@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Alerta Arrebato",
+    "slug": "alerta-arrebato",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "pe.pixelhack.alertaarrebato"
+    },
+    "android": {
+      "package": "pe.pixelhack.alertaarrebato",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "Alerta Arrebato",
+      "shortName": "Arrebato",
+      "lang": "es-PE",
+      "themeColor": "#1b5e20"
+    },
+    "plugins": [
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Usamos el movimiento del celular para detectar si te lo arranchan."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos tu ubicación para confirmar la huida y mandar la ruta a tu familia si te roban el celular."
+        }
+      ],
+      "expo-sharing"
+    ]
+  }
+}
