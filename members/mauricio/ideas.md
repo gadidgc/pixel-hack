@@ -77,3 +77,32 @@
 | **Base de Datos Vectorial** | **Qdrant / ChromaDB** | Almacenamiento e indexación semántica de boletines de la PNP, Mininter y SBS |
 | **Frontend de Demostración** | **React + Vite + Tailwind CSS** | Panel interactivo que expone el flujo de verificación y comparación semántica en vivo para el jurado |
 | **Validación y Fuentes** | **Tavily API** *(sponsor)* | Complemento opcional de búsqueda en tiempo real para noticias de última hora |
+
+---
+
+## 3. EspectroForensic (Validador de Deepfakes de Audio)
+
+> **Enfoque clave:** Subárea de Suplantación de Identidad y Estafas con Clonación de Voz por IA.
+
+### A. La problemática que resuelve
+* **El dolor:** La suplantación de identidad mediante clonación de voz con inteligencia artificial.
+* **El modus operandi:** Bandas criminales clonan la voz de un familiar (hijos, nietos) simulando un accidente o secuestro exprés ("mamá, estoy en la comisaría / me secuestraron"), o simulan la voz de una autoridad policial exigiendo transferencias inmediatas de dinero bajo pánico y presión psicológica extrema.
+
+---
+
+### B. Cómo funciona
+1. **Reenvío preventivo:** El usuario recibe la nota de voz sospechosa por WhatsApp y, antes de desesperarse o transferir dinero, la reenvía inmediatamente al bot del sistema.
+2. **Análisis espectral y frecuencias:** El sistema no analiza el contenido del mensaje (texto), sino la **señal física y las frecuencias del archivo de audio**.
+3. **Detección forense de artefactos:** Genera el espectrograma y rastrea artefactos digitales, cortes de fase y anomalías acústicas características de las herramientas de síntesis/clonación de voz (como ElevenLabs, RVC, etc.).
+4. **Veredicto inmediato:** Devuelve al usuario una alerta visual clara e instantánea (🟩 Voz humana orgánica / 🟥 Voz sintética clonada por IA) con la recomendación de colgar y verificar por llamada convencional.
+
+---
+
+### C. Stack Técnico y Arquitectura
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Ingesta de Archivos** | **n8n** | Descarga y gestión de archivos de audio (`.ogg`, `.mp3`) de los servidores de mensajería |
+| **Procesamiento de Señal & ML** | **Python + Librosa + FastAPI** | Extracción de espectrogramas, coeficientes MFCC y ejecución de modelo clasificador de ML |
+| **API de Respuesta & Mensajería** | **Node.js** | Envío de alerta inmediata con veredicto directo al chat del usuario |
+| **Dashboard Web Público** | **React + Vite** | Renderizado en tiempo real de la forma de onda y el espectrograma de frecuencias para la demo en vivo ante el jurado |
