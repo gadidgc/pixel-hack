@@ -39,6 +39,7 @@ Lee siempre [CONTEXT.md](CONTEXT.md) primero. Ahí están la rúbrica, las regla
 7. Haz commit en una rama `claude/sintesis-<hora>` con el mensaje `síntesis: <fecha hora>` y abre un PR, solo si la persona te lo pidió. Nunca hagas push a `main`.
 
 ## Reglas
+- Sponsors: cuando propongas arquitectura, considera las herramientas de los sponsors (CONTEXT §4) y anota cuáles usamos y para qué, para mencionarlas en el pitch y en la entrega. El kit de Qatom (§4.1) está **por confirmar**: no lo pongas como pieza central hasta que el equipo lo confirme.
 - El repo se evalúa (20% de la nota). Mantén el código ordenado, un README claro, commits con sentido y nada de claves. Antes de la entrega, recuérdale al equipo ordenar o mover la lluvia de ideas de `members/`.
 - Nunca inventes evidencia ni usuarios. Marca como tales las estimaciones y las cifras de fuentes secundarias.
 - Nunca subas claves, códigos de créditos ni datos personales de terceros. Si un archivo de alguna carpeta los tiene, avísalo y no los copies a la síntesis.

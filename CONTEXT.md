@@ -89,12 +89,29 @@ Para comparar fácil, en SYNTHESIS.md también la mostramos sobre 100 (nota × 2
 | **Tavily** | API de búsqueda para agentes | Verificar en tiempo real afirmaciones, números y URLs |
 | **Apify** | Scraping / actores | Recolectar publicaciones de estafas, páginas falsas y avisos de Facebook Marketplace |
 | **n8n** (1 semana Cloud Pro) | Automatización de flujos | Pegamento: alertas, escalar a la PNP o a la familia, dashboards |
-| **Qatom** (6 meses Max) | Plataforma de desarrollo con IA | Construir y armar agentes |
+| **Qatom** (6 meses Max) | Marketplace donde **agentes de IA encuentran, compran y usan APIs**, pagando por llamada (ver §4.1) | Publicar nuestra API (ej. "¿esto es estafa?") para que otros agentes la compren |
 | **AtomicMemory Cloud** (5 meses Pro) | Memoria para agentes | Recordar números o patrones reportados por cada usuario |
 | **Maritime** ($100) | Hosting / infraestructura para agentes | Despliegue |
 | **Lovable** | Constructor de apps | Frontend rápido (pero el esfuerzo técnico necesita lógica propia por debajo) |
 
 > Usar bien las herramientas de los sponsors puede impresionar a los jurados de los sponsors, pero solo si el uso es real.
+
+### 4.1 Qatom: kit para Hack the Andes (⚠️ por confirmar)
+- Repo: [StarwaterHeaven/qatom-hack-the-andes](https://github.com/StarwaterHeaven/qatom-hack-the-andes) (licencia MIT, creado el 7 de octubre de 2026). Lo encontró Cesar.
+- **Todavía no sabemos** si es el kit oficial ni cuándo o cómo se espera que lo usemos. El repo no lo publica Qatom ni el evento con su nombre: lo publica una cuenta personal. Lo que sí está confirmado en la web del evento es que Qatom es sponsor y regala 6 meses de Qatom Max a cada participante.
+- **Qué es Qatom:** un catálogo donde agentes de IA (Claude u otro cliente MCP) buscan servicios, pagan por llamada desde una wallet propia del agente y reciben la respuesta con recibo. Se conecta como MCP en `https://mcp.m.todaq.net/mcp`.
+- **Qué trae el kit:** una plantilla de Cloudflare Worker para vender nuestra API en el catálogo (`template/`), ejemplos (rastreo de carga en México, video pagado) y una skill para convertir un repo en catálogo.
+- **Por qué nos puede servir:**
+  - **Complejidad técnica (30%)**: es una integración real con un sponsor (API + pagos + MCP).
+  - **Extra +0,5**: la rúbrica da el bonus máximo por "un pago". Si otros agentes compran llamadas a nuestra API en Qatom, hay pagos reales visibles en registros.
+  - **Pitch**: "otros agentes y apps pueden consultar nuestra base de estafas peruanas y pagar por llamada" es un modelo de negocio concreto.
+- **Cuidado:**
+  - Confirmar con la organización o con Qatom (Discord del evento) si este kit es el que recomiendan y si hay un premio o reto aparte.
+  - Mueve dinero real (montos chicos, ej. 0.01). Nunca subir al repo tokens como `QATOM_FULFILMENT_TOKEN`.
+  - No dejar que Qatom se vuelva el centro del proyecto: es un canal extra, no el producto.
+
+### 4.2 Regla: mencionar a los sponsors (idea de Cesar)
+En el pitch, en el README de la entrega y en la descripción, **nombrar qué sponsors usamos y para qué**, solo si de verdad los usamos. Ejemplo: "WhatsApp con Zavu · búsqueda con Tavily · pagos por llamada con Qatom". Los sponsors suelen estar en el jurado o en el público.
 
 ---
 
