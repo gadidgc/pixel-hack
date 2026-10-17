@@ -1,0 +1,47 @@
+# Ideas de Mauricio · Track 04: Seguridad
+
+---
+
+## 1. NexoRoto AI (Inteligencia de Grafos contra Extorsión)
+
+> **Enfoque clave:** Diseñado para atacar directamente el Track 04 (Extorsión a comercios y transportistas), garantizar el 75% técnico y asegurar el bonus de tracción (+0.5).
+
+### A. La problemática que resuelve
+* **El dolor:** La extorsión sistemática a comercios (bodegas) y transportistas (choferes y líneas de combis/buses) mediante el uso de **"mulas digitales"**.
+* **La barrera:** Las víctimas no denuncian ante la policía por miedo a represalias directas y desconfianza.
+* **El mecanismo criminal:** Los extorsionadores ocultan el rastro del dinero usando cuentas de Yape/Plin y números telefónicos de terceros (mulas o identidades falsas), por lo que las investigaciones individuales nunca logran ver el cuadro completo.
+
+---
+
+### B. Cómo funciona en 4 pasos
+1. **Reporte anónimo y seguro:** El transportista o bodeguero reenvía el mensaje de texto, captura o audio extorsivo a un **bot anónimo en Telegram**.
+2. **Procesamiento y privacidad:** El sistema procesa el mensaje de forma totalmente privada y extrae únicamente los datos financieros clave:
+   * Número de billetera digital (Yape / Plin).
+   * Monto exigido (cobro de cupo diario o semanal).
+   * Alias o nombre que figura en la billetera.
+   * Línea de transporte o zona de la bodega afectada.
+3. **Inyección en grafo y triangulación:** En lugar de dejar el reporte como un simple registro en una tabla, los datos se inyectan en un mapa de nodos.
+4. **Detección del nodo central:** Cuando múltiples transportistas o bodegas reportan diferentes "mulas", el algoritmo de grafos dibuja las conexiones trianguladas en tiempo real para **identificar el nodo central de la mafia financiera**.
+
+---
+
+### C. Stack Técnico y Arquitectura (75% Rúbrica Técnica)
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Orquestación** | **n8n** *(sponsor del evento)* | Recepción y flujo de webhooks del bot de Telegram en tiempo real |
+| **Backend & IA** | **Python + FastAPI** | API de alto rendimiento con procesamiento asíncrono |
+| **Modelo NER** | **LLM local (Llama 3)** | Extracción de Entidades Nombradas (NER) de forma privada, garantizando que datos sensibles no se filtren a servicios externos y demostrando arquitectura avanzada |
+| **Base de Datos de Grafos** | **Neo4j** | Modelado de relaciones complejas, clústeres y detección de comunidades criminales |
+| **Base de Datos Relacional** | **MariaDB / MySQL** | Almacenamiento plano estructurado y auditoría de eventos |
+| **Frontend & Dashboard** | **React + Vite + Tailwind CSS** | Panel de inteligencia criminal en tiempo real, responsive y desplegado en una **URL pública** |
+| **Documentación técnica** | **PlantUML** | Diagramas de arquitectura y flujo integrados en el `README.md` del repositorio (para asegurar la máxima puntuación en Calidad Técnica - 20%) |
+
+---
+
+### D. Estrategia de Evaluación y Tracción (+0.5 Bonus)
+* **Funciona en vivo (25%):** El dashboard en React estará desplegado en una URL pública accesible para el jurado en su propia laptop, mostrando la actualización reactiva del grafo sin requerir instalación local ni login.
+* **Bonus de Tracción (+0.5):** 
+  * Se pondrá a disposición de los participantes del evento el bot de Telegram.
+  * Durante el hackathon, se recolectarán más de 20 reportes de prueba simulados enviados por compañeros y asistentes.
+  * Al momento del pitch, el jurado verá en pantalla los datos entrando en vivo y el grafo triangulando a los criminales en directo.
