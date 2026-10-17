@@ -269,6 +269,8 @@ Solo los nombramos si de verdad los usamos.
 ---
 
 ## 7. Interfaz (después)
+
+**Propuesta completa de funcionalidades (Cesar):** [funcionalidades-app.md](funcionalidades-app.md): onboarding, alerta a la familia, "Me robaron" desde otro celular, la primera hora (bloquear todo), reporte de extorsión, panel y "cancelar con PIN". El detector de este plan es su funcionalidad ⭐ (§4.2 de esa propuesta).
 Hoy hay **una pantalla simple** a propósito: activar, lecturas en vivo, alerta con "falsa alarma", modo demo, grabar y simular. Ideas para después: pantalla de alerta grande con cuenta regresiva para cancelar con PIN, contacto de confianza, historial, onboarding de permisos, ícono y nombre definitivos.
 
 ---

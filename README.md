@@ -8,6 +8,7 @@ Lima, 17 y 18 de octubre de 2026 · Equipo: Gabriel, Cesar, Mauricio, Piero.
 
 - **Plan detallado y tareas por integrante:** [docs/PLAN.md](docs/PLAN.md)
 - Investigación técnica: [docs/viabilidad-deteccion-arrebato-moto.md](docs/viabilidad-deteccion-arrebato-moto.md)
+- Funcionalidades de la app (propuesta de Cesar): [docs/funcionalidades-app.md](docs/funcionalidades-app.md)
 - Resultados del banco de pruebas: [packages/detector/reportes/evaluacion.md](packages/detector/reportes/evaluacion.md)
 - Rúbrica y contexto del evento: [CONTEXT.md](CONTEXT.md)
 

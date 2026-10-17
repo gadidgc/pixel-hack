@@ -1,7 +1,7 @@
 # Funcionalidades de la app: robo de celular, bloqueo y extorsión
 
 > Propuesta de Cesar (sábado 17 de octubre de 2026), trabajada con Claude. **Es un borrador para que el equipo decida.**
-> Parte de la investigación de Gabriel: [docs/viabilidad-deteccion-arrebato-moto.md](../../../docs/viabilidad-deteccion-arrebato-moto.md).
+> Parte de la investigación de Gabriel: [docs/viabilidad-deteccion-arrebato-moto.md](./viabilidad-deteccion-arrebato-moto.md).
 > Lo marcado como *estimación* o *hipótesis* no está comprobado. Lo que viene de blogs, foros o prensa está marcado como fuente secundaria.
 > **Todavía no hay entrevistas a personas de fuera del equipo.**
 
@@ -39,7 +39,7 @@ Solo sirve si el celular tiene PIN, patrón o huella.
 | **Hay que activarlas antes del robo**, y nadie se prepara. | *Hipótesis* |
 | **Falsas alarmas.** Hay quejas de que el bloqueo de Google se activó al trotar o en el bus. En otra prueba tuvieron que simular varios robos antes de que se activara. | Foros y Android Authority (fuente secundaria) |
 | **Desconfianza** hacia apps que piden muchos permisos. | *Hipótesis* |
-| **No resuelven el problema de fondo:** el celular igual se pierde y la víctima no sabe qué hacer en la primera hora. | [CONTEXT.md](../../../CONTEXT.md) §5 |
+| **No resuelven el problema de fondo:** el celular igual se pierde y la víctima no sabe qué hacer en la primera hora. | [CONTEXT.md](../CONTEXT.md) §5 |
 | **Están separadas:** una app para bloquear, otra para ubicar, otra para denunciar. | *Hipótesis* |
 
 ### 2.3 Apps parecidas en el Perú, en Sudamérica y en el mundo
@@ -154,7 +154,7 @@ Para todos los robos que los sensores no detectan.
 | 7.1 | **Buscar un número:** *"Reportado por 10 usuarios en Ate."* Cada usuario ve no solo su reporte, sino todo lo que hizo ese número con otros. |
 | 7.2 | **Solo se muestra con 3 reportes o más** de personas distintas, para que nadie "queme" el número de otra persona. |
 | 7.3 | **Número tapado en público** (999 *** 123). |
-| 7.4 | **Cuentas de Yape o Plin repetidas:** *"Esta cuenta aparece en 5 extorsiones con 3 números distintos"*: es la misma banda cambiando de chip (versión simple de [Cupo Cero](../cupo-cero-resumen.md)). |
+| 7.4 | **Cuentas de Yape o Plin repetidas:** *"Esta cuenta aparece en 5 extorsiones con 3 números distintos"*: es la misma banda cambiando de chip (versión simple de [Cupo Cero](./fase-1/members/cesar/cupo-cero-resumen.md)). |
 | 7.5 | **Expediente para la autoridad:** número, cuántas víctimas, fechas y cuentas, listo para que la PNP y el Ministerio Público pidan a OSIPTEL suspender la línea. |
 | 7.6 | **Estado de mis reportes:** reportado → 3 víctimas → expediente listo → línea suspendida. |
 
@@ -221,7 +221,7 @@ Para todos los robos que los sensores no detectan.
 - Unas **12 600 denuncias** entre enero y junio de 2026: unas **70 al día**.
 - Zonas con más denuncias: **Lima Este**, La Libertad, Lima Centro, Lima Norte y Lima Sur. Las cifras por zona cambian según la fuente (Lima Este aparece con 1638 o con 1806): usar la más prudente.
 - El **38%** de las personas en Lima recibió por WhatsApp algún mensaje con fines de extorsión o fraude (Gestión).
-- Alrededor de **1 condena por cada 76 denuncias** (RPP con datos del Poder Judicial, ver [Cupo Cero](../cupo-cero-resumen.md)).
+- Alrededor de **1 condena por cada 76 denuncias** (RPP con datos del Poder Judicial, ver [Cupo Cero](./fase-1/members/cesar/cupo-cero-resumen.md)).
 
 ---
 
