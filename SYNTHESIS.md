@@ -1,63 +1,56 @@
-# Synthesis: Track Seguridad
+# Síntesis: Track Seguridad
 
-Claude maintains this file. It is rebuilt from `members/*/` each time someone says **"sintetiza"**.
-Score = Traction×6 + Tech×8 + Pitch×6 (the official judges' formula, see CONTEXT §2).
+Claude mantiene este archivo. Se reconstruye a partir de `members/*/` cada vez que alguien dice **"sintetiza"**.
+Puntaje = Tracción×6 + Técnico×8 + Pitch×6 (la fórmula oficial del jurado, ver CONTEXT §2).
 
-**Last synthesis:** 2026-10-17 (initial; Claude's seed ideas, inboxes still empty)
-**What changed:** nothing has been dropped in the inboxes yet.
+**Última síntesis:** 2026-10-17 (inicial; ideas semilla de Claude, carpetas todavía vacías)
+**Qué cambió:** todavía nadie ha subido nada a su carpeta.
 
-| # | Idea | Sub-area | From | Traction | Tech | Pitch | **Projected /100** | Evidence so far |
+| # | Idea | Subárea | De | Tracción | Técnico | Pitch | **Proyectado /100** | Evidencia hasta ahora |
 |---|---|---|---|---|---|---|---|---|
-| A | ¿Es Estafa? WhatsApp bot | Scams / impersonation | Claude | 1 | 4 | 5 | **68** | none yet |
-| B | Yape Real: bodega payment verifier | Scams / merchants | Claude | 1 | 4 | 4 | **62** | none yet |
-| C | Primera Hora: anti-extortion kit | Extortion / transport | Claude | 1 | 4 | 3 | **56** | none yet |
-| D | Verifica el audio | Disinformation | Claude | 1 | 3 | 3 | **48** | none yet |
+| A | ¿Es Estafa? (bot de WhatsApp) | Estafas / suplantación | Claude | 1 | 4 | 5 | **68** | ninguna aún |
+| B | Yape Real (verificador de pagos para bodegas) | Estafas / comercios | Claude | 1 | 4 | 4 | **62** | ninguna aún |
+| C | Primera Hora (kit contra la extorsión) | Extorsión / transporte | Claude | 1 | 4 | 3 | **56** | ninguna aún |
+| D | Verifica el audio (verificador de contenido viral) | Desinformación | Claude | 1 | 3 | 3 | **48** | ninguna aún |
 
-> Traction is 1 for everything until real interviews or users land in an inbox. Each traction point is worth +6, so
-> one morning of interviews can move an idea from 68 to 80 or more. That is the cheapest score available.
-
----|---|---|---|---|---|---|---|---|---|---|---|
-| A | ¿Es Estafa? WhatsApp bot | Scams / impersonation | Claude | 5 | 5 | 5 | 4 | 4 | 5 | 5 | 33 |
-| B | Yape Real: bodega payment verifier | Scams / merchants | Claude | 5 | 5 | 4 | 4 | 3 | 5 | 5 | 31 |
-| C | Primera Hora: anti-extortion kit | Extortion / transport | Claude | 5 | 3 | 4 | 4 | 4 | 3 | 4 | 27 |
-| D | Verifica el audio: viral-content checker | Disinformation | Claude | 3 | 4 | 4 | 4 | 3 | 5 | 4 | 27 |
-| … | (add yours) | | | | | | | | | | |
+> La tracción está en 1 para todas hasta que lleguen entrevistas o usuarios reales a alguna carpeta. Cada punto de tracción vale +6,
+> así que una mañana de entrevistas puede subir una idea de 68 a 80 o más. Es el puntaje más barato que hay.
 
 ---
 
-## A. ¿Es Estafa? (recommended)
-**Problem:** Peruvians get "hola mamá, cambié de número", fake bank texts, fake courier links, and now AI voice clones. Reports tied to Yape and WhatsApp are reportedly up about 120% in 2026.
-**Product:** A WhatsApp number (via **Zavu**). You forward any suspicious message, link, screenshot, or audio, and in about 10 s you get a verdict in plain Spanish: 🟥 estafa / 🟨 sospechoso / 🟩 parece ok, plus *what to do now*.
-**Technical core:** URL reputation and domain age, a lookalike-domain check (bcp-pe.com vs bcp.com.pe), a community reputation database of phone numbers, an LLM classifier tuned on Peruvian scam scripts, OCR on screenshots, and an optional voice-clone heuristic. A web dashboard shows live trends ("top scams in Lima this week").
-**Traction in 30 h:** Share it in our family and university WhatsApp groups, then count real forwarded messages, unique users, and repeat users. This is real usage, which the rubric treats as a 5.
-**Demo:** A judge sends a message from their own phone and gets an answer live on stage.
-**LatAm:** Same flow for Pix, Nequi, and Mercado Pago scams.
+## A. ¿Es Estafa? (recomendada)
+**Problema:** a los peruanos les llegan mensajes tipo "hola mamá, cambié de número", textos falsos del banco, links falsos de courier y ahora voces clonadas con IA. Los reportes ligados a Yape y WhatsApp habrían subido cerca de 120% en 2026.
+**Producto:** un número de WhatsApp (con **Zavu**). Reenvías cualquier mensaje, link, captura o audio sospechoso y en unos 10 segundos recibes un veredicto en español sencillo: 🟥 estafa / 🟨 sospechoso / 🟩 parece ok, más *qué hacer ahora*.
+**Núcleo técnico:** reputación de URLs y antigüedad del dominio, detección de dominios parecidos (bcp-pe.com vs bcp.com.pe), una base comunitaria de reputación de números, un clasificador con LLM ajustado a guiones de estafa peruanos, OCR de capturas y, opcionalmente, una heurística de voz clonada. Un dashboard web muestra tendencias en vivo ("estafas top en Lima esta semana").
+**Tracción en 30 h:** compartirlo en los grupos de WhatsApp de nuestras familias y de la universidad, y contar mensajes reenviados reales, usuarios únicos y usuarios que vuelven. Es uso real, que la rúbrica califica con 5.
+**Demo:** un jurado manda un mensaje desde su propio celular y recibe la respuesta en vivo en el escenario.
+**Latinoamérica:** el mismo flujo sirve para estafas con Pix, Nequi y Mercado Pago.
 
 ## B. Yape Real
-**Problem:** "Yape falso" apps and fake receipts hit bodegueros, who check the customer's screen because they're busy.
-**Product:** A PWA or Android app that listens to the merchant's *own* payment notifications and **announces each confirmed payment aloud**, with a big green screen. A "verify screenshot" mode flags edited receipts.
-**Technical core:** Notification parsing, image forensics (fonts, layout, metadata), and a ledger.
-**Traction:** Install it in 5–10 bodegas near the venue.
-**Risk:** It needs an Android notification listener, which is harder to show from a URL. Check whether Yape, BCP, or Izipay already sell a payment speaker; if they do, our angle is fake-receipt detection plus being free.
+**Problema:** las apps de "Yape falso" y los comprobantes falsos golpean a los bodegueros, que miran la pantalla del cliente porque están ocupados.
+**Producto:** una PWA o app Android que lee las notificaciones de pago *del propio comerciante* y **anuncia en voz alta cada pago confirmado**, con una pantalla verde grande. Un modo "verificar captura" marca los comprobantes editados.
+**Núcleo técnico:** lectura de notificaciones, análisis forense de imágenes (tipografías, diseño, metadatos) y un registro de pagos.
+**Tracción:** instalarlo en 5 a 10 bodegas cerca del local.
+**Riesgo:** necesita leer notificaciones en Android, lo que es más difícil de mostrar desde una URL. Verificar si Yape, BCP o Izipay ya venden un parlante de pagos; si es así, nuestro ángulo es detectar comprobantes falsos y ser gratis.
 
-## C. Primera Hora (first-hour anti-extortion kit)
-**Problem:** Only 27 of 83 extorted companies reported before an attack, because of fear. Victims don't know what to do in the first hour, and evidence gets lost.
-**Product:** A private evidence vault: capture the threatening chat or audio, timestamp it, hash it, and store it encrypted. It also gives step-by-step guidance (111, PNP WhatsApp, OSIPTEL blocking, Fiscalía) and an anonymized heatmap of reports for the transport union.
-**Risk:** Retaliation and data security. It is harder to get users in 30 h, and judges will probe safety hard.
+## C. Primera Hora (kit contra la extorsión para la primera hora)
+**Problema:** solo 27 de 83 empresas extorsionadas denunciaron antes de un atentado, por miedo. Las víctimas no saben qué hacer en la primera hora y la evidencia se pierde.
+**Producto:** una bóveda privada de evidencia: guardar el chat o audio amenazante con fecha, hash y cifrado. También da una guía paso a paso (111, WhatsApp de la PNP, bloqueo en OSIPTEL, Fiscalía) y un mapa de calor anonimizado de reportes para el gremio de transportistas.
+**Riesgo:** represalias y seguridad de los datos. Es más difícil conseguir usuarios en 30 h, y el jurado va a preguntar mucho sobre seguridad.
 
 ## D. Verifica el audio
-**Problem:** Viral fake audios and videos, including fake "police alerts" and political deepfakes.
-**Product:** Forward the media, and it is checked against fact-checkers and news using Tavily, with deepfake signals.
-**Risk:** The elections are over, so the pain is lower now, and deepfake detection is hard to make reliable in 30 h. It could be folded into A as a feature.
+**Problema:** audios y videos virales falsos, incluyendo "alertas policiales" falsas y deepfakes políticos.
+**Producto:** reenvías el contenido y se contrasta con verificadores y noticias usando Tavily, más señales de deepfake.
+**Riesgo:** las elecciones ya pasaron, así que el dolor es menor ahora, y detectar deepfakes de forma confiable en 30 h es difícil. Podría ser una función dentro de A.
 
 ---
 
-## Next actions
-| Who | Do what |
+## Próximas acciones
+| Quién | Qué hace |
 |---|---|
-| Everyone | Drop your ideas and anything you've found in your inbox (`members/<you>/`) |
-| Everyone | Talk to 2 real people (a bodega, a driver, your parents) and drop the notes |
-| Claude | Synthesize on request, re-score, and recommend |
+| Todos | Suban sus ideas y lo que hayan encontrado a su carpeta (`members/<tu-nombre>/`) |
+| Todos | Hablen con 2 personas reales (una bodega, un chofer, sus papás) y suban las notas |
+| Claude | Sintetiza cuando se lo pidan, vuelve a puntuar y recomienda |
 
-## Decision
-**Chosen idea:** ____ (decide after the first synthesis that includes real evidence)
+## Decisión
+**Idea elegida:** ____ (decidir después de la primera síntesis que tenga evidencia real)

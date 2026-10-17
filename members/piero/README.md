@@ -1,13 +1,13 @@
-# Piero's inbox
+# Carpeta de Piero
 
-Drop **anything** here. There's no format and no template:
-- Ideas, even half-baked ones (a line is enough)
-- Links, articles, tweets, TikToks
-- Screenshots and photos (scam messages, bodegas, combis)
-- Interview notes or voice-note transcripts ("hablé con la señora de la bodega…")
-- Questions or doubts
+Sube **lo que sea** aquí. No hay formato ni plantilla:
+- Ideas, aunque estén a medio pensar (con una línea basta)
+- Links, artículos, tuits, TikToks
+- Capturas y fotos (mensajes de estafa, bodegas, combis)
+- Notas de entrevistas o transcripciones de audios ("hablé con la señora de la bodega…")
+- Preguntas o dudas
 
-Name the files however you want (`ideas.md`, `bodega-interview.md`, `scam-screenshot.png`…).
-Then push and tell Claude **"sintetiza"**. Claude reads every inbox and updates [SYNTHESIS.md](../../SYNTHESIS.md).
+Ponle a los archivos el nombre que quieras (`ideas.md`, `entrevista-bodega.md`, `captura-estafa.png`…).
+Después haz push y dile a Claude **"sintetiza"**. Claude lee todas las carpetas y actualiza [SYNTHESIS.md](../../SYNTHESIS.md).
 
-⚠️ Don't upload API keys, credit codes, or anyone's personal data. Blur names and phone numbers in screenshots.
+⚠️ No subas API keys, códigos de créditos ni datos personales de nadie. Tapa nombres y números de teléfono en las capturas.

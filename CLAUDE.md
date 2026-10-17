@@ -1,24 +1,31 @@
-# Instructions for Claude (any team member's session)
+# Instrucciones para Claude (en la sesión de cualquier integrante)
 
-Team pixel-hack · Hack the Andes 2026 (Lima, Oct 17–18) · Track **Seguridad**.
-Members: Gabriel, Cesar, Mauricio, Piero. Market: **Peru first, then LatAm**. The team writes in Spanish or English; answer in the language you're asked in.
+Equipo pixel-hack · Hack the Andes 2026 (Lima, 17 y 18 de octubre) · Track **Seguridad**.
+Integrantes: Gabriel, Cesar, Mauricio, Piero. Mercado: **primero Perú, luego Latinoamérica**.
 
-Always read [CONTEXT.md](CONTEXT.md) first. It holds the rubric, rules, Peru data, and personas.
+## Idioma (obligatorio)
+- **Todo lo que se escribe en el repo va en español** (español peruano, claro y sencillo): documentos, síntesis, README, comentarios para el equipo, mensajes de commit, descripción de la entrega y la presentación.
+- **Cesar, Mauricio y Piero no hablan inglés.** Con ellos responde siempre en español, aunque te escriban mezclando idiomas.
+- **Gabriel** puede recibir respuestas en inglés en el chat, pero todo lo que quede en el repo va en español.
+- Los términos técnicos (API, deploy, pitch, LLM) pueden quedar en inglés, pero explícalos en español la primera vez si no son obvios.
+- Si no sabes quién te escribe, usa español.
 
-## When someone says "sintetiza" (or "synthesize", "update the board")
-1. `git pull`, then read **every file** in `members/*/`, including images (describe what's in them).
-2. Pull out each distinct idea and each piece of evidence (interview, screenshot, data point). Merge duplicates across members and credit everyone who contributed.
-3. For each idea, estimate the judges' score (CONTEXT §2), 1–5 each:
-   - **Traction (×6)**: count only *real external evidence* in the inboxes (interviews, users, messages). No evidence means 1, whatever the idea's merits.
-   - **Technical effort (×8)**: the planned technical core that can be built in the remaining hours.
-   - **Pitch (×6)**: how clear the problem is, and whether a judge can see the demo from a URL in 3 min.
-   - Projected score = T×6 + E×8 + P×6 (out of 100).
-4. Rewrite [SYNTHESIS.md](SYNTHESIS.md): ranking table, then per idea its evidence (with file links), its gaps, and **the next concrete action plus who does it**.
-5. Add a short "What changed since last synthesis" line at the top.
-6. Be a proactive teammate: say which idea you would pick and why, and name the one piece of evidence that would change your mind.
-7. Commit with message `synthesis: <date time>` and push, only if the person asked you to push.
+Lee siempre [CONTEXT.md](CONTEXT.md) primero. Ahí están la rúbrica, las reglas, las cifras del Perú y las personas a entrevistar.
 
-## Rules
-- Never invent evidence or users. Mark estimates and secondary-source numbers as such.
-- Never commit secrets, credit codes, or third parties' personal data. If a file in an inbox has them, flag it and don't copy it into the synthesis.
-- Keep "what works" separate from "pending ideas" (this is a requirement of the event).
+## Cuando alguien diga "sintetiza" (o "synthesize", "actualiza el tablero")
+1. Haz `git pull` y lee **todos los archivos** de `members/*/`, incluidas las imágenes (describe lo que muestran).
+2. Saca cada idea distinta y cada pieza de evidencia (entrevista, captura, dato). Junta los duplicados entre integrantes y da crédito a todos los que aportaron.
+3. Para cada idea, estima el puntaje del jurado (CONTEXT §2), de 1 a 5 en cada criterio:
+   - **Tracción (×6)**: cuenta solo *evidencia externa real* de las carpetas (entrevistas, usuarios, mensajes). Sin evidencia es 1, por más buena que sea la idea.
+   - **Esfuerzo técnico (×8)**: el núcleo técnico planeado que se puede construir en las horas que quedan.
+   - **Pitch (×6)**: qué tan claro es el problema, y si un jurado puede ver la demo desde una URL en 3 minutos.
+   - Puntaje proyectado = T×6 + E×8 + P×6 (sobre 100).
+4. Reescribe [SYNTHESIS.md](SYNTHESIS.md): tabla de ranking y, por cada idea, su evidencia (con links a los archivos), lo que le falta y **la siguiente acción concreta con quién la hace**.
+5. Agrega arriba una línea corta de "Qué cambió desde la última síntesis".
+6. Actúa como un integrante proactivo: di qué idea elegirías y por qué, y qué evidencia te haría cambiar de opinión.
+7. Haz commit con el mensaje `síntesis: <fecha hora>` y push, solo si la persona te pidió hacer push.
+
+## Reglas
+- Nunca inventes evidencia ni usuarios. Marca como tales las estimaciones y las cifras de fuentes secundarias.
+- Nunca subas claves, códigos de créditos ni datos personales de terceros. Si un archivo de alguna carpeta los tiene, avísalo y no los copies a la síntesis.
+- Separa "lo que ya funciona" de "ideas pendientes" (lo exige el evento).

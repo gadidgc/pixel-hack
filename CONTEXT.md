@@ -1,170 +1,170 @@
-# Hack the Andes 2026: Shared Team Context
+# Hack the Andes 2026: Contexto compartido del equipo
 
-> Single source of truth for the team. Every member reads this before brainstorming.
-> Track: **04 · Seguridad (`security`)** · Market: **Peru first, then Latin America**.
-> Last updated: 2026-10-17 (event day 1). Sources at the bottom.
+> Fuente única de verdad del equipo. Todos lo leen antes de proponer ideas.
+> Track: **04 · Seguridad (`security`)** · Mercado: **primero Perú, luego Latinoamérica**.
+> Última actualización: 2026-10-17 (día 1 del evento). Fuentes al final.
 
 ---
 
-## 1. The event in one screen
+## 1. El evento en una pantalla
 
-| Item | Detail |
+| Tema | Detalle |
 |---|---|
-| Dates | **Oct 17–18, 2026**, 30 hours, in person, Lima |
-| Organizer | Crafter Station · Main sponsor: Chofex · Ally: Peru Tech Week |
-| Size | 100 people, 1–4 per team, 4 tracks, max 12 teams per track |
-| Prizes | 1st **S/ 6,000**, 2nd **S/ 2,000**, plus a trip to Chofex HQ (SF / Monterrey), StartUPC mentorship, Qatom and AtomicMemory credits |
-| Pitch | **3 min pitch + 2 min Q&A**, on the organizers' computer (not ours) |
-| Submission | Deployed app URL · Presentation URL · GitHub repo URL · Markdown description |
+| Fechas | **17 y 18 de octubre de 2026**, 30 horas, presencial en Lima |
+| Organiza | Crafter Station · Sponsor principal: Chofex · Aliado: Peru Tech Week |
+| Tamaño | 100 personas, equipos de 1 a 4, 4 tracks, máximo 12 equipos por track |
+| Premios | 1.º **S/ 6,000**, 2.º **S/ 2,000**, más viaje a la sede de Chofex (San Francisco / Monterrey), mentoría de StartUPC y créditos de Qatom y AtomicMemory |
+| Pitch | **3 min de pitch + 2 min de preguntas**, en la computadora de la organización (no en la nuestra) |
+| Entrega | URL de la app desplegada · URL de la presentación · URL del repo en GitHub · descripción en Markdown |
 
-### Security track brief (official wording)
+### Brief del track de Seguridad (texto oficial)
 > "Extorsión, estafas, seguridad de comercios y transportistas, suplantación y desinformación."
 
-So there are five sub-areas: **extortion · scams · security for merchants and transport workers · impersonation · disinformation**.
-Choose the track by the *main* problem the project solves.
+Son cinco subáreas: **extorsión · estafas · seguridad de comercios y transportistas · suplantación · desinformación**.
+Se elige el track según el problema *principal* que resuelve el proyecto.
 
 ---
 
-## 2. Judging rubric (this decides everything)
+## 2. Rúbrica del jurado (esto lo decide todo)
 
-Each judge gives a whole-number score from **1 to 5** on three criteria. The score out of 100 is:
+Cada jurado pone una nota entera de **1 a 5** en tres criterios. El puntaje sobre 100 es:
 
 ```
-score = traction × 6 + technical effort × 8 + pitch × 6
+puntaje = tracción × 6 + esfuerzo técnico × 8 + pitch × 6
 ```
-The team result is the average across active judges. Example: 3 / 4 / 5 = 80.
+El resultado del equipo es el promedio de los jurados activos. Ejemplo: 3 / 4 / 5 = 80.
 
-| Criterion | Weight | 1 | 3 | 5 |
+| Criterio | Peso | 1 | 3 | 5 |
 |---|---|---|---|---|
-| **Traction** | 30% | No evidence | Interviews or verifiable signals | Real use, retention, or strong demand |
-| **Technical effort** | 40% | Template with minimal changes, or doesn't work | Working product with its own logic and integrations | Solid engineering and justified decisions |
-| **Pitch** | 30% | Problem or solution unclear | Clear explanation and demo | Convincing proposal, clear demo, precise answers |
+| **Tracción** | 30% | Sin evidencia | Entrevistas o señales verificables | Uso real, retención o demanda sólida |
+| **Esfuerzo técnico** | 40% | Plantilla con cambios mínimos o que no funciona | Producto funcional con lógica e integraciones propias | Ingeniería sólida y decisiones justificadas |
+| **Pitch** | 30% | Problema o solución poco claros | Explicación y demo comprensibles | Propuesta convincente, demo clara y respuestas precisas |
 
-Notes:
-- "Using AI does not cost points by itself." Agents are fine; we stay responsible for every claim.
-- "Traction values external evidence." In 30 hours that means **real interviews with bodegueros / drivers / users**, a waitlist, a WhatsApp group with real people, or messages people actually forwarded to our bot. Screenshots plus quotes go in the progress log (bitácora).
-- Technical effort is the biggest weight (40%). We need our own logic plus real integrations, not a CRUD wrapper over an LLM.
+Notas:
+- "Usar IA no resta puntos por sí solo." Se pueden usar agentes, pero somos responsables de todo lo que afirmamos.
+- "Se valora la evidencia externa" en tracción. En 30 horas eso significa **entrevistas reales con bodegueros, choferes o usuarios**, una lista de espera, un grupo de WhatsApp con gente real o mensajes que la gente de verdad le reenvió a nuestro bot. Las capturas y citas van en la bitácora.
+- El esfuerzo técnico pesa más (40%). Necesitamos lógica propia e integraciones reales, no un CRUD encima de un LLM.
 
-### What this means for idea selection
-1. **Users we can reach today in Lima.** We can walk into a bodega or talk to a mototaxi or combi driver within a few hours. That is how we earn traction points.
-2. **A demo that works in 3 minutes from a URL** on someone else's laptop. Nothing local, no login wall, works in a private window.
-3. **A technical core that is hard to fake**, such as classification, fraud signals, verification, voice, geodata, or a WhatsApp bot with state.
-
----
-
-## 3. Submission and presentation rules (checklist)
-
-- [ ] One submission per team. Any member can edit it; there is no captain permission.
-- [ ] **Deployed app URL** works in a private / incognito window, with no session and no access requests.
-- [ ] **Presentation URL** (Canva, Google Slides, or a code-based deck), publicly reachable.
-- [ ] **GitHub repo URL** (this repo, made public before submission).
-- [ ] **Markdown description**: keep "what works" separate from "pending ideas" (this is required).
-- [ ] Post to the progress log (bitácora) after big decisions, user tests, demos, and blockers. It becomes public later.
-- [ ] **No secrets, tokens, credit codes, or third-party personal data** in the repo, log, or description.
-- [ ] Submit **early** and update later. Changes made after evaluation opens do **not** reach the judges.
-- [ ] Keep the deployment and slides online through evaluation.
-- IP: we keep ownership of what we build; the event takes no assignment of rights.
-- Conduct: ask consent before photographing or recording people. This matters for user interviews: get consent and anonymize.
+### Qué significa esto para elegir la idea
+1. **Usuarios a los que podamos llegar hoy en Lima.** Podemos entrar a una bodega o hablar con un mototaxista o un chofer de combi en pocas horas. Así sumamos puntos de tracción.
+2. **Una demo que funcione en 3 minutos desde una URL** en la laptop de otra persona. Nada local, sin login, que funcione en una ventana privada.
+3. **Un núcleo técnico difícil de falsear**: clasificación, señales de fraude, verificación, voz, geodatos o un bot de WhatsApp con estado.
 
 ---
 
-## 4. Tools and credits we get (all participants)
+## 3. Reglas de entrega y presentación (checklist)
 
-| Sponsor | What | Possible use for us |
+- [ ] Una entrega por equipo. Cualquier integrante puede editarla; no hay permiso exclusivo de capitán.
+- [ ] La **URL de la app desplegada** funciona en una ventana privada / incógnito, sin sesión y sin pedir accesos.
+- [ ] **URL de la presentación** (Canva, Google Slides o una presentación hecha con código), accesible públicamente.
+- [ ] **URL del repo en GitHub** (este repo, que debe hacerse público antes de entregar).
+- [ ] **Descripción en Markdown**: separar "lo que ya funciona" de "ideas pendientes" (es obligatorio).
+- [ ] Publicar en la bitácora después de decisiones importantes, pruebas con usuarios, demos y bloqueos. Luego se vuelve pública.
+- [ ] **Nada de claves, tokens, códigos de créditos ni datos personales de terceros** en el repo, la bitácora o la descripción.
+- [ ] Entregar **temprano** y actualizar después. Los cambios hechos cuando ya abrió la evaluación **no** llegan al jurado.
+- [ ] Mantener la app y la presentación en línea durante la evaluación.
+- Propiedad intelectual: lo que construimos es nuestro; el evento no se queda con los derechos.
+- Conducta: pedir permiso antes de tomar fotos o grabar a alguien. Esto importa en las entrevistas: pedir consentimiento y anonimizar.
+
+---
+
+## 4. Herramientas y créditos que recibimos (todos los participantes)
+
+| Sponsor | Qué es | Posible uso para nosotros |
 |---|---|---|
-| **Zavu** (3 mo Pro) | One API for **WhatsApp, SMS, voice**, email, Telegram, plus voice agents | A WhatsApp bot is how you reach Peruvians. Use it to forward suspicious messages or report extortion. |
-| **ElevenLabs** (startup program) | Voice synthesis / cloning | Voice UX for older users, or a demo of voice-clone scams |
-| **Tavily** | Search API for agents | Real-time checks of claims, numbers, and URLs |
-| **Apify** | Scraping / actors | Collect public scam posts, fake pages, and Facebook Marketplace listings |
-| **n8n** (1 wk Cloud Pro) | Workflow automation | Glue: alerts, escalation to PNP / family, dashboards |
-| **Qatom** (6 mo Max) | AI dev platform | Building and agents |
-| **AtomicMemory Cloud** (5 mo Pro) | Agent memory | Remember reported numbers or patterns per user |
-| **Maritime** ($100) | Agent hosting / infra | Deploy |
-| **Lovable** | App builder | Fast frontend (but technical effort needs our own logic underneath) |
+| **Zavu** (3 meses Pro) | Una sola API para **WhatsApp, SMS, voz**, email y Telegram, más agentes de voz | Un bot de WhatsApp es la forma de llegar a los peruanos. Sirve para reenviar mensajes sospechosos o reportar extorsiones. |
+| **ElevenLabs** (programa startups) | Síntesis y clonación de voz | Interfaz por voz para personas mayores, o una demo de estafas con voz clonada |
+| **Tavily** | API de búsqueda para agentes | Verificar en tiempo real afirmaciones, números y URLs |
+| **Apify** | Scraping / actores | Recolectar publicaciones de estafas, páginas falsas y avisos de Facebook Marketplace |
+| **n8n** (1 semana Cloud Pro) | Automatización de flujos | Pegamento: alertas, escalar a la PNP o a la familia, dashboards |
+| **Qatom** (6 meses Max) | Plataforma de desarrollo con IA | Construir y armar agentes |
+| **AtomicMemory Cloud** (5 meses Pro) | Memoria para agentes | Recordar números o patrones reportados por cada usuario |
+| **Maritime** ($100) | Hosting / infraestructura para agentes | Despliegue |
+| **Lovable** | Constructor de apps | Frontend rápido (pero el esfuerzo técnico necesita lógica propia por debajo) |
 
-> Using sponsor tools well can impress sponsor judges, but only if it is real.
-
----
-
-## 5. The problem space: Peru 2026 (with numbers)
-
-### 5.1 Extortion (extorsión): the #1 security issue in Peru
-- **12,634** extortion / blackmail complaints in **Jan–Jun 2026** (Ministerio Público), about 1,053 per month. **13,892** by July.
-- **26,217** complaints from Aug 2025 to Jul 2026, more than **5×** the 2021 figure (IPE). Sentenced prisoners went *down* from 712 to 650.
-- Hotspots: **Lima Este (1,638)**, La Libertad (1,435), Lima Centro (1,309), Lima Norte (1,163), Lima Sur (1,155).
-- **Transport:** **80+ drivers killed and 160 attacks** on buses in Lima and Callao in 2026 (La República, Oct 4). There were 107 attacks by mid-July, matching all of 2025.
-- **Under-reporting:** of 83 affected companies, only **27 reported before an attack**. The main reason is **fear of retaliation**.
-- Economic effect: transport workers and merchants **raise prices** to cover the "cupos" (protection payments).
-- Existing state channels: **Central 111** (anonymous, 24/7), PNP WhatsApp numbers, 105 emergencies, and OSIPTEL blocking (1.5M phones blocked; a decree against "líneas fantasma" was proposed Feb 2026). Gaps: low trust, fear, fragmented evidence, no follow-up, and victims don't know what to do in the first hour.
-
-### 5.2 Digital scams and wallets (estafas): Yape / Plin
-- **21,000+** reports of cybercrime tied to AI, Yape, and WhatsApp in 2026, **+120%** year over year (specialist estimate, Infobae Aug 2026; not an official figure).
-- About **90%** of computer-fraud cases go through digital wallet accounts (attributed to PNP cybercrime; secondary source).
-- Q1 2025: **7,206** computer-fraud complaints and about **3,000** identity-theft complaints (official figures understate the real volume).
-- Yape + Plin carry **more than 67%** of digital transactions (BCRP, secondary source).
-- Common methods:
-  - **"Yape falso"**: a cloned app shows a fake payment screen. Sold on Telegram, it targets **bodegueros** and merchants.
-  - **Fake receipts and tampered QR codes**: a fake QR is stuck over the real one.
-  - **Phishing** that imitates banks or wallets (the main entry point for SMEs).
-  - **SIM swap** to capture SMS codes.
-  - **WhatsApp impersonation** ("hola mamá, cambié de número…") and **AI voice cloning** of relatives.
-- Merchant rule of thumb: check incoming money in **your own** app, never on the customer's screen. Many don't, because they're busy.
-
-### 5.3 Impersonation (suplantación)
-- Voice cloning, cloned WhatsApp numbers, fake bank or police calls, and fake "SUNAT / Reniec / courier" messages.
-- In LatAm, AppGate's Fraud Beat 2026 describes fraud running as an industrial chain from social media to cash withdrawal, growing up to **228%** in some countries. It also cites synthetic identities and deepfakes becoming routine.
-- Group-IB found 97+ fraudulent domains targeting four major LatAm brands in one year.
-
-### 5.4 Disinformation (desinformación)
-- 2026 general election cycle: the **JNE logged 704 disinformation alerts** in 11 months, 65% of them in Dec 2025–Jan 2026. A post-electoral crisis followed.
-- Disinformation in elections is **not a specific crime** in Peru. A deepfake bill (PL 13975/2025) was proposed; its status is unconfirmed.
-- **6 million young voters** are heavily exposed to viral content on TikTok and WhatsApp.
-- The JNE has an AI fact-checking monitor plus factchecking@jne.gob.pe. Citizens lack a **fast, WhatsApp-native** way to check a forwarded audio, image, or video.
-- Disinformation also feeds extortion and scams: fake "alerts" and fake police notices.
-
-### 5.5 Regional context (LatAm)
-- Brazil: the Pix **MED** refund mechanism for scam victims, plus a bill to block, trace, and refund Pix fraud. This is a precedent for a "Yape/Plin MED".
-- Colombia: discussions on loans tied to identity theft. The region is moving toward UK/Australia-style **reimbursement rules**.
-- Scams are growing faster in LatAm than globally (BioCatch). Criminals focus on consumers, who are less protected.
-- Anything that works for Yape / Plin bodegas in Peru maps to **Pix (BR), Nequi / Daviplata (CO), Mercado Pago (MX / AR)**. That is the "LatAm scale" slide.
+> Usar bien las herramientas de los sponsors puede impresionar a los jurados de los sponsors, pero solo si el uso es real.
 
 ---
 
-## 6. Personas we can interview *today* (traction)
+## 5. El problema: Perú 2026 (con cifras)
 
-| Persona | Pain | Where to find them in 30 h |
+### 5.1 Extorsión: el problema de seguridad n.º 1 del Perú
+- **12,634** denuncias por extorsión y chantaje entre **enero y junio de 2026** (Ministerio Público), unas 1,053 al mes. **13,892** hasta julio.
+- **26,217** denuncias entre agosto de 2025 y julio de 2026, más de **5 veces** la cifra de 2021 (IPE). Los presos sentenciados *bajaron* de 712 a 650.
+- Zonas críticas: **Lima Este (1,638)**, La Libertad (1,435), Lima Centro (1,309), Lima Norte (1,163), Lima Sur (1,155).
+- **Transporte:** **más de 80 conductores asesinados y 160 atentados** contra buses en Lima y Callao en 2026 (La República, 4 de octubre). Hubo 107 atentados hasta mediados de julio, lo mismo que en todo 2025.
+- **Subregistro:** de 83 empresas afectadas, solo **27 denunciaron antes de sufrir un atentado**. La razón principal es el **miedo a represalias**.
+- Efecto económico: transportistas y comerciantes **suben precios** para cubrir los cupos.
+- Canales del Estado: **Central 111** (anónima, 24/7), números de WhatsApp de la PNP, 105 para emergencias y bloqueos de OSIPTEL (1.5 millones de celulares bloqueados; en febrero de 2026 se propuso un decreto contra las "líneas fantasma"). Brechas: poca confianza, miedo, evidencia dispersa, sin seguimiento, y las víctimas no saben qué hacer en la primera hora.
+
+### 5.2 Estafas digitales y billeteras: Yape / Plin
+- **Más de 21,000** reportes de ciberdelitos ligados a IA, Yape y WhatsApp en 2026, **+120%** frente al año anterior (estimación de un especialista, Infobae, agosto 2026; no es cifra oficial).
+- Cerca del **90%** de los casos de fraude informático pasan por cuentas de billeteras digitales (atribuido a la división de cibercrimen de la PNP; fuente secundaria).
+- Primer trimestre de 2025: **7,206** denuncias por fraude informático y unas **3,000** por suplantación de identidad (las cifras oficiales se quedan cortas).
+- Yape + Plin concentran **más del 67%** de las transacciones digitales (BCRP, fuente secundaria).
+- Modalidades comunes:
+  - **"Yape falso"**: una app clonada que muestra una pantalla de pago falsa. Se vende en Telegram y apunta a **bodegueros** y comerciantes.
+  - **Comprobantes falsos y QR adulterados**: pegan un QR falso encima del verdadero.
+  - **Phishing** que imita a bancos o billeteras (la principal puerta de entrada para las mypes).
+  - **Duplicado de SIM** para recibir los códigos SMS.
+  - **Suplantación por WhatsApp** ("hola mamá, cambié de número…") y **clonación de voz con IA** de familiares.
+- Regla práctica para comerciantes: verificar el pago en **tu propia** app, nunca en la pantalla del cliente. Muchos no lo hacen porque están ocupados.
+
+### 5.3 Suplantación
+- Clonación de voz, números de WhatsApp clonados, llamadas falsas del banco o de la policía, y mensajes falsos de "SUNAT / Reniec / courier".
+- En Latinoamérica, el informe Fraud Beat 2026 de AppGate describe el fraude como una cadena industrial que va de las redes sociales al retiro de efectivo, con crecimientos de hasta **228%** en algunos países. También menciona identidades sintéticas y deepfakes que se vuelven rutina.
+- Group-IB encontró más de 97 dominios fraudulentos contra cuatro grandes marcas latinoamericanas en un solo año.
+
+### 5.4 Desinformación
+- Ciclo de las elecciones generales 2026: el **JNE registró 704 alertas de desinformación** en 11 meses, el 65% entre diciembre de 2025 y enero de 2026. Después vino una crisis postelectoral.
+- La desinformación electoral **no es un delito específico** en el Perú. Se propuso un proyecto de ley contra los deepfakes (PL 13975/2025); no está confirmado si avanzó.
+- **6 millones de votantes jóvenes**, muy expuestos a contenido viral en TikTok y WhatsApp.
+- El JNE tiene un monitoreo de fact-checking con IA y el correo factchecking@jne.gob.pe. A la gente le falta una forma **rápida y dentro de WhatsApp** de verificar un audio, una imagen o un video reenviado.
+- La desinformación también alimenta la extorsión y las estafas: "alertas" falsas y avisos policiales falsos.
+
+### 5.5 Contexto regional (Latinoamérica)
+- Brasil: el mecanismo **MED** de Pix devuelve dinero a víctimas de estafas, y hay un proyecto de ley para bloquear, rastrear y reembolsar fraudes por Pix. Es un precedente para un "MED de Yape/Plin".
+- Colombia: debates sobre préstamos ligados a suplantación de identidad. La región se mueve hacia **reglas de reembolso** como las del Reino Unido o Australia.
+- Las estafas crecen más rápido en Latinoamérica que en el resto del mundo (BioCatch). Los criminales apuntan a los consumidores, que están menos protegidos.
+- Lo que funcione para Yape / Plin en bodegas del Perú se traslada a **Pix (Brasil), Nequi / Daviplata (Colombia) y Mercado Pago (México / Argentina)**. Esa es la slide de "escala en Latinoamérica".
+
+---
+
+## 6. Personas que podemos entrevistar *hoy* (tracción)
+
+| Persona | Dolor | Dónde encontrarla en 30 h |
 |---|---|---|
-| **Bodeguero / bodeguera** | Fake Yape screens, QR swaps, extortion cupos | Any bodega near the venue |
-| **Combi / bus / mototaxi driver** | Cupos, threats, attacks, route "permits" | Paraderos, transport groups on WhatsApp / Facebook |
-| **Older parent (50+)** | "Hola mamá" scams, voice clones, fake bank calls | Our own families (call them!) |
-| **Young voter / student** | Viral fake news, deepfakes on TikTok | Hackathon participants, university groups |
-| **Small online seller** (Marketplace / IG) | Fake receipts, fake buyers, chargebacks | Facebook Marketplace, IG shops |
-| **Transport company manager** | Must decide whether to report; fears retaliation | Transport associations (harder in 30 h) |
+| **Bodeguero / bodeguera** | Pantallas falsas de Yape, cambio de QR, cupos de extorsión | Cualquier bodega cerca del local |
+| **Chofer de combi, bus o mototaxi** | Cupos, amenazas, atentados, "permisos" de ruta | Paraderos, grupos de transportistas en WhatsApp / Facebook |
+| **Papá o mamá mayor (50+)** | Estafas "hola mamá", voces clonadas, llamadas falsas del banco | Nuestras propias familias (¡llámenlos!) |
+| **Votante joven / estudiante** | Fake news virales, deepfakes en TikTok | Participantes del hackathon, grupos de la universidad |
+| **Vendedor online** (Marketplace / IG) | Comprobantes falsos, compradores falsos, contracargos | Facebook Marketplace, tiendas de IG |
+| **Gerente de empresa de transporte** | Tiene que decidir si denuncia; teme represalias | Asociaciones de transportistas (más difícil en 30 h) |
 
-Interview script (5 min): *What happened last time? What did you do in the first hour? What did it cost? Who did you tell? What would you pay or use?* Record quotes and get consent. Anonymize.
+Guion de entrevista (5 min): *¿Qué pasó la última vez? ¿Qué hiciste en la primera hora? ¿Cuánto te costó? ¿A quién le contaste? ¿Qué usarías o pagarías?* Anotar citas textuales y pedir consentimiento. Anonimizar.
 
 ---
 
-## 7. Evaluation filter for ideas (score each 1–5)
+## 7. Filtro para evaluar ideas (nota de 1 a 5 en cada uno)
 
-| Filter | Question |
+| Filtro | Pregunta |
 |---|---|
-| Pain | Is it in the top 3 of what Peruvians fear in 2026? |
-| Reach | Can we get 10+ real users or interviews before the pitch? |
-| Demo | Can a judge use it from a URL (or a WhatsApp number) in 60 seconds? |
-| Tech depth | Is there real logic (detection, verification, state, integrations)? |
-| Feasibility | Can 4 people build the core in about 20 hours? |
-| Safety | Does it avoid putting victims at risk (retaliation, data leaks)? |
-| LatAm scale | Does it translate to Pix / Nequi / Mercado Pago countries? |
+| Dolor | ¿Está entre los 3 miedos principales de los peruanos en 2026? |
+| Alcance | ¿Podemos conseguir más de 10 usuarios o entrevistas reales antes del pitch? |
+| Demo | ¿Un jurado puede usarlo desde una URL (o un número de WhatsApp) en 60 segundos? |
+| Profundidad técnica | ¿Hay lógica real (detección, verificación, estado, integraciones)? |
+| Factibilidad | ¿4 personas pueden construir el núcleo en unas 20 horas? |
+| Seguridad | ¿Evita poner en riesgo a las víctimas (represalias, filtración de datos)? |
+| Escala LatAm | ¿Se traslada a países con Pix / Nequi / Mercado Pago? |
 
 ---
 
-## 8. Sources
-- Event: [hacktheandes.com](https://hacktheandes.com/) · [Team guide](https://hacktheandes.com/guide) · [Submission terms](https://hacktheandes.com/participation-terms) · [Terms](https://hacktheandes.com/terms)
-- Extortion: [RPP: 12,000+ complaints H1 2026](https://rpp.pe/peru/actualidad/ministerio-publico-informo-que-mas-de-12-000-denuncias-por-extorsion-se-registraron-en-el-primer-semestre-de-2026-noticia-1697877) · [Canal N: 12,600 H1](https://canaln.pe/actualidad/ministerio-publico-reporta-mas-12600-denuncias-extorsion-primer-semestre-2026-n493520) · [Swissinfo: 13,000 Jan–Jul](https://www.swissinfo.ch/spa/per%C3%BA-registra-m%C3%A1s-de-13.000-denuncias-por-extorsi%C3%B3n-entre-enero-y-julio-de-2026/91995447) · [El Comercio: 4,761 → 26,217](https://elcomercio.pe/peru/extorsion-denuncias-pasan-de-4761-a-26217-pero-presos-sentenciados-bajan-de-712-a-650-apuesplan-noticia/) · [La República: 80+ drivers killed](https://larepublica.pe/sociedad/2026/10/04/extorsion-al-transporte-en-lima-y-callao-deja-mas-de-80-conductores-asesinados-y-160-atentados-en-2026-376216) · [Caretas: 60+ drivers](https://caretas.pe/sociedad/extorsion-en-el-peru-mas-de-60-choferes-fueron-asesinados-en-lo-que-va-del-2026-segun-la-pnp/) · [Infobae: prices rise from cupos](https://www.infobae.com/peru/2026/03/31/pnp-alerta-aumento-de-extorsiones-en-lima-transportistas-y-comercios-suben-precios-por-cobros-ilegales/) · [Infobae: 2,000 cases Feb](https://www.infobae.com/peru/2026/02/20/peru-supera-los-2000-casos-de-extorsion-en-lo-que-va-de-2026-lima-y-la-libertad-concentran-la-mayoria-de-los-casos/)
-- State channels: [Central 111](https://canaln.pe/actualidad/central-111-contra-extorsiones-ha-recibido-188-llamadas-n477223) · [1.5M phones blocked](https://caretas.pe/?p=769466) · [Ghost-line decree](https://panamericana.pe/buenosdiasperu/locales/465099-adios-llamadas-fantasma-decreto-legislativo-propone-bloquear-numeros-usados-extorsiones) · [How to report](https://lpderecho.pe/como-denunciar-llamadas-extorsionadoras/)
-- Scams: [Infobae: AI voice + fake receipts](https://www.infobae.com/peru/2026/08/19/ciberdelitos-con-inteligencia-artificial-suplantacion-de-voz-y-comprobantes-falsos-el-nuevo-riesgo-en-yape-y-whatsapp/) · [Scamwatch: Yape/Plin 2026](https://scamwatchhq.com/peru-scams-2026-yape-digital-wallet-fraud/) · [Reevalua: common scams](https://reevalua.com/blog/estafas-yape-plin-como-evitar-peru) · [Business Empresarial: SMEs](https://www.businessempresarial.com.pe/pymes-peruanas-fraude-via-whatsapp-y-suplantacion-de-yape-son-las-modalidades-mas-utilizadas-por-ciberdelincuentes/)
-- Disinformation: [CEPLAN: 704 alerts](https://observatorio.ceplan.gob.pe/ficha/tg60) · [Infobae: JNE 700 alerts](https://www.infobae.com/peru/2026/03/05/elecciones-2026-en-medio-de-fake-news-jne-detecta-700-alerta-de-desinformacion/) · [JNE fact checking](https://factchecking.jne.gob.pe/) · [El Comercio: deepfake bill](https://elcomercio.pe/politica/actualidad/elecciones-2026-congresista-carlos-anderson-presenta-proyecto-para-prevenir-la-desinformacion-electoral-y-sancionar-deepfake-noticia/) · [Caretas: youth and AI](https://caretas.pe/sociedad/ia-y-fake-news-en-elecciones-2026-academia-y-expertos-trazan-ruta-contra-la-desinformacion/)
-- LatAm: [AppGate Fraud Beat 2026](https://lanotaeconomica.com.co/movidas-empresarial/el-informe-fraud-beat-2026-de-appgate-revela-la-industrializacion-del-fraude-digital-en-latinoamerica/) · [BioCatch: LatAm scams](https://www.biocatch.com/blog/scams-in-latin-america-what-the-data-really-tells-us) · [Contxto: AI fraud LatAm](https://contxto.substack.com/p/ai-driven-frauds-are-growing-in-latin) · [ITSitio: 2026 predictions](https://www.itsitio.com/ch/seguridad/cinco-predicciones-que-marcaran-el-fraude-y-el-acceso-seguro-en-latinoamerica-en-2026/)
+## 8. Fuentes
+- Evento: [hacktheandes.com](https://hacktheandes.com/) · [Guía para equipos](https://hacktheandes.com/guide) · [Condiciones de entrega](https://hacktheandes.com/participation-terms) · [Términos](https://hacktheandes.com/terms)
+- Extorsión: [RPP: más de 12,000 denuncias en el primer semestre 2026](https://rpp.pe/peru/actualidad/ministerio-publico-informo-que-mas-de-12-000-denuncias-por-extorsion-se-registraron-en-el-primer-semestre-de-2026-noticia-1697877) · [Canal N: 12,600 en el semestre](https://canaln.pe/actualidad/ministerio-publico-reporta-mas-12600-denuncias-extorsion-primer-semestre-2026-n493520) · [Swissinfo: 13,000 entre enero y julio](https://www.swissinfo.ch/spa/per%C3%BA-registra-m%C3%A1s-de-13.000-denuncias-por-extorsi%C3%B3n-entre-enero-y-julio-de-2026/91995447) · [El Comercio: de 4,761 a 26,217](https://elcomercio.pe/peru/extorsion-denuncias-pasan-de-4761-a-26217-pero-presos-sentenciados-bajan-de-712-a-650-apuesplan-noticia/) · [La República: más de 80 conductores asesinados](https://larepublica.pe/sociedad/2026/10/04/extorsion-al-transporte-en-lima-y-callao-deja-mas-de-80-conductores-asesinados-y-160-atentados-en-2026-376216) · [Caretas: más de 60 choferes](https://caretas.pe/sociedad/extorsion-en-el-peru-mas-de-60-choferes-fueron-asesinados-en-lo-que-va-del-2026-segun-la-pnp/) · [Infobae: suben precios por los cupos](https://www.infobae.com/peru/2026/03/31/pnp-alerta-aumento-de-extorsiones-en-lima-transportistas-y-comercios-suben-precios-por-cobros-ilegales/) · [Infobae: 2,000 casos a febrero](https://www.infobae.com/peru/2026/02/20/peru-supera-los-2000-casos-de-extorsion-en-lo-que-va-de-2026-lima-y-la-libertad-concentran-la-mayoria-de-los-casos/)
+- Canales del Estado: [Central 111](https://canaln.pe/actualidad/central-111-contra-extorsiones-ha-recibido-188-llamadas-n477223) · [1.5 millones de celulares bloqueados](https://caretas.pe/?p=769466) · [Decreto contra líneas fantasma](https://panamericana.pe/buenosdiasperu/locales/465099-adios-llamadas-fantasma-decreto-legislativo-propone-bloquear-numeros-usados-extorsiones) · [Cómo denunciar](https://lpderecho.pe/como-denunciar-llamadas-extorsionadoras/)
+- Estafas: [Infobae: voz con IA y comprobantes falsos](https://www.infobae.com/peru/2026/08/19/ciberdelitos-con-inteligencia-artificial-suplantacion-de-voz-y-comprobantes-falsos-el-nuevo-riesgo-en-yape-y-whatsapp/) · [Scamwatch: Yape/Plin 2026](https://scamwatchhq.com/peru-scams-2026-yape-digital-wallet-fraud/) · [Reevalua: estafas comunes](https://reevalua.com/blog/estafas-yape-plin-como-evitar-peru) · [Business Empresarial: mypes](https://www.businessempresarial.com.pe/pymes-peruanas-fraude-via-whatsapp-y-suplantacion-de-yape-son-las-modalidades-mas-utilizadas-por-ciberdelincuentes/)
+- Desinformación: [CEPLAN: 704 alertas](https://observatorio.ceplan.gob.pe/ficha/tg60) · [Infobae: 700 alertas del JNE](https://www.infobae.com/peru/2026/03/05/elecciones-2026-en-medio-de-fake-news-jne-detecta-700-alerta-de-desinformacion/) · [Fact checking del JNE](https://factchecking.jne.gob.pe/) · [El Comercio: proyecto contra deepfakes](https://elcomercio.pe/politica/actualidad/elecciones-2026-congresista-carlos-anderson-presenta-proyecto-para-prevenir-la-desinformacion-electoral-y-sancionar-deepfake-noticia/) · [Caretas: jóvenes e IA](https://caretas.pe/sociedad/ia-y-fake-news-en-elecciones-2026-academia-y-expertos-trazan-ruta-contra-la-desinformacion/)
+- Latinoamérica: [AppGate Fraud Beat 2026](https://lanotaeconomica.com.co/movidas-empresarial/el-informe-fraud-beat-2026-de-appgate-revela-la-industrializacion-del-fraude-digital-en-latinoamerica/) · [BioCatch: estafas en LatAm](https://www.biocatch.com/blog/scams-in-latin-america-what-the-data-really-tells-us) · [Contxto: fraude con IA en LatAm](https://contxto.substack.com/p/ai-driven-frauds-are-growing-in-latin) · [ITSitio: predicciones 2026](https://www.itsitio.com/ch/seguridad/cinco-predicciones-que-marcaran-el-fraude-y-el-acceso-seguro-en-latinoamerica-en-2026/)
 
-> ⚠️ Some numbers come from press or secondary sources. Say "según el Ministerio Público / IPE" in the pitch, and don't present the specialist estimates as official.
+> ⚠️ Algunas cifras vienen de prensa o de fuentes secundarias. En el pitch digan "según el Ministerio Público / IPE", y no presenten las estimaciones de especialistas como cifras oficiales.
