@@ -115,4 +115,6 @@ Las tres propuestas fuertes (Cupo Cero, ¿Es Estafa? y Nexus Trust) tienen **el 
 > Los roles son una **propuesta** según lo que cada uno ya escribió. Ajústenlos entre ustedes.
 
 ## Decisión
-**Idea elegida:** ____ (la recomendación es la fusión ⭐; falta que el equipo confirme)
+**Idea elegida (sábado 17, después de hablar con un mentor): plataforma para las Juntas Vecinales.**
+Un vecino reporta una conducta sospechosa; la plataforma junta reportes, detecta patrones, guía a quien reportó y escala a la comisaría o al serenazgo. Ver el [playbook de la comunidad](docs/playbook-juntas-vecinales.md).
+Las ideas anteriores (Cupo Cero, Las Tías, ¿Es Estafa?) pueden entrar como módulos: extorsión a bodegas del barrio, estafas y rumores.
