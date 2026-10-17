@@ -28,9 +28,19 @@ Se elige el track según el problema *principal* que resuelve el proyecto.
 ## 2. Rúbrica del jurado (OFICIAL, presentada en el evento el 17 de octubre)
 
 > ⚠️ Esta rúbrica **reemplaza** a la de la guía web (tracción 30% / técnico 40% / pitch 30%), que ya no aplica.
-> Capturas: [docs/rubrica.webp](docs/rubrica.webp) · [docs/puntos-extra.webp](docs/puntos-extra.webp)
+> Capturas: [docs/rubrica.webp](docs/rubrica.webp) · [docs/puntos-extra.webp](docs/puntos-extra.webp) · Hoja completa "Cómo se evalúa a los equipos": [docs/rubrica-oficial.pdf](docs/rubrica-oficial.pdf)
+
+### Paso 0: requisitos para entrar a la evaluación
+Si falta **uno solo**, el equipo **no se puntúa**:
+| Requisito | Detalle |
+|---|---|
+| **URL pública** | Desplegado. Localhost no cuenta. |
+| **Demo en vivo** | Slides o video grabado no cuentan. |
+| **Código en GitHub** | El repo se entrega con la URL. |
+| **Hora límite** | **Domingo 18, 09:00** |
 
 **Técnico 75% · Producto 25% · Cada criterio se puntúa de 1 a 5.**
+Lo puntúan **5 jurados**; cada uno multiplica la nota por el peso y suma. La nota final es el **promedio de los 5 jurados**.
 
 | Peso | Bloque | Criterio | Qué mira el jurado |
 |---|---|---|---|
@@ -40,12 +50,25 @@ Se elige el track según el problema *principal* que resuelve el proyecto.
 | **15%** | Producto | **Problema e impacto** | **Un usuario real de tu track** |
 | **10%** | Producto | **Claridad** | Explicas decisiones y tradeoffs |
 
+### Qué significa 1, 3 y 5 en cada criterio (según la hoja oficial)
+| Criterio | 1 | 3 | 5 |
+|---|---|---|---|
+| Complejidad técnica | Wrapper de una API o CRUD simple | Integra APIs, datos o un modelo con lógica propia | Datos reales, modelos o servicios orquestados, arquitectura no trivial |
+| Funciona | Falla en vivo | Corre con datos de juguete | Datos reales y aguanta preguntas fuera del guion |
+| Calidad técnica | Frágil o con secretos en el repo | Ordenado, con atajos | Maneja errores, casos borde y credenciales |
+| Problema e impacto | Tema genérico | — | Usuario específico y evidencia del problema |
+| Claridad | No se entiende qué hicieron | — | Qué, por qué y qué quedó fuera |
+
+**Desempate:** gana el mayor puntaje en **Complejidad técnica**; si sigue el empate, en **Funciona**.
+
 ### Puntos extra (tracción, se suman encima)
 | Extra | Nivel | Qué cuenta |
 |---|---|---|
 | 0 | Sin tracción | Sin usuarios fuera del equipo, o sin evidencia |
 | **+0,25** | Lo usaron | Personas fuera del equipo lo usaron. **Se ve en registros o datos.** |
 | **+0,5** | Uso repetido | Volumen visible, lista de espera real o un pago |
+
+El bonus premia usuarios reales **durante el hackathon** y no reemplaza lo técnico. **La evidencia se muestra desde el producto**: capturas solas, cuentas del equipo o tráfico automatizado **no cuentan**.
 
 ### Cómo calculamos el puntaje
 ```
@@ -66,6 +89,7 @@ Para comparar fácil, en SYNTHESIS.md también la mostramos sobre 100 (nota × 2
 
 ## 3. Reglas de entrega y presentación (checklist)
 
+- [ ] **Hora límite: domingo 18 de octubre, 09:00.** Sin URL pública, demo en vivo y repo en GitHub, no nos puntúan (ver §2, Paso 0).
 - [ ] Una entrega por equipo. Cualquier integrante puede editarla; no hay permiso exclusivo de capitán.
 - [ ] La **URL de la app desplegada** funciona en una ventana privada / incógnito, sin sesión y sin pedir accesos.
 - [ ] **URL de la presentación** (Canva, Google Slides o una presentación hecha con código), accesible públicamente.
@@ -82,17 +106,23 @@ Para comparar fácil, en SYNTHESIS.md también la mostramos sobre 100 (nota × 2
 
 ## 4. Herramientas y créditos que recibimos (todos los participantes)
 
-| Sponsor | Qué es | Posible uso para nosotros |
-|---|---|---|
-| **Zavu** (3 meses Pro) | Una sola API para **WhatsApp, SMS, voz**, email y Telegram, más agentes de voz | Un bot de WhatsApp es la forma de llegar a los peruanos. Sirve para reenviar mensajes sospechosos o reportar extorsiones. |
-| **ElevenLabs** (programa startups) | Síntesis y clonación de voz | Interfaz por voz para personas mayores, o una demo de estafas con voz clonada |
-| **Tavily** | API de búsqueda para agentes | Verificar en tiempo real afirmaciones, números y URLs |
-| **Apify** | Scraping / actores | Recolectar publicaciones de estafas, páginas falsas y avisos de Facebook Marketplace |
-| **n8n** (1 semana Cloud Pro) | Automatización de flujos | Pegamento: alertas, escalar a la PNP o a la familia, dashboards |
-| **Qatom** (6 meses Max) | Marketplace donde **agentes de IA encuentran, compran y usan APIs**, pagando por llamada (ver §4.1) | Publicar nuestra API (ej. "¿esto es estafa?") para que otros agentes la compren |
-| **AtomicMemory Cloud** (5 meses Pro) | Memoria para agentes | Recordar números o patrones reportados por cada usuario |
-| **Maritime** ($100) | Hosting / infraestructura para agentes | Despliegue |
-| **Lovable** | Constructor de apps | Frontend rápido (pero el esfuerzo técnico necesita lógica propia por debajo) |
+**Cómo ver los créditos y códigos:** el evento nos dio un CLI (programa de terminal) llamado `andes`. Ejecuta `andes credits` para ver la lista actualizada de beneficios, con sus códigos y links de canje. Claude también puede ejecutarlo cuando haga falta. **Los códigos no se copian al repo** (son del evento y tienen canjes limitados): siempre se consultan con `andes credits`.
+
+Usarlos es opcional: solo si de verdad nos ayudan a construir el proyecto.
+
+| Sponsor | Beneficio (según `andes credits`, 17 oct) | Qué es | Posible uso para nosotros |
+|---|---|---|---|
+| **Zavu** | Cupón del evento, **disponible el domingo 18**; se canjea con el equipo de Zavu | Una sola API para **WhatsApp, SMS, voz**, email y Telegram, más agentes de voz | Un bot de WhatsApp es la forma de llegar a los peruanos. Sirve para reenviar mensajes sospechosos o reportar extorsiones. |
+| **Tavily** | 8 000 créditos, válidos del 17 al 19 de octubre (disponibilidad limitada) | API de búsqueda para agentes | Verificar en tiempo real afirmaciones, números y URLs |
+| **Exa** | US$50 en créditos de Search API (hasta 300 canjes) | API de búsqueda web para agentes | Alternativa o complemento a Tavily para buscar reportes de estafas |
+| **Apify** | Beneficio del evento (condiciones en su guía de Notion) | Scraping / actores | Recolectar publicaciones de estafas, páginas falsas y avisos de Facebook Marketplace |
+| **n8n** | 1 mes de n8n Cloud Pro (100 licencias; el cupón caduca una semana después del evento) | Automatización de flujos | Pegamento: alertas, escalar a la PNP o a la familia, dashboards |
+| **Qatom** | Beneficio del evento (ver su página del evento; la web del evento menciona 6 meses de Max) | Marketplace donde **agentes de IA encuentran, compran y usan APIs**, pagando por llamada (ver §4.1) | Publicar nuestra API (ej. "¿esto es estafa?") para que otros agentes la compren |
+| **AtomicMemory** | 5 meses de Pro (valor US$95); código de participante en su página del evento | Memoria para agentes | Recordar números o patrones reportados por cada usuario |
+| **IALABS / Maritime** | Acceso a Maritime (condiciones con IALABS) | Hosting / infraestructura para agentes | Despliegue |
+| **Lovable** | Pro Plan 1 mensual con 100 créditos (hasta 120 canjes, válido hasta el 20 oct, 17:00 hora de Lima) | Constructor de apps | Frontend rápido (pero el esfuerzo técnico necesita lógica propia por debajo) |
+| **Grok (xAI)** | Beneficio por enlace de referido | LLM (modelo de lenguaje) | Opcional; ya tenemos Claude como LLM principal |
+| **ElevenLabs** | Programa startups (no aparece en `andes credits`) | Síntesis y clonación de voz | Interfaz por voz para personas mayores, o una demo de estafas con voz clonada |
 
 > Usar bien las herramientas de los sponsors puede impresionar a los jurados de los sponsors, pero solo si el uso es real.
 
