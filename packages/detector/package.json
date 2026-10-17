@@ -1,0 +1,23 @@
+{
+  "name": "@pixel-hack/detector",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Algoritmo que detecta el arrebato de celular desde una moto con acelerómetro, giroscopio y GPS. Sin dependencias: corre igual en Node, React Native y la web.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "evaluar": "tsx scripts/evaluar.ts",
+    "reproducir": "tsx scripts/reproducir.ts",
+    "typecheck": "tsc --noEmit",
+    "validar-reales": "tsx scripts/validar-reales.ts",
+    "empalme-real": "tsx scripts/empalme-real.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^3.2.4"
+  }
+}
