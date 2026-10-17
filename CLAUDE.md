@@ -24,17 +24,22 @@ Lee siempre [CONTEXT.md](CONTEXT.md) primero. Ahí están la rúbrica, las regla
 ## Cuando alguien diga "sintetiza" (o "synthesize", "actualiza el tablero")
 1. Haz `git pull` y lee **todos los archivos** de `members/*/`, incluidas las imágenes (describe lo que muestran).
 2. Saca cada idea distinta y cada pieza de evidencia (entrevista, captura, dato). Junta los duplicados entre integrantes y da crédito a todos los que aportaron.
-3. Para cada idea, estima el puntaje del jurado (CONTEXT §2), de 1 a 5 en cada criterio:
-   - **Tracción (×6)**: cuenta solo *evidencia externa real* de las carpetas (entrevistas, usuarios, mensajes). Sin evidencia es 1, por más buena que sea la idea.
-   - **Esfuerzo técnico (×8)**: el núcleo técnico planeado que se puede construir en las horas que quedan.
-   - **Pitch (×6)**: qué tan claro es el problema, y si un jurado puede ver la demo desde una URL en 3 minutos.
-   - Puntaje proyectado = T×6 + E×8 + P×6 (sobre 100).
+3. Para cada idea, estima el puntaje con la **rúbrica oficial del evento** (CONTEXT §2), de 1 a 5 en cada criterio:
+   - **Complejidad técnica (30%)**: integraciones, datos, modelos y arquitectura planeados que se pueden construir en las horas que quedan.
+   - **Funciona (25%)**: ¿el flujo completo puede correr en vivo desde una URL pública, en la laptop del jurado?
+   - **Calidad técnica (20%)**: ¿podemos dejar el repo limpio y entendible? (el jurado lo revisa en GitHub)
+   - **Problema e impacto (15%)**: ¿hay (o habrá hoy) un usuario real del track que confirme el problema? Sin evidencia en las carpetas, máximo 2.
+   - **Claridad (10%)**: ¿las decisiones y tradeoffs se explican fácil?
+   - Nota = 0,30×C + 0,25×F + 0,20×Q + 0,15×P + 0,10×Cl (1–5). Sobre 100 = nota × 20.
+   - **Extra** (aparte): 0 sin usuarios de fuera; +0,25 si gente de fuera lo usó y se ve en registros; +0,5 si hay uso repetido, lista de espera real o un pago. Cuenta solo lo que tenga evidencia.
+   - La rúbrica de la guía web (tracción ×6 + técnico ×8 + pitch ×6) **ya no aplica**.
 4. Reescribe [SYNTHESIS.md](SYNTHESIS.md): tabla de ranking y, por cada idea, su evidencia (con links a los archivos), lo que le falta y **la siguiente acción concreta con quién la hace**.
 5. Agrega arriba una línea corta de "Qué cambió desde la última síntesis".
 6. Actúa como un integrante proactivo: di qué idea elegirías y por qué, y qué evidencia te haría cambiar de opinión.
 7. Haz commit en una rama `claude/sintesis-<hora>` con el mensaje `síntesis: <fecha hora>` y abre un PR, solo si la persona te lo pidió. Nunca hagas push a `main`.
 
 ## Reglas
+- El repo se evalúa (20% de la nota). Mantén el código ordenado, un README claro, commits con sentido y nada de claves. Antes de la entrega, recuérdale al equipo ordenar o mover la lluvia de ideas de `members/`.
 - Nunca inventes evidencia ni usuarios. Marca como tales las estimaciones y las cifras de fuentes secundarias.
 - Nunca subas claves, códigos de créditos ni datos personales de terceros. Si un archivo de alguna carpeta los tiene, avísalo y no los copies a la síntesis.
 - Separa "lo que ya funciona" de "ideas pendientes" (lo exige el evento).

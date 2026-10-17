@@ -2,7 +2,7 @@
 
 > Fuente única de verdad del equipo. Todos lo leen antes de proponer ideas.
 > Track: **04 · Seguridad (`security`)** · Mercado: **primero Perú, luego Latinoamérica**.
-> Última actualización: 2026-10-17 (día 1 del evento). Fuentes al final.
+> Última actualización: 2026-10-17 (día 1 del evento, con la rúbrica oficial presentada en el evento). Fuentes al final.
 
 ---
 
@@ -25,30 +25,42 @@ Se elige el track según el problema *principal* que resuelve el proyecto.
 
 ---
 
-## 2. Rúbrica del jurado (esto lo decide todo)
+## 2. Rúbrica del jurado (OFICIAL, presentada en el evento el 17 de octubre)
 
-Cada jurado pone una nota entera de **1 a 5** en tres criterios. El puntaje sobre 100 es:
+> ⚠️ Esta rúbrica **reemplaza** a la de la guía web (tracción 30% / técnico 40% / pitch 30%), que ya no aplica.
+> Capturas: [docs/rubrica.webp](docs/rubrica.webp) · [docs/puntos-extra.webp](docs/puntos-extra.webp)
 
+**Técnico 75% · Producto 25% · Cada criterio se puntúa de 1 a 5.**
+
+| Peso | Bloque | Criterio | Qué mira el jurado |
+|---|---|---|---|
+| **30%** | Técnico | **Complejidad técnica** | Integraciones, datos, modelos y arquitectura |
+| **25%** | Técnico | **Funciona** | Flujo completo **en vivo desde la URL pública** |
+| **20%** | Técnico | **Calidad técnica** | **El jurado revisa tu repo en GitHub** |
+| **15%** | Producto | **Problema e impacto** | **Un usuario real de tu track** |
+| **10%** | Producto | **Claridad** | Explicas decisiones y tradeoffs |
+
+### Puntos extra (tracción, se suman encima)
+| Extra | Nivel | Qué cuenta |
+|---|---|---|
+| 0 | Sin tracción | Sin usuarios fuera del equipo, o sin evidencia |
+| **+0,25** | Lo usaron | Personas fuera del equipo lo usaron. **Se ve en registros o datos.** |
+| **+0,5** | Uso repetido | Volumen visible, lista de espera real o un pago |
+
+### Cómo calculamos el puntaje
 ```
-puntaje = tracción × 6 + esfuerzo técnico × 8 + pitch × 6
+nota (1–5) = 0,30×Complejidad + 0,25×Funciona + 0,20×Calidad + 0,15×Problema + 0,10×Claridad
+nota final = nota + extra (0 / 0,25 / 0,5)      → máximo 5,5
 ```
-El resultado del equipo es el promedio de los jurados activos. Ejemplo: 3 / 4 / 5 = 80.
-
-| Criterio | Peso | 1 | 3 | 5 |
-|---|---|---|---|---|
-| **Tracción** | 30% | Sin evidencia | Entrevistas o señales verificables | Uso real, retención o demanda sólida |
-| **Esfuerzo técnico** | 40% | Plantilla con cambios mínimos o que no funciona | Producto funcional con lógica e integraciones propias | Ingeniería sólida y decisiones justificadas |
-| **Pitch** | 30% | Problema o solución poco claros | Explicación y demo comprensibles | Propuesta convincente, demo clara y respuestas precisas |
-
-Notas:
-- "Usar IA no resta puntos por sí solo." Se pueden usar agentes, pero somos responsables de todo lo que afirmamos.
-- "Se valora la evidencia externa" en tracción. En 30 horas eso significa **entrevistas reales con bodegueros, choferes o usuarios**, una lista de espera, un grupo de WhatsApp con gente real o mensajes que la gente de verdad le reenvió a nuestro bot. Las capturas y citas van en la bitácora.
-- El esfuerzo técnico pesa más (40%). Necesitamos lógica propia e integraciones reales, no un CRUD encima de un LLM.
+Para comparar fácil, en SYNTHESIS.md también la mostramos sobre 100 (nota × 20; el extra suma hasta +10).
 
 ### Qué significa esto para elegir la idea
-1. **Usuarios a los que podamos llegar hoy en Lima.** Podemos entrar a una bodega o hablar con un mototaxista o un chofer de combi en pocas horas. Así sumamos puntos de tracción.
-2. **Una demo que funcione en 3 minutos desde una URL** en la laptop de otra persona. Nada local, sin login, que funcione en una ventana privada.
-3. **Un núcleo técnico difícil de falsear**: clasificación, señales de fraude, verificación, voz, geodatos o un bot de WhatsApp con estado.
+1. **El 75% es técnico.** Gana una idea con integraciones reales, datos propios, modelos y una arquitectura que se pueda explicar. Un CRUD encima de un LLM no alcanza.
+2. **"Funciona" vale 25%**: el flujo completo tiene que correr **en vivo desde una URL pública**, en la laptop del jurado, sin login y sin nada local. Si la idea vive en WhatsApp o en Android, igual necesitamos una URL pública donde se vea el flujo completo.
+3. **El repo se evalúa (20%)**: código ordenado, README claro, PRs, commits con sentido, sin claves. Antes de entregar, la lluvia de ideas (`members/`) se mueve fuera del código o se ordena en `docs/`.
+4. **Hace falta al menos un usuario real del track** (15%): un bodeguero, un chofer o una víctima de estafa que confirme el problema. Las entrevistas siguen importando.
+5. **La tracción ahora es un bonus** (máximo +0,5), no el 30%. Vale la pena si sale barata: registros de uso de gente de fuera, una lista de espera real o un pago.
+6. **Claridad pesa solo 10%**, pero el jurado premia que expliquemos decisiones y tradeoffs. Hay que anotarlos mientras construimos.
 
 ---
 
@@ -130,7 +142,7 @@ Notas:
 
 ---
 
-## 6. Personas que podemos entrevistar *hoy* (tracción)
+## 6. Personas que podemos entrevistar *hoy* (usuario real del track + bonus de tracción)
 
 | Persona | Dolor | Dónde encontrarla en 30 h |
 |---|---|---|
@@ -145,17 +157,17 @@ Guion de entrevista (5 min): *¿Qué pasó la última vez? ¿Qué hiciste en la 
 
 ---
 
-## 7. Filtro para evaluar ideas (nota de 1 a 5 en cada uno)
+## 7. Filtro para evaluar ideas (alineado a la rúbrica oficial)
 
-| Filtro | Pregunta |
+| Criterio (peso) | Pregunta |
 |---|---|
-| Dolor | ¿Está entre los 3 miedos principales de los peruanos en 2026? |
-| Alcance | ¿Podemos conseguir más de 10 usuarios o entrevistas reales antes del pitch? |
-| Demo | ¿Un jurado puede usarlo desde una URL (o un número de WhatsApp) en 60 segundos? |
-| Profundidad técnica | ¿Hay lógica real (detección, verificación, estado, integraciones)? |
-| Factibilidad | ¿4 personas pueden construir el núcleo en unas 20 horas? |
+| Complejidad (30%) | ¿Tiene integraciones, datos, modelos y una arquitectura de verdad? |
+| Funciona (25%) | ¿Podemos tener el flujo completo en vivo desde una URL pública en ~20 h? |
+| Calidad (20%) | ¿Podemos dejar un repo limpio y entendible a tiempo? |
+| Problema (15%) | ¿Conseguimos hoy un usuario real del track que lo confirme? |
+| Claridad (10%) | ¿Las decisiones y tradeoffs se explican fácil? |
+| Extra (+0,5) | ¿Gente de fuera lo puede usar y volver a usar antes del pitch? |
 | Seguridad | ¿Evita poner en riesgo a las víctimas (represalias, filtración de datos)? |
-| Escala LatAm | ¿Se traslada a países con Pix / Nequi / Mercado Pago? |
 
 ---
 
