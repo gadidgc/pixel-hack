@@ -1,9 +1,22 @@
-# Idea Board: Track Seguridad
+# Synthesis: Track Seguridad
 
-Score with the CONTEXT §7 filter (1–5 each). Rubric reminder: traction 30%, **tech 40%**, pitch 30%.
+Claude maintains this file. It is rebuilt from `members/*/` each time someone says **"sintetiza"**.
+Score = Traction×6 + Tech×8 + Pitch×6 (the official judges' formula, see CONTEXT §2).
 
-| # | Idea | Sub-area | Proposed by | Pain | Reach | Demo | Tech | Feasible | Safe | LatAm | Total |
-|---|---|---|---|---|---|---|---|---|---|---|---|
+**Last synthesis:** 2026-10-17 (initial; Claude's seed ideas, inboxes still empty)
+**What changed:** nothing has been dropped in the inboxes yet.
+
+| # | Idea | Sub-area | From | Traction | Tech | Pitch | **Projected /100** | Evidence so far |
+|---|---|---|---|---|---|---|---|---|
+| A | ¿Es Estafa? WhatsApp bot | Scams / impersonation | Claude | 1 | 4 | 5 | **68** | none yet |
+| B | Yape Real: bodega payment verifier | Scams / merchants | Claude | 1 | 4 | 4 | **62** | none yet |
+| C | Primera Hora: anti-extortion kit | Extortion / transport | Claude | 1 | 4 | 3 | **56** | none yet |
+| D | Verifica el audio | Disinformation | Claude | 1 | 3 | 3 | **48** | none yet |
+
+> Traction is 1 for everything until real interviews or users land in an inbox. Each traction point is worth +6, so
+> one morning of interviews can move an idea from 68 to 80 or more. That is the cheapest score available.
+
+---|---|---|---|---|---|---|---|---|---|---|---|
 | A | ¿Es Estafa? WhatsApp bot | Scams / impersonation | Claude | 5 | 5 | 5 | 4 | 4 | 5 | 5 | 33 |
 | B | Yape Real: bodega payment verifier | Scams / merchants | Claude | 5 | 5 | 4 | 4 | 3 | 5 | 5 | 31 |
 | C | Primera Hora: anti-extortion kit | Extortion / transport | Claude | 5 | 3 | 4 | 4 | 4 | 3 | 4 | 27 |
@@ -39,7 +52,12 @@ Score with the CONTEXT §7 filter (1–5 each). Rubric reminder: traction 30%, *
 
 ---
 
+## Next actions
+| Who | Do what |
+|---|---|
+| Everyone | Drop your ideas and anything you've found in your inbox (`members/<you>/`) |
+| Everyone | Talk to 2 real people (a bodega, a driver, your parents) and drop the notes |
+| Claude | Synthesize on request, re-score, and recommend |
+
 ## Decision
-- [ ] Each member adds at least 1 idea
-- [ ] 2+ interviews backing the top idea
-- [ ] Vote → **chosen idea:** ____
+**Chosen idea:** ____ (decide after the first synthesis that includes real evidence)

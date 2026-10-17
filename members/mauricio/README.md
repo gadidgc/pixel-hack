@@ -1,23 +1,13 @@
-# Mauricio
+# Mauricio's inbox
 
-> Read [../../CONTEXT.md](../../CONTEXT.md) first.
+Drop **anything** here. There's no format and no template:
+- Ideas, even half-baked ones (a line is enough)
+- Links, articles, tweets, TikToks
+- Screenshots and photos (scam messages, bodegas, combis)
+- Interview notes or voice-note transcripts ("hablé con la señora de la bodega…")
+- Questions or doubts
 
-## My ideas
-Copy this block once per idea.
+Name the files however you want (`ideas.md`, `bodega-interview.md`, `scam-screenshot.png`…).
+Then push and tell Claude **"sintetiza"**. Claude reads every inbox and updates [SYNTHESIS.md](../../SYNTHESIS.md).
 
-### Idea: <name>
-- **Sub-area:** extortion / scams / merchants & transport / impersonation / disinformation
-- **Who has the problem:** (persona from CONTEXT §6)
-- **The one action they must complete:**
-- **Why now / evidence:** (number + source)
-- **What we demo in 60 s:**
-- **Technical core (not just an LLM call):**
-- **How we get traction in 30 h:**
-- **LatAm scale:**
-- **Self-score (CONTEXT §7):** Pain _ · Reach _ · Demo _ · Tech _ · Feasible _ · Safe _ · LatAm _
-
-## Interviews / evidence I collected
-| Who (anonymized) | Date | Key quote | Consent? |
-|---|---|---|---|
-
-## Notes / links
+⚠️ Don't upload API keys, credit codes, or anyone's personal data. Blur names and phone numbers in screenshots.
