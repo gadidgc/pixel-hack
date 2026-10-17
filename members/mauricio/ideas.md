@@ -219,3 +219,41 @@
   1. En la pantalla de presentación se abre una página web idéntica a la banca por internet de un banco peruano (sitio clonado de phishing simulado) o un post viral falso de Twitter/TikTok.
   2. El presentador presiona el atajo de teclado en vivo.
   3. En milisegundos se despliega el **overlay interactivo** en pantalla marcando en rojo los campos falsos, señalando la URL engañosa y desplegando la advertencia oficial de la SBS extraída de la base vectorial local.
+
+---
+
+## 7. Audio-Poisoning: Inmunización Proactiva contra Deepfakes
+
+> **Enfoque clave:** Paradigma de Seguridad Proactiva vs. Reactiva. En lugar de limitarse a detectar la clonación una vez que ya fuiste víctima, destruyes la capacidad del atacante de clonar tu voz desde el origen.
+
+### A. La problemática que resuelve
+* **El dolor:** Las bandas criminales descargan audios y videos cotidianos que la gente sube libremente a TikTok, Instagram o historias de WhatsApp para alimentar modelos de síntesis de voz (Few-Shot Voice Cloning) y luego llamar a sus familias simulando secuestros o emergencias.
+* **La falla del modelo reactivo:** Esperar a detectar un deepfake cuando ya te están extorsionando deja a la víctima en pánico. 
+* **La solución proactiva:** Inmunizar cualquier contenido audiovisual antes de que sea publicado en redes públicas.
+
+---
+
+### B. Cómo funciona
+1. **Carga del archivo:** El usuario sube su video o nota de voz a una plataforma web pública antes de publicarlo o compartirlo.
+2. **Inyección de Ruido Adversario (Adversarial Perturbation):** El motor procesa el espectrograma del audio e inyecta perturbaciones acústicas diseñadas específicamente contra las capas de codificación de modelos de síntesis de voz (como RVC, FastSpeech, ElevenLabs o VITS).
+3. **Transparencia psicoacústica:** Para el oído humano, el audio suena idéntico y con fidelidad perfecta (el ruido se oculta bajo los umbrales de enmascaramiento auditivo).
+4. **Colapso del modelo clonador:** Si un atacante descarga ese audio y lo introduce en un software de clonación por IA, las perturbaciones adversarias hacen que el extractor de características colapse, generando un audio resultante ininteligible, metálico y distorsionado.
+
+---
+
+### C. Stack Técnico y Arquitectura (30% Complejidad Técnica)
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Microservicio de Procesamiento** | **Python + FastAPI** | Backend de alta velocidad para análisis espectral y generación de perturbaciones |
+| **Algoritmos Adversarios** | **PyTorch + Librosa / SciPy** | Generación de ataques adversarios acústicos (perturbaciones FGSM o proyectadas) optimizadas para modelos neuronales de voz |
+| **Frontend Web Público** | **React + Vite + Tailwind CSS** | Plataforma drag-and-drop disponible en URL pública para procesar e inmunizar audios al instante |
+| **Orquestación & Almacenamiento** | **n8n / FastAPI Storage** | Flujo de entrega del archivo protegido listo para descargar |
+
+---
+
+### D. El Show para el Pitch (25% Funciona en vivo)
+* **Demostración de alto impacto auditivo ante el jurado:**
+  1. **Prueba 1 (Sin protección):** Se sube un audio de voz limpio de 5 segundos a una herramienta de clonación por IA en vivo: el sistema clona la voz perfectamente y el jurado escucha el clon idéntico.
+  2. **Prueba 2 (Con Audio-Poisoning):** Se procesa ese mismo audio en la plataforma web (inmunización de 2 segundos). El jurado lo escucha y comprueba que suena idéntico al original.
+  3. **El colapso en vivo:** Se introduce el audio inmunizado en la herramienta de clonación: el modelo colapsa en tiempo real y reproduce un audio robótico e incomprensible. La voz quedó blindada contra cualquier clonación futura.
