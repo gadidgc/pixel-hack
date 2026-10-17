@@ -4,6 +4,8 @@
 
 Lee primero la investigación técnica: [docs/viabilidad-deteccion-arrebato-moto.md](../../../docs/viabilidad-deteccion-arrebato-moto.md).
 
+**Propuesta de Cesar con todas las funcionalidades de la app** (robo, bloqueo y extorsión): [funcionalidades-de-la-app.md](funcionalidades-de-la-app.md).
+
 ## Tarea sugerida para Cesar (propuesta de Claude, el equipo decide)
 - **Problema e impacto:** conseguir y entrevistar al menos a una víctima real de arrebato en moto (vale 15% de la nota). Buscar la cifra oficial de robos "al paso" (INEI, Osiptel, PNP). Revisar qué podemos hacer legalmente con la ubicación y con fotos.
 
