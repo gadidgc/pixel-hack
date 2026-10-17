@@ -106,3 +106,41 @@
 | **Procesamiento de Señal & ML** | **Python + Librosa + FastAPI** | Extracción de espectrogramas, coeficientes MFCC y ejecución de modelo clasificador de ML |
 | **API de Respuesta & Mensajería** | **Node.js** | Envío de alerta inmediata con veredicto directo al chat del usuario |
 | **Dashboard Web Público** | **React + Vite** | Renderizado en tiempo real de la forma de onda y el espectrograma de frecuencias para la demo en vivo ante el jurado |
+
+---
+
+## 4. Proyecto Hydra: Red de Honeypots Autónomos (Agentes Activos)
+
+> **Enfoque clave:** Seguridad activa / Ofensiva defensiva contra extorsión y estafas algorítmicas. Inversión del modelo tradicional: en vez de esperar la denuncia de una víctima, el sistema crea víctimas simuladas con agentes autónomos para extraer la infraestructura del criminal.
+
+### A. La problemática que resuelve
+* **El problema:** La extorsión y las estafas operan a escala algorítmica y masiva. Esperar a que una víctima real denuncie suele ser tarde: la víctima ya pagó o tiene demasiado miedo para hablar.
+* **El concepto:** Despliegue de un **enjambre de "agentes señuelo" (honeypots)** impulsados por LLMs que simulan ser pequeños empresarios (bodegueros, transportistas) o personas vulnerables en redes sociales y Telegram.
+* **Ingeniería social inversa:** Cuando un extorsionador contacta a un señuelo, el agente autónomo mantiene la conversación de manera creíble, finge temor y negocia hasta que el delincuente **revela sus cuentas bancarias, números de Yape/Plin o billeteras cripto** para recibir el pago.
+
+---
+
+### B. Cómo funciona
+1. **Detección y enganche:** El extorsionador escribe amenazando al número señuelo. El agente autónomo toma el control de la conversación.
+2. **Persistencia de personalidad y contexto:** El agente utiliza memoria contextual para no romper su falsa identidad (edad, tono asustado, rubro del negocio).
+3. **Extracción activa:** El agente solicita formalmente los datos de pago para "hacer el depósito del cupo", extrayendo las cuentas receptoras.
+4. **Alimentación automática del grafo:** En el momento exacto en que el delincuente envía el número de cuenta o Yape, el sistema lo captura y dibuja el nodo en un mapa de calor y grafo en vivo.
+
+---
+
+### C. Stack Técnico y Arquitectura (30% Complejidad)
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Orquestación de sesiones** | **n8n** | Manejo de webhooks y múltiples sesiones de chat concurrentes |
+| **Backend & Memoria de Agentes** | **Python + FastAPI + Arquitectura RAG / Memoria** | Gestión de contexto, perfiles de identidad y persistencia (apoyado con **AtomicMemory**, sponsor del evento) |
+| **Generación de Diálogo Humano** | **LLM local** | Respuestas humanas, dialecto peruano y manejo de presión psicológica en tiempo real |
+| **Inteligencia de Datos** | **Neo4j** | Base de datos de grafos que se auto-puebla en vivo conforme los señuelos extraen cuentas |
+| **Dashboard Administrativo** | **React + Vite** | Panel de control desplegado en URL pública con métricas de atacantes neutralizados y grafos en tiempo real |
+
+---
+
+### D. El Show para el Pitch (25% Funciona en vivo)
+* **Demostración interactiva con el jurado:** Durante el pitch, se proyecta el dashboard administrativo en React.
+* Se invita a un miembro del jurado a que tome su propio celular y le escriba al bot señuelo simulando ser un extorsionador exigiendo dinero.
+* El jurado y la audiencia ven en pantalla cómo la IA le responde con naturalidad, le pide la cuenta para "pagar", y en cuanto el jurado envía el número de prueba, **el nodo criminal y su relación financiera aparecen automáticamente proyectados en el mapa de calor**.
