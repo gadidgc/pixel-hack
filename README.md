@@ -5,7 +5,7 @@ Lima, Oct 17–18, 2026 · 30 h · Peru / LatAm focus.
 ## Layout
 - [CONTEXT.md](CONTEXT.md): **shared context**. Rubric, rules, tools, Peru security data, personas. Everyone reads it first.
 - [IDEAS.md](IDEAS.md): team shortlist and voting board.
-- `members/member-1..4/`: each member's own brainstorm space (rename the folder to your name).
+- `members/`: one brainstorm folder per member: [gabriel](members/gabriel), [cesar](members/cesar), [mauricio](members/mauricio), [piero](members/piero).
 
 ## Phase 1: idea storm (now)
 1. Read CONTEXT.md (10 min).

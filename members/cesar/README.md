@@ -1,6 +1,6 @@
-# Member 1: <your name>
+# Cesar
 
-> Rename this folder to your name (e.g. `members/gabriel`). Read [../../CONTEXT.md](../../CONTEXT.md) first.
+> Read [../../CONTEXT.md](../../CONTEXT.md) first.
 
 ## My ideas
 Copy this block once per idea.
