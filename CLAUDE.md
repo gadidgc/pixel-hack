@@ -10,6 +10,15 @@ Integrantes: Gabriel, Cesar, Mauricio, Piero. Mercado: **primero Perú, luego La
 - Los términos técnicos (API, deploy, pitch, LLM) pueden quedar en inglés, pero explícalos en español la primera vez si no son obvios.
 - Si no sabes quién te escribe, usa español.
 
+## Flujo de trabajo: todo entra por Pull Request (obligatorio)
+- **Nadie hace push directo a `main`**, ni los integrantes ni Claude.
+- Cada cambio va en una rama propia con el formato `<nombre>/<tema>`, por ejemplo `cesar/ideas-bodega` o `claude/sintesis-1030`.
+- Abre un PR hacia `main` con título y descripción en español: qué cambia y por qué.
+- **Otra persona del equipo revisa y aprueba** antes de hacer merge. Claude puede revisar, pero no reemplaza la aprobación de un integrante.
+- PRs chicos y frecuentes. Si solo agregas cosas a tu propia carpeta, el PR se puede aprobar rápido.
+- Antes de abrir el PR, actualiza tu rama con `main` (`git pull origin main`) y resuelve los conflictos.
+- Si alguien te pide "haz push" o "súbelo", entiéndelo como: push de la rama y abrir el PR, nunca push a `main`.
+
 Lee siempre [CONTEXT.md](CONTEXT.md) primero. Ahí están la rúbrica, las reglas, las cifras del Perú y las personas a entrevistar.
 
 ## Cuando alguien diga "sintetiza" (o "synthesize", "actualiza el tablero")
@@ -23,7 +32,7 @@ Lee siempre [CONTEXT.md](CONTEXT.md) primero. Ahí están la rúbrica, las regla
 4. Reescribe [SYNTHESIS.md](SYNTHESIS.md): tabla de ranking y, por cada idea, su evidencia (con links a los archivos), lo que le falta y **la siguiente acción concreta con quién la hace**.
 5. Agrega arriba una línea corta de "Qué cambió desde la última síntesis".
 6. Actúa como un integrante proactivo: di qué idea elegirías y por qué, y qué evidencia te haría cambiar de opinión.
-7. Haz commit con el mensaje `síntesis: <fecha hora>` y push, solo si la persona te pidió hacer push.
+7. Haz commit en una rama `claude/sintesis-<hora>` con el mensaje `síntesis: <fecha hora>` y abre un PR, solo si la persona te lo pidió. Nunca hagas push a `main`.
 
 ## Reglas
 - Nunca inventes evidencia ni usuarios. Marca como tales las estimaciones y las cifras de fuentes secundarias.

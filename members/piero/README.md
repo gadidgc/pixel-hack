@@ -8,6 +8,6 @@ Sube **lo que sea** aquí. No hay formato ni plantilla:
 - Preguntas o dudas
 
 Ponle a los archivos el nombre que quieras (`ideas.md`, `entrevista-bodega.md`, `captura-estafa.png`…).
-Después haz push y dile a Claude **"sintetiza"**. Claude lee todas las carpetas y actualiza [SYNTHESIS.md](../../SYNTHESIS.md).
+Después súbelo en un Pull Request (ver el [README](../../README.md)) y dile a Claude **"sintetiza"**. Claude lee todas las carpetas y actualiza [SYNTHESIS.md](../../SYNTHESIS.md).
 
 ⚠️ No subas API keys, códigos de créditos ni datos personales de nadie. Tapa nombres y números de teléfono en las capturas.
