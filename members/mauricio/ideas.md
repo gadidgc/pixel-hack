@@ -144,3 +144,40 @@
 * **Demostración interactiva con el jurado:** Durante el pitch, se proyecta el dashboard administrativo en React.
 * Se invita a un miembro del jurado a que tome su propio celular y le escriba al bot señuelo simulando ser un extorsionador exigiendo dinero.
 * El jurado y la audiencia ven en pantalla cómo la IA le responde con naturalidad, le pide la cuenta para "pagar", y en cuanto el jurado envía el número de prueba, **el nodo criminal y su relación financiera aparecen automáticamente proyectados en el mapa de calor**.
+
+---
+
+## 5. ShieldStream: Interceptor VoIP en Tiempo Real (Procesamiento Edge)
+
+> **Enfoque clave:** Ingeniería pura de procesamiento en streaming vs. procesamiento estático. Detección en vivo de voces clonadas durante la llamada misma, antes de que el usuario cuelgue o transfiera dinero.
+
+### A. La problemática que resuelve
+* **El problema:** Subir un archivo `.mp3` grabado a una web es un flujo pasivo y tardío. En una extorsión o estafa con secuestro exprés telefónico, la decisión de transferir dinero ocurre **durante los 60 a 90 segundos de la llamada**. Si no se avisa en tiempo real, el daño ya está hecho.
+* **El concepto:** Un interceptor en segundo plano (simulado en PWA / cliente local / webapp de monitoreo) que procesa llamadas VoIP entrantes mientras ocurren. Mientras el usuario habla con el supuesto "familiar en apuros", el sistema analiza la latencia, jitter y formantes vocales milisegundo a milisegundo.
+
+---
+
+### B. Cómo funciona
+1. **Streaming continuo vía WebSockets:** El flujo de audio del interlocutor se fragmenta en pequeños chunks binarios y se envía de forma continua mediante WebSockets bidireccionales.
+2. **Inferencia acústica en streaming:** El backend procesa los chunks de audio sin cortar la llamada a través de un clasificador espectral ligero optimizado para baja latencia.
+3. **Detección sub-segundo:** En el instante en que el interlocutor utiliza una voz clonada (detectable por anomalías de fase y corte de frecuencias sintéticas), el sistema dispara la alerta.
+
+---
+
+### C. Stack Técnico y Arquitectura (30% Complejidad Técnica)
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Streaming de Audio** | **WebSockets (Full-Duplex)** | Transmisión continua de fragmentos de audio desde el cliente al servidor sin buffering perceptible |
+| **Backend Asíncrono** | **Python + FastAPI (Asyncio)** | Inferencia ultra-rápida chunk por chunk sin bloqueo |
+| **Procesamiento Distribuido** | **Algoritmo de Elección de Líder / Nodos Worker** | Capacidad de distribuir la carga de análisis espectral entre múltiples instancias/nodos concurrentes |
+| **Visualización en Vivo** | **React + Canvas / Web Audio API** | Renderizado del osciloscopio y análisis espectral en tiempo real |
+
+---
+
+### D. El Show para el Pitch (25% Funciona en vivo)
+* **Demostración de alto impacto escénico:** 
+  1. Durante la presentación, se realiza una llamada VoIP en vivo usando un micrófono en la sala.
+  2. En el dashboard en React (desplegado en URL pública) se proyecta un **osciloscopio digital** con la onda de voz humana en verde.
+  3. En vivo, el orador conmuta el audio hacia un modulador o sintetizador con voz clonada por IA.
+  4. En cuestión de milisegundos y **en medio de la frase**, la onda cambia abruptamente a rojo y salta una alerta visual crítica en pantalla: **`⚠️ CLONACIÓN DETECTADA - VOZ SINTÉTICA DETECTADA EN VIVO`**, antes de que termine la llamada.
