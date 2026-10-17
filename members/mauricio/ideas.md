@@ -45,3 +45,35 @@
   * Se pondrá a disposición de los participantes del evento el bot de Telegram.
   * Durante el hackathon, se recolectarán más de 20 reportes de prueba simulados enviados por compañeros y asistentes.
   * Al momento del pitch, el jurado verá en pantalla los datos entrando en vivo y el grafo triangulando a los criminales en directo.
+
+---
+
+## 2. DeepShield RAG (Agente Autónomo de Contraste)
+
+> **Enfoque clave:** Subárea de Desinformación y Estafas masivas. Motor de verificación Zero-Trust con citas a fuentes oficiales peruanas.
+
+### A. La problemática que resuelve
+* **El dolor:** La viralización descontrolada de desinformación, noticias falsas y estafas masivas (como esquemas piramidales, ofertas laborales falsas o bonos gubernamentales fraudulentos tipo "Bono Yanapay falso").
+* **Público afectado:** Usuarios vulnerables (adultos mayores, familias) en grupos masivos de WhatsApp y Telegram que no tienen herramientas para validar la veracidad de cadenas virales.
+
+---
+
+### B. Cómo funciona
+1. **Reenvío de cadena sospechosa:** El usuario recibe un mensaje o enlace dudoso en su aplicación de mensajería y lo reenvía directamente al sistema.
+2. **Vectorización y Recuperación (RAG Zero-Trust):** El texto se transforma en embeddings vectoriales y el agente RAG escanea al instante una base de datos de conocimiento oficial precargada con:
+   * Boletines oficiales del Ministerio del Interior (Mininter).
+   * Alertas y comunicados de la División de Investigación de Delitos de Alta Tecnología (Divindat / PNP).
+   * Normativas y comunicados de la SBS (Superintendencia de Banca, Seguros y AFP) sobre entidades financieras no autorizadas.
+3. **Refutación fundamentada:** Si el sistema identifica el patrón de estafa o falsedad, genera una **refutación detallada citando textualmente la fuente oficial**, lista para que el usuario la comparta en su grupo y frene la desinformación.
+
+---
+
+### C. Stack Técnico y Arquitectura
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Ingesta de peticiones** | **n8n / Node.js + Express** | Recepción de mensajes entrantes y preprocesamiento de la cadena |
+| **Backend & Motor RAG** | **Python + FastAPI** | Pipeline de generación y recuperación de contexto con LLM local |
+| **Base de Datos Vectorial** | **Qdrant / ChromaDB** | Almacenamiento e indexación semántica de boletines de la PNP, Mininter y SBS |
+| **Frontend de Demostración** | **React + Vite + Tailwind CSS** | Panel interactivo que expone el flujo de verificación y comparación semántica en vivo para el jurado |
+| **Validación y Fuentes** | **Tavily API** *(sponsor)* | Complemento opcional de búsqueda en tiempo real para noticias de última hora |
