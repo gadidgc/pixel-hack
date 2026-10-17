@@ -64,7 +64,7 @@
    * Boletines oficiales del Ministerio del Interior (Mininter).
    * Alertas y comunicados de la División de Investigación de Delitos de Alta Tecnología (Divindat / PNP).
    * Normativas y comunicados de la SBS (Superintendencia de Banca, Seguros y AFP) sobre entidades financieras no autorizadas.
-3. **Refutación fundamentada:** Si el sistema identifica el patrón de estafa o falsedad, genera una **refutación detallada citando textualmente la fuente oficial**, lista para que el usuario la comparta en su grupo y frene la desinformación.
+3. **Refutación fundamentada:** Si el sistema identifica el patrón de estafas o falsedad, genera una **refutación detallada citando textualmente la fuente oficial**, lista para que el usuario la comparta en su grupo y frene la desinformación.
 
 ---
 
@@ -181,3 +181,41 @@
   2. En el dashboard en React (desplegado en URL pública) se proyecta un **osciloscopio digital** con la onda de voz humana en verde.
   3. En vivo, el orador conmuta el audio hacia un modulador o sintetizador con voz clonada por IA.
   4. En cuestión de milisegundos y **en medio de la frase**, la onda cambia abruptamente a rojo y salta una alerta visual crítica en pantalla: **`⚠️ CLONACIÓN DETECTADA - VOZ SINTÉTICA DETECTADA EN VIVO`**, antes de que termine la llamada.
+
+---
+
+## 6. OmniRAG Desktop: Análisis Multimodal Continuo
+
+> **Enfoque clave:** Detección de estafas visuales, phishing y desinformación sin fricción de usuario. Copiloto de seguridad Zero-Click/Atajo con procesamiento on-premise para máxima privacidad.
+
+### A. La problemática que resuelve
+* **El problema:** La barrera del usuario frente a la verificación. Los usuarios comunes **no copian y pegan textos largos** ni guardan archivos para subirlos a un verificador web; simplemente ven capturas de pantalla en TikTok, mensajes en WhatsApp Web o visitan páginas de bancos clonadas sin darse cuenta.
+* **El concepto:** Un copiloto de seguridad de escritorio (aplicación de escritorio / overlay nativo) que asiste al usuario de forma contextual. Si el usuario está viendo una noticia dudosa, un correo sospechoso, un QR fraudulento o un sitio bancario clonado, presiona un atajo de teclado y el sistema analiza la pantalla completa de inmediato, **sin enviar capturas a la nube ni comprometer su privacidad**.
+
+---
+
+### B. Cómo funciona
+1. **Captura y OCR instantáneo:** Al pulsar la tecla macro o atajo global, la app toma un fotograma de la ventana activa y ejecuta un motor OCR local ultrarrápido para extraer textos, URLs impresas y códigos QR.
+2. **Pipeline Multimodal Local:** El texto y los metadatos visuales se inyectan en un motor RAG que consulta una base de datos vectorial local.
+3. **Cruce Zero-Trust con dominios y alertas oficiales:** Compara dominios detectados contra listas de phishing y boletines de la SBS/Bancos oficiales (ej. detecta `bcp-bancasegura.com` vs `viabcp.com`).
+4. **Overlay de alerta inmediata:** Se proyecta una superposición translúcida sobre la misma pantalla que resalta en rojo los elementos peligrosos y muestra los enlaces y datos oficiales verificados.
+
+---
+
+### C. Stack Técnico y Arquitectura (30% Complejidad + 10% Claridad)
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **App de Escritorio & Overlay** | **Electron / Tauri / Python PyQt** | Captura de pantalla a nivel de sistema operativo y renderizado de overlay sin latencia |
+| **Motor OCR** | **Tesseract OCR / PaddleOCR local** | Extracción de texto y lectura de QRs en pantalla sin salir de la máquina |
+| **Pipeline RAG Multimodal** | **Python + FastAPI + LangChain/LlamaIndex** | Vectorización e inferencia contextual |
+| **Base Vectorial Local** | **ChromaDB / Qdrant local** | Almacenamiento de embeddings de boletines oficiales, firmas de phishing y normativas |
+| **Tradeoff de Diseño (10% Claridad):** | **Arquitectura 100% On-Premise** | Decisión técnica deliberada: no enviar imágenes de la pantalla del usuario a servidores en la nube para garantizar secreto bancario y privacidad de datos personales. |
+
+---
+
+### D. El Show para el Pitch (25% Funciona en vivo)
+* **Demostración visual en vivo:**
+  1. En la pantalla de presentación se abre una página web idéntica a la banca por internet de un banco peruano (sitio clonado de phishing simulado) o un post viral falso de Twitter/TikTok.
+  2. El presentador presiona el atajo de teclado en vivo.
+  3. En milisegundos se despliega el **overlay interactivo** en pantalla marcando en rojo los campos falsos, señalando la URL engañosa y desplegando la advertencia oficial de la SBS extraída de la base vectorial local.
