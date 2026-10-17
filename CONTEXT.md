@@ -82,17 +82,23 @@ Para comparar fácil, en SYNTHESIS.md también la mostramos sobre 100 (nota × 2
 
 ## 4. Herramientas y créditos que recibimos (todos los participantes)
 
-| Sponsor | Qué es | Posible uso para nosotros |
-|---|---|---|
-| **Zavu** (3 meses Pro) | Una sola API para **WhatsApp, SMS, voz**, email y Telegram, más agentes de voz | Un bot de WhatsApp es la forma de llegar a los peruanos. Sirve para reenviar mensajes sospechosos o reportar extorsiones. |
-| **ElevenLabs** (programa startups) | Síntesis y clonación de voz | Interfaz por voz para personas mayores, o una demo de estafas con voz clonada |
-| **Tavily** | API de búsqueda para agentes | Verificar en tiempo real afirmaciones, números y URLs |
-| **Apify** | Scraping / actores | Recolectar publicaciones de estafas, páginas falsas y avisos de Facebook Marketplace |
-| **n8n** (1 semana Cloud Pro) | Automatización de flujos | Pegamento: alertas, escalar a la PNP o a la familia, dashboards |
-| **Qatom** (6 meses Max) | Marketplace donde **agentes de IA encuentran, compran y usan APIs**, pagando por llamada (ver §4.1) | Publicar nuestra API (ej. "¿esto es estafa?") para que otros agentes la compren |
-| **AtomicMemory Cloud** (5 meses Pro) | Memoria para agentes | Recordar números o patrones reportados por cada usuario |
-| **Maritime** ($100) | Hosting / infraestructura para agentes | Despliegue |
-| **Lovable** | Constructor de apps | Frontend rápido (pero el esfuerzo técnico necesita lógica propia por debajo) |
+**Cómo ver los créditos y códigos:** el evento nos dio un CLI (programa de terminal) llamado `andes`. Ejecuta `andes credits` para ver la lista actualizada de beneficios, con sus códigos y links de canje. Claude también puede ejecutarlo cuando haga falta. **Los códigos no se copian al repo** (son del evento y tienen canjes limitados): siempre se consultan con `andes credits`.
+
+Usarlos es opcional: solo si de verdad nos ayudan a construir el proyecto.
+
+| Sponsor | Beneficio (según `andes credits`, 17 oct) | Qué es | Posible uso para nosotros |
+|---|---|---|---|
+| **Zavu** | Cupón del evento, **disponible el domingo 18**; se canjea con el equipo de Zavu | Una sola API para **WhatsApp, SMS, voz**, email y Telegram, más agentes de voz | Un bot de WhatsApp es la forma de llegar a los peruanos. Sirve para reenviar mensajes sospechosos o reportar extorsiones. |
+| **Tavily** | 8 000 créditos, válidos del 17 al 19 de octubre (disponibilidad limitada) | API de búsqueda para agentes | Verificar en tiempo real afirmaciones, números y URLs |
+| **Exa** | US$50 en créditos de Search API (hasta 300 canjes) | API de búsqueda web para agentes | Alternativa o complemento a Tavily para buscar reportes de estafas |
+| **Apify** | Beneficio del evento (condiciones en su guía de Notion) | Scraping / actores | Recolectar publicaciones de estafas, páginas falsas y avisos de Facebook Marketplace |
+| **n8n** | 1 mes de n8n Cloud Pro (100 licencias; el cupón caduca una semana después del evento) | Automatización de flujos | Pegamento: alertas, escalar a la PNP o a la familia, dashboards |
+| **Qatom** | Beneficio del evento (ver su página del evento; la web del evento menciona 6 meses de Max) | Marketplace donde **agentes de IA encuentran, compran y usan APIs**, pagando por llamada (ver §4.1) | Publicar nuestra API (ej. "¿esto es estafa?") para que otros agentes la compren |
+| **AtomicMemory** | 5 meses de Pro (valor US$95); código de participante en su página del evento | Memoria para agentes | Recordar números o patrones reportados por cada usuario |
+| **IALABS / Maritime** | Acceso a Maritime (condiciones con IALABS) | Hosting / infraestructura para agentes | Despliegue |
+| **Lovable** | Pro Plan 1 mensual con 100 créditos (hasta 120 canjes, válido hasta el 20 oct, 17:00 hora de Lima) | Constructor de apps | Frontend rápido (pero el esfuerzo técnico necesita lógica propia por debajo) |
+| **Grok (xAI)** | Beneficio por enlace de referido | LLM (modelo de lenguaje) | Opcional; ya tenemos Claude como LLM principal |
+| **ElevenLabs** | Programa startups (no aparece en `andes credits`) | Síntesis y clonación de voz | Interfaz por voz para personas mayores, o una demo de estafas con voz clonada |
 
 > Usar bien las herramientas de los sponsors puede impresionar a los jurados de los sponsors, pero solo si el uso es real.
 
