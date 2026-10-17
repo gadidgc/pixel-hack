@@ -28,9 +28,19 @@ Se elige el track según el problema *principal* que resuelve el proyecto.
 ## 2. Rúbrica del jurado (OFICIAL, presentada en el evento el 17 de octubre)
 
 > ⚠️ Esta rúbrica **reemplaza** a la de la guía web (tracción 30% / técnico 40% / pitch 30%), que ya no aplica.
-> Capturas: [docs/rubrica.webp](docs/rubrica.webp) · [docs/puntos-extra.webp](docs/puntos-extra.webp)
+> Capturas: [docs/rubrica.webp](docs/rubrica.webp) · [docs/puntos-extra.webp](docs/puntos-extra.webp) · Hoja completa "Cómo se evalúa a los equipos": [docs/rubrica-oficial.pdf](docs/rubrica-oficial.pdf)
+
+### Paso 0: requisitos para entrar a la evaluación
+Si falta **uno solo**, el equipo **no se puntúa**:
+| Requisito | Detalle |
+|---|---|
+| **URL pública** | Desplegado. Localhost no cuenta. |
+| **Demo en vivo** | Slides o video grabado no cuentan. |
+| **Código en GitHub** | El repo se entrega con la URL. |
+| **Hora límite** | **Domingo 18, 09:00** |
 
 **Técnico 75% · Producto 25% · Cada criterio se puntúa de 1 a 5.**
+Lo puntúan **5 jurados**; cada uno multiplica la nota por el peso y suma. La nota final es el **promedio de los 5 jurados**.
 
 | Peso | Bloque | Criterio | Qué mira el jurado |
 |---|---|---|---|
@@ -40,12 +50,25 @@ Se elige el track según el problema *principal* que resuelve el proyecto.
 | **15%** | Producto | **Problema e impacto** | **Un usuario real de tu track** |
 | **10%** | Producto | **Claridad** | Explicas decisiones y tradeoffs |
 
+### Qué significa 1, 3 y 5 en cada criterio (según la hoja oficial)
+| Criterio | 1 | 3 | 5 |
+|---|---|---|---|
+| Complejidad técnica | Wrapper de una API o CRUD simple | Integra APIs, datos o un modelo con lógica propia | Datos reales, modelos o servicios orquestados, arquitectura no trivial |
+| Funciona | Falla en vivo | Corre con datos de juguete | Datos reales y aguanta preguntas fuera del guion |
+| Calidad técnica | Frágil o con secretos en el repo | Ordenado, con atajos | Maneja errores, casos borde y credenciales |
+| Problema e impacto | Tema genérico | — | Usuario específico y evidencia del problema |
+| Claridad | No se entiende qué hicieron | — | Qué, por qué y qué quedó fuera |
+
+**Desempate:** gana el mayor puntaje en **Complejidad técnica**; si sigue el empate, en **Funciona**.
+
 ### Puntos extra (tracción, se suman encima)
 | Extra | Nivel | Qué cuenta |
 |---|---|---|
 | 0 | Sin tracción | Sin usuarios fuera del equipo, o sin evidencia |
 | **+0,25** | Lo usaron | Personas fuera del equipo lo usaron. **Se ve en registros o datos.** |
 | **+0,5** | Uso repetido | Volumen visible, lista de espera real o un pago |
+
+El bonus premia usuarios reales **durante el hackathon** y no reemplaza lo técnico. **La evidencia se muestra desde el producto**: capturas solas, cuentas del equipo o tráfico automatizado **no cuentan**.
 
 ### Cómo calculamos el puntaje
 ```
@@ -66,6 +89,7 @@ Para comparar fácil, en SYNTHESIS.md también la mostramos sobre 100 (nota × 2
 
 ## 3. Reglas de entrega y presentación (checklist)
 
+- [ ] **Hora límite: domingo 18 de octubre, 09:00.** Sin URL pública, demo en vivo y repo en GitHub, no nos puntúan (ver §2, Paso 0).
 - [ ] Una entrega por equipo. Cualquier integrante puede editarla; no hay permiso exclusivo de capitán.
 - [ ] La **URL de la app desplegada** funciona en una ventana privada / incógnito, sin sesión y sin pedir accesos.
 - [ ] **URL de la presentación** (Canva, Google Slides o una presentación hecha con código), accesible públicamente.
