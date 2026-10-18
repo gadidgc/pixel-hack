@@ -19,6 +19,8 @@ export interface EnvMensajes {
   META_WA_TOKEN?: string;
   META_WA_NUMERO_ID?: string;
   ZAVU_API_KEY?: string;
+  /** "si" para que, además del SMS, Zavu LLAME a cada contacto (necesita un agente con voz en el sender). */
+  ZAVU_LLAMADAS?: string;
 }
 
 export interface ResultadoMensaje {
@@ -50,18 +52,47 @@ export function horaLima(t: number): string {
 export interface Mensaje {
   texto: string;
   /**
-   * Texto para SMS. El filtro antifraude de Zavu bloquea los SMS que "parecen phishing" (una "PRUEBA" con un
-   * enlace, por ejemplo): por SMS decimos quién lo manda y para qué, y solo ponemos enlace cuando hace falta.
+   * Texto para SMS: todo lo necesario + la web (sin https) y el CÓDIGO para ver la ruta en vivo. Zavu rechaza
+   * nuestros enlaces (revisión automática "AI"/"Security"): por eso no va `https://…` sino la dirección escrita.
    */
   sms: string;
+  /** El mismo aviso con el código pero sin la dirección: si Zavu no la aprobó todavía, o si bloquea el SMS. */
+  smsRespaldo?: string;
+  /** La dirección que va escrita en `sms` (ej. `alerta.gadidgc.com/aviso`): se revisa con Zavu antes de mandarla. */
+  web?: string;
   plantilla: { nombre: string; variables: string[] };
 }
 
+/** El código de la vista de ejemplo (la prueba guiada). */
+export const CODIGO_EJEMPLO = 'EJEMPLO';
+
+/**
+ * El código que recibe cada contacto: las 6 primeras letras del id de la alerta (en mayúsculas) y el número del
+ * contacto (1 a 5). Ej.: alerta `28kaakxh…`, contacto 0 → `28KAAK1`. Con eso la app abre `/a/<id>?c=<n>`.
+ */
+export function codigoContacto(alertaId: string, indice: number): string {
+  return `${alertaId.slice(0, 6).toUpperCase()}${indice + 1}`;
+}
+
+/** `https://alerta.gadidgc.com` → `alerta.gadidgc.com/aviso`: la dirección que va escrita en el SMS (sin https). */
+export function webAviso(origen: string): string {
+  return `${origen.replace(/^https?:\/\//, '').replace(/\/+$/, '')}/aviso`;
+}
+
+/** `28kaak 1`, `28-KAAK-1` → `{ prefijo: '28kaak', indice: 0 }`; `EJEMPLO` → ejemplo; si no tiene la forma, `null`. */
+export function leerCodigo(texto: string): { prefijo: string; indice: number } | 'ejemplo' | null {
+  const limpio = texto.replace(/[\s-]/g, '').toUpperCase();
+  if (limpio === CODIGO_EJEMPLO) return 'ejemplo';
+  const m = limpio.match(/^([A-Z2-9]{6})([1-5])$/);
+  return m ? { prefijo: m[1].toLowerCase(), indice: Number(m[2]) - 1 } : null;
+}
+
 export const MENSAJES = {
-  alerta: (nombre: string, t: number, enlace: string): Mensaje => ({
+  alerta: (nombre: string, t: number, enlace: string, codigo: string, web: string): Mensaje => ({
     texto: `ALERTA: posible robo del celular de ${nombre} a las ${horaLima(t)}. Probablemente ${nombre} esta bien. Ruta en vivo: ${enlace}`,
-    // Sin enlace y sin "robo": el filtro antifraude de Zavu bloquea esos SMS como phishing. El detalle va por WhatsApp.
-    sms: `Vigia: ${nombre} te tiene como contacto de emergencia y su app envio una alerta a las ${horaLima(t)}. Revisa tu WhatsApp para ver los detalles o llamale.`,
+    sms: `Vigia: ${nombre} te tiene como contacto de emergencia y su celular envio un aviso a las ${horaLima(t)}. Mira su ubicacion en vivo en ${web} con el codigo ${codigo}. Y llamale.`,
+    smsRespaldo: `Vigia: ${nombre} te tiene como contacto de emergencia y su celular envio un aviso a las ${horaLima(t)}. Tu codigo para ver su ubicacion en vivo es ${codigo}; te llamamos para decirte donde usarlo. Y llamale.`,
+    web,
     plantilla: { nombre: 'alerta_arrebato', variables: [nombre, horaLima(t), enlace] },
   }),
   estaBien: (nombre: string): Mensaje => ({
@@ -69,14 +100,18 @@ export const MENSAJES = {
     sms: `Vigia: ${nombre} confirmo que esta bien, fue una falsa alarma. No tienes que hacer nada.`,
     plantilla: { nombre: 'alerta_arrebato_bien', variables: [nombre] },
   }),
-  encargado: (quien: string, nombre: string, enlace: string): Mensaje => ({
+  encargado: (quien: string, nombre: string, enlace: string, codigo: string, web: string): Mensaje => ({
     texto: `${quien} dijo que se encarga del robo del celular de ${nombre}. Ruta: ${enlace}`,
-    sms: `Vigia: ${quien} se esta encargando de lo que le paso a ${nombre}. Los detalles te llegan por WhatsApp.`,
+    sms: `Vigia: ${quien} se esta encargando de lo que le paso a ${nombre}. Sigue su ubicacion en ${web} con tu codigo ${codigo}.`,
+    smsRespaldo: `Vigia: ${quien} se esta encargando de lo que le paso a ${nombre}. Puedes seguir su ubicacion con tu codigo ${codigo}.`,
+    web,
     plantilla: { nombre: 'alerta_arrebato_encargado', variables: [quien, nombre, enlace] },
   }),
-  prueba: (nombre: string, enlace: string): Mensaje => ({
+  prueba: (nombre: string, enlace: string, web: string): Mensaje => ({
     texto: `PRUEBA de Vigia: ${nombre} te eligio como contacto de confianza. Si le arranchan el celular te llegara un mensaje asi, con su ruta: ${enlace}`,
-    sms: `Vigia: ${nombre} te agrego como contacto de confianza en la app. Si algun dia le roban el celular, te avisaremos por aqui. No tienes que hacer nada.`,
+    sms: `Vigia: ${nombre} te agrego como contacto de confianza. Si algun dia te avisa, veras su ubicacion en ${web} con el codigo que te llegue. Para ver como se ve, usa el codigo ${CODIGO_EJEMPLO}.`,
+    smsRespaldo: `Vigia: ${nombre} te agrego como contacto de confianza en la app. Si algun dia le roban el celular, te avisaremos por aqui. No tienes que hacer nada.`,
+    web,
     plantilla: { nombre: 'alerta_arrebato_prueba', variables: [nombre, enlace] },
   }),
 };
@@ -145,7 +180,7 @@ export async function mandarMensaje(
   const zavuLive = Boolean(env.ZAVU_API_KEY) && !env.ZAVU_API_KEY!.trim().startsWith('zv_test_');
   const intentos: Array<Promise<ResultadoMensaje>> = [];
   if (hayMeta(env)) intentos.push(porMeta(env, a.telefono, a.mensaje));
-  if (zavuLive) intentos.push(porZavu(env, a.telefono, a.mensaje.sms, `${a.idempotencia}-sms`, 'sms'));
+  if (zavuLive) intentos.push(porSms(env, a.telefono, a.mensaje, `${a.idempotencia}-sms`));
   let resultados = await Promise.all(intentos);
   if (!resultados.some((r) => r.ok) && env.ZAVU_API_KEY && !zavuLive) {
     resultados = [...resultados, await porZavu(env, a.telefono, a.mensaje.texto, a.idempotencia, 'whatsapp')];
@@ -154,8 +189,72 @@ export async function mandarMensaje(
   const buenos = resultados.filter((r) => r.ok);
   const fallidos = resultados.filter((r) => !r.ok).map((r) => r.detalle);
   // Si un camino falló y otro no, lo dejamos anotado (en el registro de envíos) para saber por qué.
-  if (buenos.length) return { ok: true, canal: buenos.map((r) => r.canal).join(' + '), detalle: fallidos.length ? `enviado (falló: ${fallidos.join('; ')})` : 'enviado' };
+  // También lo que salió "a medias" (por ejemplo, el SMS sin enlace porque Zavu rechazó el enlace).
+  const notas = [...buenos.filter((r) => r.detalle !== 'enviado').map((r) => r.detalle), ...fallidos.map((r) => `falló: ${r}`)];
+  if (buenos.length) return { ok: true, canal: buenos.map((r) => r.canal).join(' + '), detalle: notas.length ? `enviado (${notas.join('; ')})` : 'enviado' };
   return { ok: false, canal: null, detalle: resultados.map((r) => r.detalle).join('; ') };
+}
+
+/** Lo que dice la llamada al contestar. Sin "robo": la revisión de riesgo de Zavu lee cada llamada antes de marcar. */
+export function saludoLlamada(nombre: string, codigo: string, web: string): string {
+  // Letra por letra, con pausas: "2, 8, K, A, A, K, 1". La web, como se dice: "alerta punto gadidgc punto com, barra aviso".
+  const deletreado = codigo.split('').join(', ');
+  const dicha = web.replace(/\./g, ' punto ').replace(/\//g, ', barra ');
+  return `Hola, te llama Vigia, la aplicacion de alertas. ${nombre} te tiene como contacto de emergencia y su celular envio un aviso hace un momento. Para ver su ubicacion en vivo, entra a ${dicha}, y escribe este codigo: ${deletreado}. Repito el codigo: ${deletreado}. Tambien te lo mandamos por mensaje de texto. Y llama a ${nombre}.`;
+}
+
+/**
+ * Hace sonar el celular del contacto: una llamada de Zavu que lee `saludoLlamada` (el SMS se puede pasar por alto;
+ * una llamada, no). Solo si `ZAVU_LLAMADAS` = "si" y la clave es "live". Docs: https://docs.zavu.dev/api-reference/voice-agents/place-a-voice-call.md
+ */
+export async function llamar(env: EnvMensajes, telefono: string, nombre: string, alertaId: string, codigo: string, web: string): Promise<ResultadoMensaje> {
+  const clave = env.ZAVU_API_KEY?.trim();
+  if (env.ZAVU_LLAMADAS !== 'si' || !clave || clave.startsWith('zv_test_')) return { ok: false, canal: null, detalle: 'llamadas apagadas' };
+  try {
+    const r = await fetch('https://api.zavu.dev/v1/calls', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${clave}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: telefono, greeting: saludoLlamada(nombre, codigo, web), language: 'es', maxDurationMinutes: 2, metadata: { alerta: alertaId } }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const datos = (await r.json().catch(() => ({}))) as { error?: { code?: string; message?: string } };
+    if (r.status === 202 || r.status === 200) return { ok: true, canal: 'llamada', detalle: 'llamando' };
+    return { ok: false, canal: null, detalle: `Zavu llamada ${r.status} ${datos.error?.code ?? ''} ${datos.error?.message?.slice(0, 160) ?? ''}`.trim() };
+  } catch (e) {
+    return { ok: false, canal: null, detalle: e instanceof Error ? `Zavu llamada: ${e.message}` : 'Zavu llamada: error de red' };
+  }
+}
+
+/**
+ * ¿Zavu ya aprobó la dirección? Si está pendiente o rechazada, un SMS con ella se queda retenido
+ * (`pending_url_verification`) o no sale: mejor mandar el respaldo al toque. Docs: POST /v1/urls.
+ */
+async function webAprobada(env: EnvMensajes, web: string): Promise<boolean> {
+  try {
+    const r = await fetch('https://api.zavu.dev/v1/urls', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${(env.ZAVU_API_KEY ?? '').trim()}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: `https://${web}` }),
+      signal: AbortSignal.timeout(4000),
+    });
+    const datos = (await r.json().catch(() => ({}))) as { url?: { status?: string } };
+    return r.ok && datos.url?.status === 'approved';
+  } catch {
+    return false;
+  }
+}
+
+/** SMS con la dirección de la web si Zavu ya la aprobó; si no (o si bloquea el SMS), el respaldo sin dirección. */
+async function porSms(env: EnvMensajes, telefono: string, m: Mensaje, idempotencia: string): Promise<ResultadoMensaje> {
+  if (m.web && m.smsRespaldo && !(await webAprobada(env, m.web))) {
+    const r = await porZavu(env, telefono, m.smsRespaldo, `${idempotencia}-respaldo`, 'sms');
+    return r.ok ? { ...r, detalle: 'enviado sin la web (Zavu aun no la aprueba)' } : r;
+  }
+  const primero = await porZavu(env, telefono, m.sms, idempotencia, 'sms');
+  const bloqueado = /sms_compliance_blocked|url_rejected|url_pending|malicious/.test(primero.detalle);
+  if (primero.ok || !m.smsRespaldo || !bloqueado) return primero;
+  const respaldo = await porZavu(env, telefono, m.smsRespaldo, `${idempotencia}-respaldo`, 'sms');
+  return respaldo.ok ? { ...respaldo, detalle: `enviado sin la web (${primero.detalle})` } : { ...respaldo, detalle: `${primero.detalle}; respaldo: ${respaldo.detalle}` };
 }
 
 async function porZavu(env: EnvMensajes, telefono: string, texto: string, idempotencia: string, canal: 'sms' | 'whatsapp'): Promise<ResultadoMensaje> {
@@ -182,10 +281,18 @@ async function porZavu(env: EnvMensajes, telefono: string, texto: string, idempo
       body: JSON.stringify({ ...cuerpo, fallbackEnabled: false, idempotencyKey: idempotencia }),
       signal: AbortSignal.timeout(8000),
     });
-    const datos = (await r.json().catch(() => ({}))) as { message?: { channel?: string }; error?: { code?: string; message?: string } };
+    const crudo = await r.text().catch(() => '');
+    let datos: { message?: { channel?: string }; error?: { code?: string; message?: string } } = {};
+    try {
+      datos = JSON.parse(crudo);
+    } catch {
+      // Respuesta sin JSON: abajo va el texto tal cual.
+    }
     // 409 = ya se mandó con esta misma clave (un reintento de la app): cuenta como enviado.
     if (r.status === 202 || r.status === 200 || r.status === 409) return { ok: true, canal: datos.message?.channel ?? canal, detalle: 'enviado' };
-    return { ok: false, canal: null, detalle: `Zavu ${r.status} ${datos.error?.code ?? ''} ${datos.error?.message?.slice(0, 160) ?? ''}`.trim() };
+    // Si Zavu no manda `error.code` (pasó con un 403), guardamos el cuerpo para saber por qué.
+    const motivo = datos.error?.code ? `${datos.error.code} ${datos.error.message?.slice(0, 160) ?? ''}` : crudo.slice(0, 200);
+    return { ok: false, canal: null, detalle: `Zavu ${r.status} ${motivo}`.trim() };
   } catch (e) {
     return { ok: false, canal: null, detalle: e instanceof Error ? `Zavu: ${e.message}` : 'Zavu: error de red' };
   }

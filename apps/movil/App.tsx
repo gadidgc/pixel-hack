@@ -25,6 +25,7 @@ import { Nombre } from './src/pantallas/Nombre';
 import { Permisos } from './src/pantallas/Permisos';
 import { PinBienvenida } from './src/pantallas/PinBienvenida';
 import { Prueba, type MotivoSinProteccion } from './src/pantallas/Prueba';
+import { RecibiAviso } from './src/pantallas/RecibiAviso';
 import { Siempre } from './src/pantallas/Siempre';
 import { TodoBien } from './src/pantallas/TodoBien';
 import { Tu } from './src/pantallas/Tu';
@@ -41,8 +42,9 @@ type Extra = null | 'red' | 'cuentas' | 'herramientas' | 'meRobaron' | 'vistaCon
  * En la web (la URL pública) también servimos las páginas que se abren desde OTRO celular:
  * - `/a/<id>?c=<n>`: lo que ve el contacto (F5), en vivo desde el backend. `/a/ejemplo` o `?ver=contacto`: vista de ejemplo.
  * - `/yo` o `?ver=yo`: "Me robaron" (F6).
+ * - `/aviso`: "Recibí un aviso" (el código del SMS o de la llamada), para quien no tiene la app.
  */
-type PaginaWeb = { tipo: 'contacto'; id: string; contacto: number | null } | { tipo: 'yo' } | null;
+type PaginaWeb = { tipo: 'contacto'; id: string; contacto: number | null } | { tipo: 'yo' } | { tipo: 'aviso' } | null;
 
 function paginaWeb(): PaginaWeb {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
@@ -56,6 +58,7 @@ function paginaWeb(): PaginaWeb {
   }
   if (search.includes('ver=contacto')) return { tipo: 'contacto', id: 'ejemplo', contacto: null };
   if (pathname.startsWith('/yo') || search.includes('ver=yo')) return { tipo: 'yo' };
+  if (pathname.startsWith('/aviso')) return { tipo: 'aviso' };
   return null;
 }
 
@@ -163,6 +166,7 @@ function Navegacion() {
 
   if (web?.tipo === 'contacto') return <ContactoEnVivo key={web.id} id={web.id} contacto={web.contacto} />;
   if (web?.tipo === 'yo') return <MeRobaron />;
+  if (web?.tipo === 'aviso') return <RecibiAviso />;
   if (!prefs) return <View style={{ flex: 1, backgroundColor: COLORES.noche.fondo }} />;
 
   // F1 · Primer uso

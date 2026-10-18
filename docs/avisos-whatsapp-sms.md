@@ -1,4 +1,17 @@
-# Avisos a la red: WhatsApp y SMS (estado al 17 de octubre, 22:45)
+# Avisos a la red: SMS con enlace, llamada y WhatsApp (estado al 18 de octubre, 04:30)
+
+> **Cambio del 18 de octubre, 05:00.** Zavu rechaza los enlaces en SMS (revisión automática "AI"/"Security"),
+> aunque la cuenta tenga KYC y el dominio sea propio (`alerta.gadidgc.com`). Por eso:
+> - **El SMS lleva todo lo necesario y un código** (ej. `28KAAK1`: 6 letras del id de la alerta + número del
+>   contacto). El contacto entra a **alerta.gadidgc.com/aviso** (la web, sin instalar nada; no hay botón en la
+>   app), escribe el código y ve la página en vivo: ruta, "Yo me encargo" y "Sí, fue un robo".
+> - Esa dirección es **siempre la misma**: antes de cada SMS el backend pregunta a Zavu (`POST /v1/urls`) si ya
+>   la aprobó. Si sí, el SMS la lleva escrita; si no, sale el SMS solo con el código (la llamada dice la web).
+>   Cuando Zavu la apruebe una vez, todos los SMS la llevan, sin cambiar código.
+> - **Zavu llama a cada contacto**: la voz dice la web y lee el código letra por letra (agente "Alerta Arrebato" con voz en
+>   el sender `pixel`; se apaga con `ZAVU_LLAMADAS`).
+> - **WhatsApp** (Meta) sigue mandando el enlace directo (token renovado el 18; plantillas aún en revisión).
+
 
 Cuando la app confirma un arrebato, el backend ([apps/api](../apps/api)) avisa a los contactos de confianza
 por **dos canales a la vez**. Si uno falla, el otro igual llega.
@@ -6,7 +19,8 @@ por **dos canales a la vez**. Si uno falla, el otro igual llega.
 | Canal | Desde | A quién le llega | Qué dice |
 |---|---|---|---|
 | **WhatsApp** (Meta, WhatsApp Cloud API) | +51 914 652 364 (sale como **"ExamPrazol"**, número prestado de otro proyecto de Gabriel) | Con plantilla aprobada: **a cualquiera**. Mientras Meta revisa las plantillas: solo a quien le escribió a ese número en las últimas 24 h. | La alerta completa **con el enlace a la ruta en vivo** |
-| **SMS** (Zavu, sponsor, plan Pro) | +1 928 251 8311 | **A cualquier número** | Un aviso neutro **sin enlace**: "…su app envió una alerta a las 21:04. Revisa tu WhatsApp…" |
+| **SMS** (Zavu, sponsor, plan Pro) | +1 928 251 8311 | **A cualquier número** | Un aviso neutro con un **código** para abrir la ruta en la app o en alerta.gadidgc.com/aviso |
+| **Llamada** (Zavu, voz) | +1 928 251 8311 | **A cualquier número** | Una voz en español que lee el código letra por letra |
 
 Probado de verdad en un celular del equipo: llegaron la alerta por WhatsApp y por SMS, y el "está bien" al cancelar.
 

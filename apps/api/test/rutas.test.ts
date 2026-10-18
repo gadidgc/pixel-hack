@@ -121,6 +121,16 @@ describe('Worker: carreras y casos borde', () => {
     expect(r.status).toBe(403);
   });
 
+  it('el código del SMS abre la alerta y dice qué contacto es', async () => {
+    const a = await evento({ tipo: 'notificar_familia', dispositivo, evento: jalon(7000), nombre: 'Lucía', contactos });
+    const codigo = `${String(a.id).slice(0, 6).toUpperCase()}2`;
+    const r = (await (await pedir(`/api/codigo/${codigo}`)).json()) as Record<string, unknown>;
+    expect(r).toMatchObject({ ok: true, id: a.id, contacto: 1 });
+    expect((await pedir('/api/codigo/EJEMPLO')).status).toBe(200);
+    expect((await pedir('/api/codigo/ZZZZZZ1')).status).toBe(404);
+    expect((await pedir('/api/codigo/hola')).status).toBe(400);
+  });
+
   it('la descarga del APK responde a HEAD sin mandar el archivo', async () => {
     await env.EVIDENCIAS.put('app/AlertaArrebato.apk', new Uint8Array(1234));
     const r = await pedir('/api/descargar/android', { method: 'HEAD' });

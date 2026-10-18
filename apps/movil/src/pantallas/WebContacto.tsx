@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import { Linking, Pressable, ScrollView, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import { Linking, PanResponder, Pressable, ScrollView, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { EJEMPLO_KIT, KitBloqueo, type Kit, type ResultadoMarca } from '../componentes/KitBloqueo';
 import { Boton, Hoja, Insignia, LineaDeTiempo, Onda, T, type Paso } from '../ui/componentes';
 import { Icono } from '../ui/iconos';
 import { MapaFondo, useEscalaX } from '../ui/mapa';
-import { MapaCalles, aPantalla, encuadrar, type Coordenada, type Punto } from '../ui/mapa-calles';
+import { MapaCalles, VISTA_INICIAL, aPantalla, encuadrar, moverEncuadre, zoomVista, type Coordenada, type Punto, type Vista } from '../ui/mapa-calles';
 import { COLORES, RADIO, TemaContexto, useTema } from '../ui/tema';
 
 export type { Coordenada };
@@ -120,15 +120,39 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme, onConfirmarRobo, on
     setHueco({ arriba: y, abajo: y + height });
   };
 
-  const conRuta = Boolean(datos.ruta && datos.ruta.length > 0);
-  const coordenadas: Coordenada[] = conRuta ? (datos.jalon ? [datos.jalon, ...(datos.ruta ?? [])] : (datos.ruta ?? [])) : [];
+  // El mapa se puede arrastrar y acercar (en la web y en el celular); "Centrar" vuelve al encuadre automático.
+  const [vista, setVista] = useState<Vista>(VISTA_INICIAL);
+  const vistaAlEmpezar = useRef<Vista>(VISTA_INICIAL);
+  const vistaActual = useRef<Vista>(VISTA_INICIAL);
+  vistaActual.current = vista;
+  const arrastre = useRef(
+    PanResponder.create({
+      // Un toque no es arrastre: solo después de moverse unos píxeles (así los botones encima siguen andando).
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) + Math.abs(g.dy) > 4,
+      onPanResponderGrant: () => {
+        vistaAlEmpezar.current = vistaActual.current;
+      },
+      onPanResponderMove: (_e, g) => setVista({ ...vistaAlEmpezar.current, dx: vistaAlEmpezar.current.dx + g.dx, dy: vistaAlEmpezar.current.dy + g.dy }),
+    }),
+  ).current;
+  // La hoja de abajo se puede esconder para ver el mapa entero.
+  const [hojaOculta, setHojaOculta] = useState(false);
+
+  // El jalón y la ruta real. Sin ninguno de los dos: la vista de ejemplo dibuja su ruta; una alerta real, no
+  // (sería una ruta inventada): dice que espera la ubicación.
+  const coordenadas: Coordenada[] = [...(datos.jalon ? [datos.jalon] : []), ...(datos.ruta ?? [])];
+  const conRuta = coordenadas.length > 0;
+  const sinUbicacion = !conRuta && !ejemplo;
   const zona = {
     x: MARGEN.lados,
     y: hueco.arriba + MARGEN.arriba,
     ancho: Math.max(lienzo.ancho - 2 * MARGEN.lados, 80),
     alto: Math.max(hueco.abajo - hueco.arriba - MARGEN.arriba - MARGEN.abajo, 80),
   };
-  const encuadre = conRuta ? encuadrar(coordenadas, zona) : null;
+  const encuadreBase = conRuta ? encuadrar(coordenadas, zona) : null;
+  const centroZona = { x: zona.x + zona.ancho / 2, y: zona.y + zona.alto / 2 };
+  const encuadre = encuadreBase ? moverEncuadre(encuadreBase, vista, centroZona) : null;
+  const movida = vista.dz !== 0 || vista.dx !== 0 || vista.dy !== 0;
   // Todo en píxeles de pantalla: la ruta real con Web Mercator; la de ejemplo, escalada desde el diseño.
   const puntos: Punto[] = encuadre ? coordenadas.map((p) => aPantalla(p, encuadre)) : RUTA_EJEMPLO.map((p) => ({ x: ex(p.x), y: p.y }));
   const inicio = puntos[0];
@@ -156,26 +180,28 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme, onConfirmarRobo, on
   return (
     <View style={{ flex: 1, backgroundColor: c.fondo }} onLayout={medirLienzo}>
       {encuadre ? <MapaCalles encuadre={encuadre} ancho={lienzo.ancho} alto={lienzo.alto} arribaCredito={hueco.arriba} /> : <MapaFondo alto={600} />}
-      <View style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }} pointerEvents="none">
-        <Svg width={lienzo.ancho} height={lienzo.alto} style={{ position: 'absolute', left: 0, top: 0 }} pointerEvents="none">
-          <Path d={trazo} fill="none" stroke={c.alerta} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 8" />
-        </Svg>
-        <View style={{ position: 'absolute', left: inicio.x - 10, top: inicio.y - 10, width: 20, height: 20, borderRadius: 99, backgroundColor: '#ffffff', borderWidth: 4, borderColor: c.alerta }} />
-        <View style={{ position: 'absolute', left: Math.max(8, Math.min(inicio.x + 16, lienzo.ancho - 110)), top: inicio.y + 8, backgroundColor: c.superficie, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
-          <T v="apoyo13">Jalón · {datos.horaJalon}</T>
-        </View>
-        <View style={{ position: 'absolute', left: fin.x - 19, top: fin.y - 19, width: 38, height: 38, alignItems: 'center', justifyContent: 'center' }}>
-          <Onda tam={38} color="rgba(194,65,45,0.35)" duracionMs={2000} />
-          <View style={{ width: 16, height: 16, borderRadius: 99, backgroundColor: c.alerta, borderWidth: 3, borderColor: '#ffffff' }} />
-        </View>
-        {datos.velocidadKmh !== null && !cancelada && (
-          <View style={{ position: 'absolute', left: Math.max(10, Math.min(fin.x - 132, lienzo.ancho - 140)), top: fin.y - 27, backgroundColor: c.alerta, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-            <T v="apoyo13" color={c.sobreAlerta}>
-              Ahora · {datos.velocidadKmh} km/h
-            </T>
+      {!sinUbicacion && (
+        <View style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }} pointerEvents="none">
+          <Svg width={lienzo.ancho} height={lienzo.alto} style={{ position: 'absolute', left: 0, top: 0 }} pointerEvents="none">
+            <Path d={trazo} fill="none" stroke={c.alerta} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 8" />
+          </Svg>
+          <View style={{ position: 'absolute', left: inicio.x - 10, top: inicio.y - 10, width: 20, height: 20, borderRadius: 99, backgroundColor: '#ffffff', borderWidth: 4, borderColor: c.alerta }} />
+          <View style={{ position: 'absolute', left: Math.max(8, Math.min(inicio.x + 16, lienzo.ancho - 110)), top: inicio.y + 8, backgroundColor: c.superficie, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
+            <T v="apoyo13">Jalón · {datos.horaJalon}</T>
           </View>
-        )}
-      </View>
+          <View style={{ position: 'absolute', left: fin.x - 19, top: fin.y - 19, width: 38, height: 38, alignItems: 'center', justifyContent: 'center' }}>
+            <Onda tam={38} color="rgba(194,65,45,0.35)" duracionMs={2000} />
+            <View style={{ width: 16, height: 16, borderRadius: 99, backgroundColor: c.alerta, borderWidth: 3, borderColor: '#ffffff' }} />
+          </View>
+          {datos.velocidadKmh !== null && !cancelada && (
+            <View style={{ position: 'absolute', left: Math.max(10, Math.min(fin.x - 132, lienzo.ancho - 140)), top: fin.y - 27, backgroundColor: c.alerta, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+              <T v="apoyo13" color={c.sobreAlerta}>
+                Ahora · {datos.velocidadKmh} km/h
+              </T>
+            </View>
+          )}
+        </View>
+      )}
 
       <View style={{ paddingTop: ins.top + 12, paddingHorizontal: 16, paddingBottom: 14, backgroundColor: c.superficie, borderBottomWidth: 1, borderBottomColor: c.linea, gap: 6 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -209,56 +235,106 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme, onConfirmarRobo, on
         {ejemplo && <Insignia tipo="aviso" texto="VISTA DE EJEMPLO" />}
       </View>
 
-      <View style={{ flex: 1 }} onLayout={medirHueco} />
-      <Hoja style={{ paddingTop: 18, paddingHorizontal: 16, paddingBottom: ins.bottom + 24, maxHeight: kit || preguntando ? '64%' : undefined }}>
-        {/* Con el kit, el 105 va primero (sigue siendo la acción de emergencia) y la hoja deja ver parte del mapa. */}
-        <ScrollView ref={hoja} contentContainerStyle={{ gap: 12 }} showsVerticalScrollIndicator={false}>
-          {kit && !cancelada && <Boton texto="Llamar a la Policía (105)" variante="emergencia" icono="telefono" onPress={() => void Linking.openURL('tel:105')} />}
-          {kit && <KitBloqueo kit={kit} nombre={datos.nombre} horaJalon={datos.horaJalon} onMarcar={ejemplo || !onMarcarPaso ? marcarEjemplo : onMarcarPaso} />}
-          <LineaDeTiempo pasos={datos.pasos} enTarjeta={false} />
-          {!cancelada && !kit && <Boton texto="Llamar a la Policía (105)" variante="emergencia" icono="telefono" onPress={() => void Linking.openURL('tel:105')} />}
-          {ultima && (
-            <Boton
-              texto="Ver la calle exacta en Google Maps"
-              variante="secundario"
-              principal={false}
-              icono="mapa"
-              onPress={() => void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${ultima.lat},${ultima.lon}`)}
-            />
-          )}
-          {puedeConfirmar &&
-            (preguntando ? (
-              <View style={{ borderRadius: RADIO.s, borderWidth: 1, borderColor: c.linea, padding: 14, gap: 10 }}>
-                <T v="cuerpo15Fuerte">¿Confirmas que le robaron el celular a {datos.nombre}?</T>
-                <T v="apoyo" suave>
-                  No llames a su celular: lo tiene el ladrón. Si {datos.nombre} está contigo o te escribe desde otro número, pregúntale primero. Al confirmar, verás los números para bloquear sus bancos y su línea.
-                </T>
-                <T v="apoyo" suave>
-                  Si fue una falsa alarma, {datos.nombre} puede anularlo con su PIN.
-                </T>
-                {!!errorRobo && (
-                  <T v="apoyo" color={c.alerta}>
-                    {errorRobo}
-                  </T>
-                )}
-                <Boton texto={confirmando ? 'Confirmando…' : 'Sí, fue un robo'} icono="check" variante="secundario" deshabilitado={confirmando} onPress={() => void confirmarRobo()} />
-                <Boton texto="Volver" variante="terciario" onPress={() => setPreguntando(false)} />
-              </View>
-            ) : (
-              <Boton texto="Fue un robo: ver cómo bloquear" variante="secundario" principal={false} onPress={() => setPreguntando(true)} />
-            ))}
-          {cancelada ? null : !encargado ? (
-            <Boton texto="Yo me encargo (avisa al resto)" variante="secundario" principal={false} onPress={() => void encargarme()} />
-          ) : (
-            <View style={{ minHeight: 48, borderRadius: RADIO.total, backgroundColor: c.protegidoFondo, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 12 }}>
-              <Icono nombre="check" tam={18} color={c.protegido} />
-              <T v="cuerpo15Fuerte" color={c.protegido}>
-                {ejemplo ? 'Así le avisaremos al resto de la red' : yoMeEncargo ? 'Avisamos al resto de la red que tú te encargas' : `${datos.encargado} se está encargando`}
-              </T>
+      {/* El hueco del mapa: aquí se arrastra; a la derecha, acercar, alejar y centrar. */}
+      <View style={{ flex: 1 }} onLayout={medirHueco} {...(encuadre ? arrastre.panHandlers : {})}>
+        {sinUbicacion && (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+            <View style={{ backgroundColor: c.superficie, borderRadius: RADIO.m, paddingHorizontal: 14, paddingVertical: 10 }}>
+              <T v="cuerpo15Fuerte">Esperando la ubicación de su celular…</T>
             </View>
-          )}
-        </ScrollView>
-      </Hoja>
+          </View>
+        )}
+        {encuadreBase && (
+          <View style={{ position: 'absolute', right: 12, bottom: 12, gap: 8 }}>
+            <BotonMapa etiqueta="Acercar" onPress={() => setVista((v) => zoomVista(v, 1, encuadreBase.zoom))}>
+              <Icono nombre="mas" tam={20} color={c.texto} />
+            </BotonMapa>
+            <BotonMapa etiqueta="Alejar" onPress={() => setVista((v) => zoomVista(v, -1, encuadreBase.zoom))}>
+              <T v="titulo">−</T>
+            </BotonMapa>
+            {movida && (
+              <BotonMapa etiqueta="Centrar en la ruta" onPress={() => setVista(VISTA_INICIAL)}>
+                <Icono nombre="ubicacion" tam={20} color={c.texto} />
+              </BotonMapa>
+            )}
+          </View>
+        )}
+      </View>
+      {hojaOculta ? (
+        <Hoja style={{ paddingTop: 10, paddingHorizontal: 16, paddingBottom: ins.bottom + 16 }}>
+          <Boton texto="Mostrar opciones" variante="secundario" principal={false} onPress={() => setHojaOculta(false)} />
+        </Hoja>
+      ) : (
+        <Hoja style={{ paddingTop: 6, paddingHorizontal: 16, paddingBottom: ins.bottom + 24, maxHeight: kit || preguntando ? '64%' : undefined }}>
+          <Pressable onPress={() => setHojaOculta(true)} accessibilityRole="button" accessibilityLabel="Ocultar para ver el mapa" style={{ alignSelf: 'center', minHeight: 32, paddingHorizontal: 16, justifyContent: 'center' }}>
+            <T v="apoyo13" suave>
+              Ocultar para ver el mapa ▾
+            </T>
+          </Pressable>
+          {/* Con el kit, el 105 va primero (sigue siendo la acción de emergencia) y la hoja deja ver parte del mapa. */}
+          <ScrollView ref={hoja} contentContainerStyle={{ gap: 12 }} showsVerticalScrollIndicator={false}>
+            {kit && !cancelada && <Boton texto="Llamar a la Policía (105)" variante="emergencia" icono="telefono" onPress={() => void Linking.openURL('tel:105')} />}
+            {kit && <KitBloqueo kit={kit} nombre={datos.nombre} horaJalon={datos.horaJalon} onMarcar={ejemplo || !onMarcarPaso ? marcarEjemplo : onMarcarPaso} />}
+            <LineaDeTiempo pasos={datos.pasos} enTarjeta={false} />
+            {!cancelada && !kit && <Boton texto="Llamar a la Policía (105)" variante="emergencia" icono="telefono" onPress={() => void Linking.openURL('tel:105')} />}
+            {ultima && (
+              <Boton
+                texto="Ver la calle exacta en Google Maps"
+                variante="secundario"
+                principal={false}
+                icono="mapa"
+                onPress={() => void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${ultima.lat},${ultima.lon}`)}
+              />
+            )}
+            {puedeConfirmar &&
+              (preguntando ? (
+                <View style={{ borderRadius: RADIO.s, borderWidth: 1, borderColor: c.linea, padding: 14, gap: 10 }}>
+                  <T v="cuerpo15Fuerte">¿Confirmas que le robaron el celular a {datos.nombre}?</T>
+                  <T v="apoyo" suave>
+                    No llames a su celular: lo tiene el ladrón. Si {datos.nombre} está contigo o te escribe desde otro número, pregúntale primero. Al confirmar, verás los números para bloquear sus bancos y su línea.
+                  </T>
+                  <T v="apoyo" suave>
+                    Si fue una falsa alarma, {datos.nombre} puede anularlo con su PIN.
+                  </T>
+                  {!!errorRobo && (
+                    <T v="apoyo" color={c.alerta}>
+                      {errorRobo}
+                    </T>
+                  )}
+                  <Boton texto={confirmando ? 'Confirmando…' : 'Sí, fue un robo'} icono="check" variante="secundario" deshabilitado={confirmando} onPress={() => void confirmarRobo()} />
+                  <Boton texto="Volver" variante="terciario" onPress={() => setPreguntando(false)} />
+                </View>
+              ) : (
+                <Boton texto="Fue un robo: ver cómo bloquear" variante="secundario" principal={false} onPress={() => setPreguntando(true)} />
+              ))}
+            {cancelada ? null : !encargado ? (
+              <Boton texto="Yo me encargo (avisa al resto)" variante="secundario" principal={false} onPress={() => void encargarme()} />
+            ) : (
+              <View style={{ minHeight: 48, borderRadius: RADIO.total, backgroundColor: c.protegidoFondo, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 12 }}>
+                <Icono nombre="check" tam={18} color={c.protegido} />
+                <T v="cuerpo15Fuerte" color={c.protegido}>
+                  {ejemplo ? 'Así le avisaremos al resto de la red' : yoMeEncargo ? 'Avisamos al resto de la red que tú te encargas' : `${datos.encargado} se está encargando`}
+                </T>
+              </View>
+            )}
+          </ScrollView>
+        </Hoja>
+      )}
     </View>
+  );
+}
+
+/** Botón redondo encima del mapa (acercar, alejar, centrar): 44 px para el dedo. */
+function BotonMapa({ etiqueta, onPress, children }: { etiqueta: string; onPress: () => void; children: React.ReactNode }) {
+  const c = useTema();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={etiqueta}
+      style={{ width: 44, height: 44, borderRadius: RADIO.total, backgroundColor: c.superficie, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.linea }}
+    >
+      {children}
+    </Pressable>
   );
 }
