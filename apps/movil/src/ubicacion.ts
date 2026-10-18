@@ -54,6 +54,14 @@ export async function pedirPermisosUbicacion(): Promise<PermisosUbicacion> {
   return { primerPlano: true, segundoPlano: segundo.granted };
 }
 
+/** Solo mira los permisos, sin pedirlos (para saber si la persona ya eligió «Siempre» en Ajustes). */
+export async function revisarPermisosUbicacion(): Promise<PermisosUbicacion> {
+  const primer = await Location.getForegroundPermissionsAsync();
+  if (!primer.granted) return { primerPlano: false, segundoPlano: false };
+  const segundo = await Location.getBackgroundPermissionsAsync();
+  return { primerPlano: true, segundoPlano: segundo.granted };
+}
+
 /**
  * `true` si el GPS en segundo plano quedó encendido de una sesión anterior (por ejemplo, el sistema cerró
  * la app y la volvió a abrir en segundo plano). En ese caso hay que reactivar la protección: si no, el GPS

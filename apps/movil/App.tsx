@@ -2,24 +2,30 @@ import { Figtree_400Regular, Figtree_500Medium, Figtree_600SemiBold } from '@exp
 import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
 import { Lexend_300Light, Lexend_500Medium, Lexend_600SemiBold, useFonts } from '@expo-google-fonts/lexend';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { usePantallaBloqueada } from './src/bloqueo';
 import { guardarPreferencias } from './src/preferencias';
+import { CON_ATAJOS } from './src/componentes/PasoBienvenida';
 import { AlertaSobreBloqueo } from './src/pantallas/AlertaSobreBloqueo';
+import { AtajosBienvenida } from './src/pantallas/AtajosBienvenida';
 import { Bienvenida } from './src/pantallas/Bienvenida';
 import { BloqueoCuentas } from './src/pantallas/BloqueoCuentas';
 import { Cerca } from './src/pantallas/Cerca';
 import { Contacto } from './src/pantallas/Contacto';
+import { ContactoBienvenida } from './src/pantallas/ContactoBienvenida';
 import { ContactoEnVivo } from './src/pantallas/ContactoEnVivo';
 import { FalsaAlarma } from './src/pantallas/FalsaAlarma';
 import { Grabar } from './src/pantallas/Grabar';
 import { Herramientas } from './src/pantallas/Herramientas';
 import { Inicio } from './src/pantallas/Inicio';
 import { MeRobaron } from './src/pantallas/MeRobaron';
+import { Nombre } from './src/pantallas/Nombre';
 import { Permisos } from './src/pantallas/Permisos';
-import { Prueba } from './src/pantallas/Prueba';
+import { PinBienvenida } from './src/pantallas/PinBienvenida';
+import { Prueba, type MotivoSinProteccion } from './src/pantallas/Prueba';
+import { Siempre } from './src/pantallas/Siempre';
 import { TodoBien } from './src/pantallas/TodoBien';
 import { Tu } from './src/pantallas/Tu';
 import { EJEMPLO_CONTACTO, WebContacto, type DatosContacto } from './src/pantallas/WebContacto';
@@ -28,7 +34,7 @@ import { useProteccion, usePreferencias } from './src/useProteccion';
 import { hora, type Pestana } from './src/ui/componentes';
 import { COLORES, TemaContexto } from './src/ui/tema';
 
-type PasoBienvenida = 'bienvenida' | 'permisos' | 'contacto' | 'prueba';
+type PasoBienvenida = 'bienvenida' | 'nombre' | 'contacto' | 'permisos' | 'siempre' | 'pin' | 'atajos' | 'prueba';
 type Extra = null | 'red' | 'cuentas' | 'herramientas' | 'meRobaron' | 'vistaContacto' | 'alerta';
 
 /**
@@ -107,6 +113,22 @@ export default function App() {
   );
 }
 
+/**
+ * Por qué no encendió la protección al terminar la bienvenida, en palabras de la persona.
+ * `enAjustes`: se arregla dando un permiso en Ajustes (si no, por ejemplo un celular sin acelerómetro).
+ */
+function motivoSinProteccion(estado: EstadoProteccion): MotivoSinProteccion {
+  // En el navegador no hay "Ajustes" que abrir: el permiso se da en el candado de la barra de direcciones.
+  if (Platform.OS === 'web' && estado.permisosFaltantes.length) {
+    return { texto: `Permite ${estado.permisosFaltantes.join(' y ')} en el candado de la barra de direcciones y recarga la página.`, enAjustes: false };
+  }
+  const faltan = estado.permisosFaltantes.filter((f) => f !== 'notificaciones');
+  if (faltan.some((f) => f.startsWith('ubicación "'))) return { texto: 'En Ajustes › Ubicación elige «Siempre». Sin eso no funciona con la pantalla apagada.', enAjustes: true };
+  if (faltan.length) return { texto: `En Ajustes da el permiso de ${faltan.join(' y ')} y vuelve.`, enAjustes: true };
+  const ultimo = estado.registros.find((r) => r.tipo === 'error');
+  return { texto: ultimo?.texto ?? 'No se pudo encender la protección.', enAjustes: false };
+}
+
 function Navegacion() {
   const prefs = usePreferencias();
   const { estado } = useProteccion();
@@ -122,6 +144,17 @@ function Navegacion() {
   const listas = Boolean(prefs?.bienvenidaHecha);
   // Con la app encima de la pantalla de bloqueo, solo se ve el "¿Todo bien?": nada de pestañas ni ajustes.
   const bloqueada = usePantallaBloqueada(Boolean(estado.alerta?.sobreBloqueo));
+  // Si se borró todo desde Herramientas, la bienvenida empieza desde el primer paso.
+  // Solo al pasar de "lista" a "no lista": durante la bienvenida las preferencias cambian y no hay que reiniciarla.
+  const estabaLista = useRef(listas);
+  useEffect(() => {
+    if (estabaLista.current && !listas) {
+      setPaso('bienvenida');
+      setExtra(null);
+      setPestana('inicio');
+    }
+    estabaLista.current = listas;
+  }, [listas]);
   useEffect(() => {
     if (listas && !web && Platform.OS !== 'web') void servicio.reanudarSiEstabaActiva();
     // Solo al abrir la app.
@@ -134,14 +167,31 @@ function Navegacion() {
 
   // F1 · Primer uso
   if (!prefs.bienvenidaHecha) {
-    const terminar = async () => {
-      await guardarPreferencias({ bienvenidaHecha: true });
-      void servicio.activar();
+    // Se espera a que la protección encienda: si no puede, Prueba muestra por qué y cómo arreglarlo,
+    // en vez de dejar a la persona en un Inicio que dice "Protección apagada" sin explicar nada.
+    const terminar = async (): Promise<MotivoSinProteccion | null> => {
+      if (await servicio.activar()) {
+        setPaso('bienvenida');
+        await guardarPreferencias({ bienvenidaHecha: true });
+        return null;
+      }
+      return motivoSinProteccion(servicio.obtener());
     };
-    if (paso === 'bienvenida') return <Bienvenida onSeguir={() => setPaso('permisos')} />;
-    if (paso === 'permisos') return <Permisos onSeguir={() => setPaso('contacto')} onVolver={() => setPaso('bienvenida')} />;
-    if (paso === 'contacto') return <Contacto onSeguir={() => setPaso('prueba')} onVolver={() => setPaso('permisos')} />;
-    return <Prueba onListo={terminar} onVolver={() => setPaso('contacto')} />;
+    const entrarSinProteccion = () => {
+      // Si luego se borra todo desde Herramientas, la bienvenida empieza en el paso 1 sin parpadear.
+      setPaso('bienvenida');
+      void guardarPreferencias({ bienvenidaHecha: true });
+    };
+    if (paso === 'bienvenida') return <Bienvenida onSeguir={() => setPaso('nombre')} />;
+    if (paso === 'nombre') return <Nombre onSeguir={() => setPaso('contacto')} onVolver={() => setPaso('bienvenida')} />;
+    if (paso === 'contacto') return <ContactoBienvenida onSeguir={() => setPaso('permisos')} onVolver={() => setPaso('nombre')} />;
+    if (paso === 'permisos') return <Permisos onSeguir={() => setPaso('pin')} onFaltaSiempre={() => setPaso('siempre')} onVolver={() => setPaso('contacto')} />;
+    if (paso === 'siempre') return <Siempre onSeguir={() => setPaso('pin')} onVolver={() => setPaso('permisos')} />;
+    // iPhone: después del PIN, el bloqueo con Atajos (en Android y la web no hace falta).
+    const despuesDelPin: PasoBienvenida = CON_ATAJOS ? 'atajos' : 'prueba';
+    if (paso === 'pin') return <PinBienvenida onSeguir={() => setPaso(despuesDelPin)} onVolver={() => setPaso('permisos')} />;
+    if (paso === 'atajos') return <AtajosBienvenida onSeguir={() => setPaso('prueba')} onVolver={() => setPaso('pin')} />;
+    return <Prueba onListo={terminar} onEntrarSinProteccion={entrarSinProteccion} onVolver={() => setPaso(CON_ATAJOS ? 'atajos' : 'pin')} />;
   }
 
   if (estado.alerta?.sobreBloqueo && bloqueada) return <AlertaSobreBloqueo />;
