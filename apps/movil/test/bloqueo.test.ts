@@ -4,6 +4,8 @@ const entorno = vi.hoisted(() => ({
   plataforma: 'android',
   cargado: true,
   cargar: vi.fn(),
+  /** `extra` de app.config.js (TestFlight pone `sinTiempoDeUso`). */
+  extra: {} as Record<string, unknown>,
   modulo: {
     consultarEstado: vi.fn(),
     solicitarAutorizacion: vi.fn(),
@@ -29,11 +31,19 @@ vi.mock('expo', () => ({
     return entorno.cargado ? entorno.modulo : null;
   },
 }));
+vi.mock('expo-constants', () => ({
+  default: {
+    get expoConfig() {
+      return { extra: entorno.extra };
+    },
+  },
+}));
 beforeEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
   entorno.plataforma = 'android';
   entorno.cargado = true;
+  entorno.extra = {};
   entorno.modulo.consultarEstado
     .mockReset()
     .mockReturnValue({
@@ -239,5 +249,42 @@ describe('iPhone: tapar las apps con Tiempo de uso', () => {
     const b = await import('../src/bloqueo');
     expect(b.consultarBloqueo().detalle).toContain('Expo Go');
     expect(b.appsBloqueadas()).toBe(false);
+  });
+});
+
+describe('iPhone de TestFlight: compilado sin el permiso de Tiempo de uso', () => {
+  beforeEach(() => {
+    entorno.plataforma = 'ios';
+    entorno.extra = { sinTiempoDeUso: true };
+    // Lo que respondía el iPhone de TestFlight: disponible, pero nunca autorizable (el diálogo de Apple no sale).
+    entorno.modulo.consultarEstado.mockReturnValue({ disponible: true, administradorActivo: false, bloqueoSeguro: true, bloqueado: false, pantallaCompleta: false });
+  });
+  it('no ofrece "Autorizar Tiempo de uso" y explica que falta la aprobación de Apple', async () => {
+    const b = await import('../src/bloqueo');
+    const estado = b.consultarBloqueo();
+    expect(estado.disponible).toBe(false);
+    expect(estado.detalle).toContain('Apple todavía no aprueba');
+    expect(estado.detalle).toContain('Atajos');
+    expect(await b.solicitarAutorizacionBloqueo()).toBe(false);
+    expect(entorno.modulo.solicitarAutorizacion).not.toHaveBeenCalled();
+  });
+  it('Inicio no pide autorizar algo imposible: solo el bloqueo con Atajos', async () => {
+    const b = await import('../src/bloqueo');
+    const estado = b.consultarBloqueo();
+    expect(b.faltaParaBloqueo(estado, '+51987654321')).toBeNull();
+    expect(b.faltaParaBloqueo(estado)).toContain('Atajos');
+  });
+  it('una alerta no intenta tapar las apps y dice por qué', async () => {
+    const b = await import('../src/bloqueo');
+    const resultado = b.bloquearAlDetectar();
+    expect(resultado.estado).toBe('no_disponible');
+    expect(resultado.detalle).toContain('Tiempo de uso');
+    expect(entorno.modulo.bloquearAhora).not.toHaveBeenCalled();
+  });
+  it('la marca no afecta a Android', async () => {
+    entorno.plataforma = 'android';
+    const b = await import('../src/bloqueo');
+    expect(b.consultarBloqueo().disponible).toBe(true);
+    expect(await b.solicitarAutorizacionBloqueo()).toBe(true);
   });
 });

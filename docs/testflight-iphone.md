@@ -26,9 +26,10 @@ Requisito: iOS reciente (el que pida TestFlight). La beta dura 90 días.
 - **Sin Tiempo de uso en TestFlight:** el permiso `com.apple.developer.family-controls` (bloquear las demás apps,
   ver [bloqueo-por-arrebato.md](bloqueo-por-arrebato.md)) solo se puede distribuir cuando Apple aprueba un
   formulario aparte, que tarda días. Por eso el perfil `production` pone `SIN_TIEMPO_DE_USO=1` y
-  `apps/movil/app.config.js` lo quita del build. En la beta el bloqueo de apps responde "sin autorización";
-  la detección, los avisos y el bloqueo con Atajos funcionan igual. Al llegar la aprobación de Apple se borra
-  esa variable de `eas.json`.
+  `apps/movil/app.config.js` lo quita del build. Sin ese permiso, iOS rechaza el pedido sin mostrar el diálogo de
+  Apple, así que `app.config.js` también marca el build (`extra.sinTiempoDeUso`) y la app esconde "Autorizar
+  Tiempo de uso" y explica que Apple todavía no aprueba el permiso. La detección, los avisos y el bloqueo con
+  Atajos funcionan igual. Al llegar la aprobación de Apple se borra esa variable de `eas.json`.
 
 ## Paso a paso (Gabriel)
 
