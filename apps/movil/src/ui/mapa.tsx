@@ -4,8 +4,8 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import { useTema } from './tema';
 
 /**
- * Fondo de mapa estilizado, de bajo contraste (README del sistema: "Mapa"). Es decorativo: todavía no
- * usamos un proveedor de mapas (necesitaría claves); lo importante sobre él son los puntos y la ruta.
+ * Fondo de mapa estilizado, de bajo contraste (README del sistema: "Mapa"). Es decorativo: lo usan las
+ * pantallas de ejemplo. La ruta real del contacto va sobre calles de verdad (`mapa-calles.tsx`).
  * Coordenadas de dibujo en una caja de 390 × alto (como las pantallas del diseño), escalada al ancho real.
  */
 export function MapaFondo({ alto, children }: { alto: number; children?: ReactNode }) {

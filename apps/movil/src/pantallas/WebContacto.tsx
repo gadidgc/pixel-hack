@@ -1,16 +1,14 @@
 import { useState } from 'react';
-import { Linking, Pressable, ScrollView, View } from 'react-native';
+import { Linking, Pressable, ScrollView, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Boton, Hoja, Insignia, LineaDeTiempo, Onda, T, type Paso } from '../ui/componentes';
 import { Icono } from '../ui/iconos';
 import { MapaFondo, useEscalaX } from '../ui/mapa';
+import { MapaCalles, aPantalla, encuadrar, type Coordenada, type Punto } from '../ui/mapa-calles';
 import { COLORES, RADIO, TemaContexto, useTema } from '../ui/tema';
 
-export interface Coordenada {
-  lat: number;
-  lon: number;
-}
+export type { Coordenada };
 
 export interface DatosContacto {
   nombre: string;
@@ -27,26 +25,20 @@ export interface DatosContacto {
   encargado?: string | null;
 }
 
-const RUTA_EJEMPLO = 'M150 450 L162 394 L236 378 L312 362 L318 300 L322 242';
+/** Ruta de ejemplo en coordenadas del diseño (390 de ancho), sobre el mapa estilizado. */
+const RUTA_EJEMPLO: Punto[] = [
+  { x: 150, y: 450 },
+  { x: 162, y: 394 },
+  { x: 236, y: 378 },
+  { x: 312, y: 362 },
+  { x: 318, y: 300 },
+  { x: 322, y: 242 },
+];
 
-/**
- * Pasa la ruta real (lat/lon) al lienzo del mapa (390 × 600): la encaja en la zona libre entre la cabecera
- * y la hoja, sin deformarla (1° de longitud mide menos que 1° de latitud fuera del ecuador).
- */
-export function proyectarRuta(puntos: Coordenada[], caja = { x: 50, y: 210, ancho: 290, alto: 250 }): Array<{ x: number; y: number }> {
-  if (puntos.length === 0) return [];
-  const latMedia = puntos.reduce((a, p) => a + p.lat, 0) / puntos.length;
-  const k = Math.cos((latMedia * Math.PI) / 180);
-  const xs = puntos.map((p) => p.lon * k);
-  const ys = puntos.map((p) => p.lat);
-  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-  // Mínimo ~110 m de lado: una ruta cortita no se estira hasta llenar la pantalla.
-  const lado = Math.max(x1 - x0, y1 - y0, 0.001);
-  const escala = Math.min(caja.ancho, caja.alto) / lado;
-  const cx = caja.x + caja.ancho / 2;
-  const cy = caja.y + caja.alto / 2;
-  return puntos.map((_, i) => ({ x: cx + (xs[i] - (x0 + x1) / 2) * escala, y: cy - (ys[i] - (y0 + y1) / 2) * escala }));
-}
+/** Zona libre por defecto (entre la cabecera y la hoja) hasta que se mida la pantalla. */
+const ZONA_INICIAL = { arriba: 210, abajo: 460 };
+/** Margen alrededor de la ruta para que entren el punto del jalón y las etiquetas. */
+const MARGEN = { lados: 36, arriba: 44, abajo: 48 };
 
 /** Datos de ejemplo, SOLO para mostrar cómo se verá (se marca en pantalla). */
 export const EJEMPLO_CONTACTO: DatosContacto = {
@@ -88,10 +80,30 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme }: Props) {
   const encargado = yoMeEncargo || Boolean(datos.encargado);
   const cancelada = datos.estado === 'cancelada';
 
-  const real = datos.ruta && datos.ruta.length > 0 ? proyectarRuta(datos.jalon ? [datos.jalon, ...datos.ruta] : datos.ruta) : null;
-  const inicio = real ? real[0] : { x: 150, y: 450 };
-  const fin = real ? real[real.length - 1] : { x: 322, y: 242 };
-  const trazo = real ? real.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ') : RUTA_EJEMPLO;
+  // Medidas reales: el lienzo entero y el hueco entre la cabecera y la hoja (ahí va la ruta).
+  const ventana = useWindowDimensions();
+  const [lienzo, setLienzo] = useState({ ancho: ventana.width, alto: ventana.height });
+  const [hueco, setHueco] = useState(ZONA_INICIAL);
+  const medirLienzo = (e: LayoutChangeEvent) => setLienzo({ ancho: e.nativeEvent.layout.width, alto: e.nativeEvent.layout.height });
+  const medirHueco = (e: LayoutChangeEvent) => {
+    const { y, height } = e.nativeEvent.layout;
+    setHueco({ arriba: y, abajo: y + height });
+  };
+
+  const conRuta = Boolean(datos.ruta && datos.ruta.length > 0);
+  const coordenadas: Coordenada[] = conRuta ? (datos.jalon ? [datos.jalon, ...(datos.ruta ?? [])] : (datos.ruta ?? [])) : [];
+  const zona = {
+    x: MARGEN.lados,
+    y: hueco.arriba + MARGEN.arriba,
+    ancho: Math.max(lienzo.ancho - 2 * MARGEN.lados, 80),
+    alto: Math.max(hueco.abajo - hueco.arriba - MARGEN.arriba - MARGEN.abajo, 80),
+  };
+  const encuadre = conRuta ? encuadrar(coordenadas, zona) : null;
+  // Todo en píxeles de pantalla: la ruta real con Web Mercator; la de ejemplo, escalada desde el diseño.
+  const puntos: Punto[] = encuadre ? coordenadas.map((p) => aPantalla(p, encuadre)) : RUTA_EJEMPLO.map((p) => ({ x: ex(p.x), y: p.y }));
+  const inicio = puntos[0];
+  const fin = puntos[puntos.length - 1];
+  const trazo = puntos.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
   const ultima = datos.ruta?.[datos.ruta.length - 1];
 
   const encargarme = async () => {
@@ -100,27 +112,28 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme }: Props) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.fondo }}>
-      <MapaFondo alto={600}>
-        <Svg width={ex(390)} height={600} viewBox="0 0 390 600" style={{ position: 'absolute', left: 0, top: 0 }} pointerEvents="none">
+    <View style={{ flex: 1, backgroundColor: c.fondo }} onLayout={medirLienzo}>
+      {encuadre ? <MapaCalles encuadre={encuadre} ancho={lienzo.ancho} alto={lienzo.alto} arribaCredito={hueco.arriba} /> : <MapaFondo alto={600} />}
+      <View style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }} pointerEvents="none">
+        <Svg width={lienzo.ancho} height={lienzo.alto} style={{ position: 'absolute', left: 0, top: 0 }} pointerEvents="none">
           <Path d={trazo} fill="none" stroke={c.alerta} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 8" />
         </Svg>
-        <View style={{ position: 'absolute', left: ex(inicio.x - 10), top: inicio.y - 10, width: 20, height: 20, borderRadius: 99, backgroundColor: '#ffffff', borderWidth: 4, borderColor: c.alerta }} />
-        <View style={{ position: 'absolute', left: ex(Math.min(inicio.x + 16, 290)), top: inicio.y + 8, backgroundColor: c.superficie, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
+        <View style={{ position: 'absolute', left: inicio.x - 10, top: inicio.y - 10, width: 20, height: 20, borderRadius: 99, backgroundColor: '#ffffff', borderWidth: 4, borderColor: c.alerta }} />
+        <View style={{ position: 'absolute', left: Math.max(8, Math.min(inicio.x + 16, lienzo.ancho - 110)), top: inicio.y + 8, backgroundColor: c.superficie, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
           <T v="apoyo13">Jalón · {datos.horaJalon}</T>
         </View>
-        <View style={{ position: 'absolute', left: ex(fin.x - 19), top: fin.y - 19, width: 38, height: 38, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ position: 'absolute', left: fin.x - 19, top: fin.y - 19, width: 38, height: 38, alignItems: 'center', justifyContent: 'center' }}>
           <Onda tam={38} color="rgba(194,65,45,0.35)" duracionMs={2000} />
           <View style={{ width: 16, height: 16, borderRadius: 99, backgroundColor: c.alerta, borderWidth: 3, borderColor: '#ffffff' }} />
         </View>
         {datos.velocidadKmh !== null && !cancelada && (
-          <View style={{ position: 'absolute', left: ex(Math.max(10, Math.min(fin.x - 132, 250))), top: fin.y - 27, backgroundColor: c.alerta, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+          <View style={{ position: 'absolute', left: Math.max(10, Math.min(fin.x - 132, lienzo.ancho - 140)), top: fin.y - 27, backgroundColor: c.alerta, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
             <T v="apoyo13" color={c.sobreAlerta}>
               Ahora · {datos.velocidadKmh} km/h
             </T>
           </View>
         )}
-      </MapaFondo>
+      </View>
 
       <View style={{ paddingTop: ins.top + 12, paddingHorizontal: 16, paddingBottom: 14, backgroundColor: c.superficie, borderBottomWidth: 1, borderBottomColor: c.linea, gap: 6 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -146,7 +159,7 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme }: Props) {
         {ejemplo && <Insignia tipo="aviso" texto="VISTA DE EJEMPLO" />}
       </View>
 
-      <View style={{ flex: 1 }} />
+      <View style={{ flex: 1 }} onLayout={medirHueco} />
       <Hoja style={{ paddingTop: 18, paddingHorizontal: 16, paddingBottom: ins.bottom + 24 }}>
         <ScrollView contentContainerStyle={{ gap: 12 }}>
           <LineaDeTiempo pasos={datos.pasos} enTarjeta={false} />
