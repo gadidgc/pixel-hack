@@ -129,6 +129,8 @@
   .numero span { display: block; font-size: 28px; line-height: 1.3; color: var(--texto-medio); margin-top: 16px; }
   .numero em { display: block; font-style: normal; font-family: var(--datos); font-size: 18px; line-height: 1.45; letter-spacing: .02em; color: var(--texto-suave); margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--linea); }
   .numero em b { color: var(--protegido); font-weight: 600; }
+  .numero .origen { display: block; font-size: 20px; line-height: 1.4; color: var(--texto-medio); margin-top: 12px; }
+  .numero .origen b { color: var(--protegido); font-weight: 600; }
   .auditoria { margin-top: 56px; font-size: 30px; line-height: 1.35; color: var(--texto-medio); border-left: 4px solid var(--alerta); padding-left: 24px; }
   .auditoria b { color: var(--texto); }
 
@@ -317,14 +319,16 @@
   <h2>Probado con datos reales</h2>
   <div class="numeros">
     <div class="numero"><strong>23/24</strong><span>jalones detectados</span>
-      <em>24 robos actuados ante un celular</em></div>
+      <em>24 robos actuados ante un celular</em>
+      <span class="origen"><b>Fuente:</b> proyecto de estudiantes universitarios, publicado en GitHub</span></div>
     <div class="numero"><strong>9</strong><span>falsas alarmas en 93 h</span>
-      <em>La mayoría al subir a un auto o bus</em></div>
+      <em>La mayoría al subir a un auto o bus</em>
+      <span class="origen"><b>Fuente:</b> Universidad de Sussex y Huawei (Reino Unido): 3 personas, 9 días, celular en la mano</span></div>
     <div class="numero"><strong>~5&nbsp;s</strong><span>del arrebato al aviso</span>
-      <em>Unimos caminar + jalón + huida reales</em></div>
+      <em>Unimos caminar + jalón + huida reales</em>
+      <span class="origen"><b>Fuente:</b> armado por nosotros con las grabaciones de las otras dos fuentes</span></div>
   </div>
-  <p class="auditoria">¿Falsa alarma? El celular vibra y te pregunta: <b>con tu PIN la cancelas antes de que avise a tu familia.</b></p>
-  <p class="fuente" style="margin-top:20px">Datos públicos de terceros, no de nuestro simulador: 3 personas, 9 días con el celular en la mano · No existe un dataset público de robos en moto</p>
+  <p class="fuente" style="margin-top:56px">Datos públicos de terceros, no de nuestro simulador · No existe un dataset público de robos en moto</p>
   <aside class="notas">
     <p><span class="t">2:40</span><q>No nos quedamos con nuestro simulador: lo probamos con datos reales de terceros. 23 de 24 jalones, 9 falsas alarmas en 93 horas, la mayoría al subir a un auto, y el aviso sale en unos 5 segundos.</q></p>
     <p>Si preguntan por las falsas alarmas: la familia solo se entera a los 10 s y el dueño cancela con su PIN (lámina de respaldo A).</p>
