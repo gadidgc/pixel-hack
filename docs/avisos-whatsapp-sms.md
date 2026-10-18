@@ -10,6 +10,8 @@
 >   Cuando Zavu la apruebe una vez, todos los SMS la llevan, sin cambiar código.
 > - **Zavu llama a cada contacto**: la voz dice la web y lee el código letra por letra (agente "Alerta Arrebato" con voz en
 >   el sender `pixel`; se apaga con `ZAVU_LLAMADAS`).
+> - **Si Zavu bloquea el SMS con el código** (pasó a las 05:12: lo tomó como phishing por "código de ubicación" +
+>   "llámale"), sale un **tercer SMS mínimo**: solo quién, a qué hora y "Revisa tu WhatsApp". El código lo da la llamada.
 > - **WhatsApp** (Meta) sigue mandando el enlace directo (token renovado el 18; plantillas aún en revisión).
 
 
