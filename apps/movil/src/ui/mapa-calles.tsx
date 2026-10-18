@@ -72,6 +72,36 @@ export function encuadrar(puntos: Coordenada[], zona: Zona, zoomMax = ZOOM_MAX):
   };
 }
 
+/** Zoom máximo de las teselas de OSM (acercándose con los botones; el encuadre automático llega a ZOOM_MAX). */
+export const ZOOM_TESELAS = 19;
+
+/** Lo que la persona movió el mapa: niveles de zoom de más (o de menos) y cuántos píxeles lo arrastró. */
+export interface Vista {
+  dz: number;
+  dx: number;
+  dy: number;
+}
+
+export const VISTA_INICIAL: Vista = { dz: 0, dx: 0, dy: 0 };
+
+/**
+ * El encuadre automático, movido por la persona: el zoom crece alrededor del punto `centro` de la pantalla
+ * (así lo que está al medio se queda al medio) y después se corre lo que arrastró.
+ */
+export function moverEncuadre(e: Encuadre, v: Vista, centro: Punto): Encuadre {
+  const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_TESELAS, e.zoom + v.dz));
+  const f = 2 ** (zoom - e.zoom);
+  return { zoom, origenX: (e.origenX + centro.x) * f - centro.x - v.dx, origenY: (e.origenY + centro.y) * f - centro.y - v.dy };
+}
+
+/** Acercar o alejar un nivel: lo arrastrado se escala igual, para que el mismo lugar siga al centro. */
+export function zoomVista(v: Vista, paso: 1 | -1, zoomBase: number): Vista {
+  const dz = Math.max(ZOOM_MIN - zoomBase, Math.min(ZOOM_TESELAS - zoomBase, v.dz + paso));
+  if (dz === v.dz) return v;
+  const f = paso === 1 ? 2 : 0.5;
+  return { dz, dx: v.dx * f, dy: v.dy * f };
+}
+
 /** Dónde cae una coordenada en la pantalla, con el encuadre dado. */
 export function aPantalla(p: Coordenada, e: Encuadre): Punto {
   const m = aMundo(p, e.zoom);
