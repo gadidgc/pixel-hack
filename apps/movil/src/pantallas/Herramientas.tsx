@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, Pressable, Switch, View } from 'react-native';
 import { hayBackend } from '../alertas';
 import { consultarBloqueo, faltaParaBloqueo } from '../bloqueo';
+import { textoEstadoLlave } from '../componentes/ConfiguracionLlave';
 import { ETIQUETAS, type Etiqueta } from '../grabadora';
 import { correrSimulacion, ESCENARIOS_APP, type ResultadoSimulacion } from '../simulacion';
 import { describirEvento, useProteccion } from '../useProteccion';
@@ -52,6 +53,22 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
       <T v="apoyo13" suave>
         Panel: {hayBackend() ? 'configurado' : 'no configurado (EXPO_PUBLIC_URL_ALERTAS)'} · Giroscopio: {estado.tieneGiroscopio === false ? 'no' : estado.tieneGiroscopio ? 'sí' : '—'}
       </T>
+
+      {estado.llave && (
+        <>
+          <Rotulo>LLAVE EN VIVO (ROBO SILENCIOSO)</Rotulo>
+          <Lecturas
+            celdas={[
+              { rotulo: 'ESTADO', valor: estado.llave.modo === 'vigilando' ? (estado.llave.telemetria?.estado ?? '—') : estado.llave.modo.replace('_', ' ') },
+              { rotulo: 'DISTANCIA', valor: estado.llave.telemetria?.distanciaM != null ? estado.llave.telemetria.distanciaM.toFixed(1) : '—', unidad: 'm' },
+              { rotulo: 'SEÑAL', valor: estado.llave.telemetria?.rssi != null ? estado.llave.telemetria.rssi.toFixed(0) : '—', unidad: 'dBm' },
+            ]}
+          />
+          <T v="apoyo13" suave>
+            {`${textoEstadoLlave(estado.llave, estado.activa)} Alerta a más de ${estado.llave.distanciaMaxM} m (${estado.modoDemo ? 'modo demo' : 'modo normal'}).`}
+          </T>
+        </>
+      )}
 
       <Rotulo>CAPTURA DE SENSORES (CSV)</Rotulo>
       <T v="apoyo" suave>

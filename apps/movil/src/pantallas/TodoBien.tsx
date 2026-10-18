@@ -3,6 +3,7 @@ import { Animated, Easing, Platform, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PedirPin } from '../componentes/PedirPin';
 import { preferencias } from '../preferencias';
+import { explicacionAlerta } from '../servicio';
 import { useProteccion } from '../useProteccion';
 import { T, useReducirMovimiento } from '../ui/componentes';
 import { Icono } from '../ui/iconos';
@@ -17,7 +18,8 @@ export function TodoBien({ onVer }: { onVer: () => void }) {
   const c = useTema();
   const ins = useSafeAreaInsets();
   const { estado, servicio } = useProteccion();
-  const [pin, setPin] = useState(false);
+  /** `olvide`: "Olvidé mi llave" (también pide el PIN). */
+  const [pin, setPin] = useState<false | 'bien' | 'olvide'>(false);
   const reducir = useReducirMovimiento();
   const barra = useRef(new Animated.Value(1)).current;
   const alerta = estado.alerta;
@@ -57,10 +59,10 @@ export function TodoBien({ onVer }: { onVer: () => void }) {
           ¿Todo bien?
         </T>
         <T v="cuerpo15" suave>
-          Notamos un movimiento brusco y luego velocidad. Si fue tuyo, confírmalo y no avisaremos a nadie.
+          {explicacionAlerta(alerta.evento)} Si fue tuyo, confírmalo y no avisaremos a nadie.
         </T>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Pressable onPress={() => setPin(true)} accessibilityRole="button" style={{ flex: 1, minHeight: 48, borderRadius: RADIO.total, backgroundColor: c.superficie2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <Pressable onPress={() => setPin('bien')} accessibilityRole="button" style={{ flex: 1, minHeight: 48, borderRadius: RADIO.total, backgroundColor: c.superficie2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <Icono nombre="huella" tam={18} color={c.texto} />
             <T v="cuerpo15Fuerte">Estoy bien</T>
           </Pressable>
@@ -68,13 +70,20 @@ export function TodoBien({ onVer }: { onVer: () => void }) {
             <T v="cuerpo15Fuerte">Ver</T>
           </Pressable>
         </View>
+        {alerta.evento.via === 'separacion_llave' && (
+          <Pressable onPress={() => setPin('olvide')} accessibilityRole="button" style={{ minHeight: 44, borderRadius: RADIO.total, alignItems: 'center', justifyContent: 'center' }}>
+            <T v="cuerpo15Fuerte" suave>
+              Olvidé mi llave
+            </T>
+          </Pressable>
+        )}
       </View>
       <PedirPin
-        visible={pin}
-        titulo="¿Estás bien?"
-        explicacion="Escribe tu PIN y no avisaremos a nadie."
-        textoConfirmar="Estoy bien"
-        alConfirmar={(p) => servicio.cancelarAlerta(p)}
+        visible={pin !== false}
+        titulo={pin === 'olvide' ? 'Olvidé mi llave' : '¿Estás bien?'}
+        explicacion={pin === 'olvide' ? 'Escribe tu PIN: no avisaremos a nadie y no vigilaremos tu llave por 8 horas.' : 'Escribe tu PIN y no avisaremos a nadie.'}
+        textoConfirmar={pin === 'olvide' ? 'Confirmar' : 'Estoy bien'}
+        alConfirmar={(p) => servicio.cancelarAlerta(p, { olvideLaLlave: pin === 'olvide' })}
         mensajeError={() => servicio.mensajePin()}
         alCerrar={() => setPin(false)}
       />

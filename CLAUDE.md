@@ -23,7 +23,8 @@ Solo ese caso: no buscamos detectar todos los robos.
 ## Estructura del repo
 ```
 packages/detector/   El algoritmo (TypeScript puro, sin dependencias). Corre igual en Node, la app y la web.
-  src/               detector.ts (máquina de estados), filtro-gravedad.ts, config.ts (umbrales), csv.ts
+  src/               detector.ts (máquina de estados), filtro-gravedad.ts, config.ts (umbrales), csv.ts,
+                     llave.ts (robo silencioso: distancia a la llave Bluetooth; ver docs/robo-silencioso-llave.md)
   src/simulador/     Física del celular + escenarios (arrebato, caída, mototaxi, bache…) + "día normal"
   test/              Pruebas con vitest (unitarias + regresión con el simulador)
   scripts/           evaluar.ts (banco de pruebas → reportes/evaluacion.md), reproducir.ts (CSV reales)
@@ -31,6 +32,7 @@ packages/detector/   El algoritmo (TypeScript puro, sin dependencias). Corre igu
 apps/movil/          App Expo (React Native) para iPhone, Android y web. Solo sensores, permisos y pantalla.
   src/servicio.ts    El servicio de protección (fuera de React: sigue en segundo plano)
   modules/sensores-fondo/  Módulo nativo propio (Kotlin + Swift): sensores en segundo plano. No funciona en Expo Go
+  modules/llave-ble/       Módulo nativo (Kotlin, solo Android): la llave del robo silencioso por Bluetooth
 docs/                PLAN.md, investigación, rúbrica; fase-1/ archivada
 ```
 

@@ -1,19 +1,27 @@
 import {
   CONFIG_DEMO,
+  CONFIG_LLAVE_DEMO,
+  CONFIG_LLAVE_NORMAL,
   CONFIG_POR_DEFECTO,
   DetectorArrebato,
+  VigilanteLlave,
+  calibrarRssiA1m,
   reproducir,
   simular,
   type EventoDetector,
+  type EventoLlave,
   type LecturaGps,
+  type LecturaLlave,
   type MuestraImu,
   type Telemetria,
+  type TelemetriaLlave,
 } from '@pixel-hack/detector';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Platform } from 'react-native';
 import { enviar, hayBackend, type ResultadoEnvio } from './alertas';
 import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, type ResultadoBloqueo } from './bloqueo';
 import { Grabadora, type Etiqueta } from './grabadora';
+import { escucharLlave } from './llave';
 import { avisarTodoBien, pedirPermisoNotificaciones, quitarAviso } from './notificaciones';
 import { hayPin, verificarPin } from './pin';
 import { guardarPreferencias, preferencias, type Contacto } from './preferencias';
@@ -61,6 +69,17 @@ export interface AlertaEnCurso {
   enlace: string | null;
 }
 
+/** La llave del robo silencioso mientras la protección está activa. */
+export interface EstadoVigilanciaLlave {
+  /** `vigilando`: buscando su señal; `ignorada`: "Olvidé mi llave"; `sin_bluetooth`: no se pudo escanear. */
+  modo: 'vigilando' | 'ignorada' | 'sin_bluetooth';
+  telemetria: TelemetriaLlave | null;
+  ignoradaHasta: number | null;
+  /** A partir de qué distancia (m) cuenta como lejos (cambia con el modo demo). */
+  distanciaMaxM: number;
+  detalle: string;
+}
+
 export interface EstadoProteccion {
   activa: boolean;
   /** `true`: sigue con la pantalla apagada. `false`: solo con la app abierta (web o Expo Go). */
@@ -76,6 +95,8 @@ export interface EstadoProteccion {
   tieneGiroscopio: boolean | null;
   tieneGps: boolean | null;
   alerta: AlertaEnCurso | null;
+  /** `null` sin llave vinculada o con la protección apagada. */
+  llave: EstadoVigilanciaLlave | null;
   registros: Registro[];
   grabando: boolean;
   filasGrabadas: number;
@@ -94,9 +115,20 @@ export function describirEvento(e: EventoDetector): string {
     case 'descartado':
       return `Descartado: ${e.motivo.replace(/_/g, ' ')}`;
     case 'alerta':
+      if (e.via === 'separacion_llave') return `Alerta: tu llave siguió lejos ${((e.t - e.tJalon) / 1000).toFixed(1)} s`;
       return `Alerta (${e.via.replace(/_/g, ' ')}, confianza ${e.confianza}) a ${((e.t - e.tJalon) / 1000).toFixed(1)} s del jalón`;
   }
 }
+
+/** Qué notamos, en una frase neutra (la puede leer el ladrón): va en el "¿Todo bien?". */
+export function explicacionAlerta(e: Extract<EventoDetector, { tipo: 'alerta' }>): string {
+  return e.via === 'separacion_llave' ? 'Tu celular se alejó de tu llave.' : 'Notamos un movimiento brusco y luego velocidad.';
+}
+
+/** "Olvidé mi llave": cuántas horas dejamos de vigilarla. */
+export const HORAS_SIN_LLAVE = 8;
+/** Al vincular, cuánto tiempo medimos la señal con los dos celulares a 1 m. */
+const CALIBRACION_MS = 4_000;
 
 /** Segundos extra para avisar a la red cuando el dueño tiene que desbloquear Android antes de cancelar. */
 export const SEGUNDOS_EXTRA_DESBLOQUEO = 15;
@@ -116,6 +148,7 @@ class ServicioProteccion {
     tieneGiroscopio: null,
     tieneGps: null,
     alerta: null,
+    llave: null,
     registros: [],
     grabando: false,
     filasGrabadas: 0,
@@ -136,6 +169,9 @@ class ServicioProteccion {
   private envioAlerta: Promise<ResultadoEnvio> | null = null;
   private pinFallidos = 0;
   private pinEsperarHasta = 0;
+  /** Robo silencioso: la lógica vive en packages/detector (llave.ts); aquí solo se alimenta. */
+  private vigilante: VigilanteLlave | null = null;
+  private detenerEscaneoLlave: (() => void) | null = null;
 
   obtener(): EstadoProteccion {
     return this.estado;
@@ -210,7 +246,8 @@ class ServicioProteccion {
           this.cambiar({ pausadaHasta: null });
           this.registrar('Terminó la pausa: estás protegida otra vez.');
         }
-        this.cambiar({ telemetria: this.detector.obtenerTelemetria(), filasGrabadas: this.grabadora.cantidad });
+        const llave = this.estado.llave && this.vigilante ? { ...this.estado.llave, telemetria: this.vigilante.obtenerTelemetria() } : this.estado.llave;
+        this.cambiar({ telemetria: this.detector.obtenerTelemetria(), filasGrabadas: this.grabadora.cantidad, llave });
       }, 250);
       this.detenerTodo.push(() => clearInterval(reloj));
 
@@ -228,6 +265,8 @@ class ServicioProteccion {
         sensores.segundoPlano ? 'info' : 'aviso',
       );
       if (!sensores.tieneGiroscopio) this.registrar('Este celular no tiene giroscopio: pedimos un jalón más fuerte.', 'aviso');
+      this.detenerTodo.push(() => this.detenerLlave());
+      await this.iniciarLlave();
       void guardarPreferencias({ proteccionActiva: true });
       return true;
     } catch (e) {
@@ -247,6 +286,8 @@ class ServicioProteccion {
       return false;
     }
     this.detector.reiniciar();
+    // Al volver de la pausa, la llave tiene que verse cerca otra vez antes de alertar.
+    this.vigilante?.reiniciar();
     this.cambiar({ pausadaHasta: Date.now() + minutos * 60_000 });
     this.registrar(`Protección en pausa por ${minutos} min. Vuelve sola.`);
     return true;
@@ -272,7 +313,7 @@ class ServicioProteccion {
       this.registrar('PIN incorrecto: la protección sigue activa.', 'error');
       return false;
     }
-    if (this.estado.alerta && this.detector.estado === 'alerta') await this.cancelarAlerta(pin);
+    if (this.estado.alerta && (this.detector.estado === 'alerta' || this.vigilante?.estado === 'separada')) await this.cancelarAlerta(pin);
     await this.apagar();
     void guardarPreferencias({ proteccionActiva: false });
     this.registrar('Protección desactivada.');
@@ -289,16 +330,16 @@ class ServicioProteccion {
       this.pantallaPrendida = false;
       Promise.resolve(deactivateKeepAwake(ETIQUETA_PANTALLA)).catch(() => undefined);
     }
-    this.cambiar({ activa: false, activaDesde: null, pausadaHasta: null, telemetria: null, segundoPlano: null });
+    this.cambiar({ activa: false, activaDesde: null, pausadaHasta: null, telemetria: null, segundoPlano: null, llave: null });
   }
 
   // --- Alerta ------------------------------------------------------------------------------------------
 
   /**
    * "Estoy bien" / "Fue falsa alarma": exige el PIN. Si la red ya fue avisada, le mandamos que fue
-   * falsa alarma.
+   * falsa alarma. `olvideLaLlave`: además deja de vigilar la llave por 8 h (la dejaste en casa).
    */
-  async cancelarAlerta(pin: string): Promise<boolean> {
+  async cancelarAlerta(pin: string, opciones: { olvideLaLlave?: boolean } = {}): Promise<boolean> {
     if (this.mensajePin()) return false;
     if (!(await verificarPin(pin))) {
       this.pinFallidos++;
@@ -315,6 +356,8 @@ class ServicioProteccion {
     this.detenerCuentaFamilia();
     void quitarAviso(this.idNotificacion);
     this.detector.cancelar();
+    // La llave vuelve a "buscando": no alerta otra vez hasta verla cerca (si no, a los 5 s alertaría de nuevo).
+    this.vigilante?.reiniciar();
     // El backend cuenta por su lado y avisa a la red si no le llega "cancelada". Se manda SIEMPRE que haya
     // backend (también en un ensayo, donde el detector no tiene alerta, y aunque el envío de la alerta siga
     // en camino): esperamos a que llegue la alerta para que "cancelada" no llegue antes que ella.
@@ -328,6 +371,7 @@ class ServicioProteccion {
         ? 'Falsa alarma: cancelada con tu PIN. Tu red ya había sido avisada; le mandamos que estás bien.'
         : 'Falsa alarma: cancelada con tu PIN antes de avisar a tu red.',
     );
+    if (opciones.olvideLaLlave) await this.ignorarLlave();
     return true;
   }
 
@@ -349,13 +393,15 @@ class ServicioProteccion {
     this.pinFallidos = 0;
     this.pinEsperarHasta = 0;
     const conVelocidad = evento.velocidadMs !== null ? ` y luego ${Math.round(evento.velocidadMs * 3.6)} km/h` : '';
+    const motivo = explicacionAlerta(evento);
+    const primerPaso = evento.via === 'separacion_llave' ? `Tu llave quedó a más de ${this.configLlave().distanciaMaxM} m` : `Movimiento brusco${conVelocidad}`;
 
     // 0) Bloqueo de Android, lo primero: si el celular estaba desbloqueado en la mano, cada segundo cuenta.
     // Es síncrono y no espera al servidor ni a la cuenta para avisar a la familia.
     const bloqueo = bloquearAlDetectar();
     // Con el celular bloqueado, el "¿Todo bien?" se abre ENCIMA de la pantalla de bloqueo (como un
     // despertador): el dueño cancela con el PIN de la app sin tener que desbloquear Android primero.
-    const sobreBloqueo = bloqueo.estado === 'solicitado' && mostrarSobreBloqueo(elegida);
+    const sobreBloqueo = bloqueo.estado === 'solicitado' && mostrarSobreBloqueo(elegida, motivo);
     // Respaldo: si Android no deja la pregunta sobre el bloqueo, el dueño tiene que desbloquear Android
     // antes de escribir el PIN. Le damos 15 s más para que una falsa alarma no avise a su familia.
     const extra = bloqueo.estado === 'solicitado' && !sobreBloqueo ? SEGUNDOS_EXTRA_DESBLOQUEO : 0;
@@ -374,7 +420,7 @@ class ServicioProteccion {
         enlace: null,
         pasos: [
           { t: Date.now(), texto: 'Te preguntamos "¿Todo bien?"', clave: false },
-          { t: evento.tJalon, texto: `Movimiento brusco${conVelocidad}`, clave: false },
+          { t: evento.tJalon, texto: primerPaso, clave: false },
         ],
       },
     });
@@ -383,7 +429,7 @@ class ServicioProteccion {
       this.registrar(`Android no deja mostrar el "¿Todo bien?" sobre la pantalla de bloqueo: para cancelar hay que desbloquear. Esperamos ${extra} s más antes de avisar.`, 'aviso');
     }
     // Sobre la pantalla de bloqueo ya va nuestro aviso de pantalla completa; no repetimos la notificación.
-    if (!sobreBloqueo) void avisarTodoBien(espera).then((id) => (this.idNotificacion = id));
+    if (!sobreBloqueo) void avisarTodoBien(espera, motivo).then((id) => (this.idNotificacion = id));
 
     // 1) Al panel, al instante y en silencio, con la ruta de los últimos segundos.
     const { nombre, contactos } = preferencias();
@@ -518,8 +564,11 @@ class ServicioProteccion {
     }
     this.grabadora.agregar({ tipo: 'imu', muestra: m });
     if (this.ensayo) this.revisarEnsayo();
+    this.revisarLlaveIgnorada();
     if (this.enPausa()) return;
     this.atender(this.detector.procesarImu(m));
+    // Justo cuando se llevan el celular dejan de llegar lecturas de la llave: los plazos se revisan aquí.
+    if (this.vigilante) this.atenderLlave(this.vigilante.revisar(m.t));
   }
 
   private alGps(l: LecturaGps): void {
@@ -542,13 +591,181 @@ class ServicioProteccion {
     return this.ruta[this.ruta.length - 1] ?? null;
   }
 
+  // --- Llave (robo silencioso) -------------------------------------------------------------------------
+
+  private configLlave() {
+    return this.estado.modoDemo ? CONFIG_LLAVE_DEMO : CONFIG_LLAVE_NORMAL;
+  }
+
+  private estadoLlave(modo: EstadoVigilanciaLlave['modo'], detalle: string): EstadoVigilanciaLlave {
+    return {
+      modo,
+      detalle,
+      telemetria: this.vigilante?.obtenerTelemetria() ?? null,
+      ignoradaHasta: preferencias().llaveIgnoradaHasta ?? null,
+      distanciaMaxM: this.configLlave().distanciaMaxM,
+    };
+  }
+
+  /** Empieza a vigilar la llave vinculada (si hay una y la protección está activa). */
+  private async iniciarLlave(): Promise<void> {
+    this.detenerLlave();
+    const { llave, llaveIgnoradaHasta } = preferencias();
+    if (!llave || !this.estado.activa) return this.cambiar({ llave: null });
+    if (llaveIgnoradaHasta && Date.now() < llaveIgnoradaHasta) {
+      return this.cambiar({ llave: this.estadoLlave('ignorada', `No vigilamos tu llave hasta las ${horaCorta(llaveIgnoradaHasta)}.`) });
+    }
+    this.vigilante = new VigilanteLlave(this.configLlave(), llave.rssiA1m);
+    try {
+      this.detenerEscaneoLlave = await escucharLlave(
+        llave.codigo,
+        (l) => this.alLlave(l),
+        (detalle) => {
+          this.detenerLlave();
+          this.cambiar({ llave: this.estadoLlave('sin_bluetooth', detalle) });
+          this.registrar(`Llave: ${detalle} La protección contra arrebatos sigue.`, 'error');
+        },
+      );
+      this.cambiar({ llave: this.estadoLlave('vigilando', 'Buscando tu llave por Bluetooth.') });
+      this.registrar('Vigilando tu llave por Bluetooth: si tu celular se aleja de ella, lo bloqueamos.');
+    } catch (e) {
+      this.detenerLlave();
+      const detalle = e instanceof Error ? e.message : 'No se pudo buscar la llave por Bluetooth.';
+      this.cambiar({ llave: this.estadoLlave('sin_bluetooth', detalle) });
+      this.registrar(`Llave: ${detalle} La protección contra arrebatos sigue.`, 'aviso');
+    }
+  }
+
+  private detenerLlave(): void {
+    this.detenerEscaneoLlave?.();
+    this.detenerEscaneoLlave = null;
+    this.vigilante = null;
+  }
+
+  private alLlave(l: LecturaLlave): void {
+    if (!this.vigilante || this.enPausa()) return;
+    this.atenderLlave(this.vigilante.procesar(l));
+  }
+
+  private atenderLlave(eventos: EventoLlave[]): void {
+    for (const e of eventos) {
+      if (e.tipo === 'llave_lejos') {
+        this.registrar(`Tu llave se alejó (${e.distanciaM === null ? 'sin señal' : `~${e.distanciaM.toFixed(1)} m`}).`, 'aviso');
+      } else if (e.tipo === 'llave_cerca') {
+        this.registrar(`Tu llave volvió a estar cerca (~${e.distanciaM.toFixed(1)} m).`);
+      } else if (e.tipo === 'llave_no_encontrada') {
+        this.registrar('No encontramos tu llave cerca. Hasta que esté contigo, no podemos avisar si se llevan tu celular en silencio.', 'aviso');
+      } else if (!this.estado.alerta) {
+        const evento = this.eventoSeparacion(e);
+        this.registrar(describirEvento(evento), 'alerta');
+        this.iniciarAlerta(evento);
+      }
+    }
+  }
+
+  /** La separación entra por el MISMO camino que un arrebato: bloqueo, "¿Todo bien?", panel y red. */
+  private eventoSeparacion(e: Extract<EventoLlave, { tipo: 'separacion' }>): Extract<EventoDetector, { tipo: 'alerta' }> {
+    const u = this.ruta[this.ruta.length - 1];
+    const posicion = u ? { t: u.t, lat: u.lat, lon: u.lon, precision: u.precision } : null;
+    return {
+      tipo: 'alerta',
+      t: e.t,
+      tJalon: e.tLejos,
+      via: 'separacion_llave',
+      confianza: 'media',
+      velocidadMs: null,
+      posicionJalon: posicion,
+      ultimaPosicion: posicion,
+      picoAceleracionG: 0,
+      picoGiroRadS: null,
+    };
+  }
+
+  /** "Olvidé mi llave" vence sola: con la pantalla apagada se revisa con cada lote de sensores. */
+  private revisarLlaveIgnorada(): void {
+    const hasta = preferencias().llaveIgnoradaHasta;
+    if (this.estado.llave?.modo !== 'ignorada' || !hasta || Date.now() < hasta) return;
+    // Se marca al instante para no repetirlo con cada muestra mientras se guarda.
+    this.cambiar({ llave: { ...this.estado.llave, modo: 'vigilando', ignoradaHasta: null } });
+    this.registrar(`Pasaron las ${HORAS_SIN_LLAVE} h: volvemos a vigilar tu llave.`);
+    void guardarPreferencias({ llaveIgnoradaHasta: null }).then(() => this.iniciarLlave());
+  }
+
+  private async ignorarLlave(): Promise<void> {
+    const hasta = Date.now() + HORAS_SIN_LLAVE * 3_600_000;
+    await guardarPreferencias({ llaveIgnoradaHasta: hasta });
+    this.detenerLlave();
+    if (this.estado.activa && preferencias().llave) {
+      this.cambiar({ llave: this.estadoLlave('ignorada', `No vigilamos tu llave hasta las ${horaCorta(hasta)}.`) });
+    }
+    this.registrar(`Olvidaste tu llave: no la vigilamos hasta las ${horaCorta(hasta)} (${HORAS_SIN_LLAVE} h). La protección contra arrebatos sigue.`);
+  }
+
+  /** Desde Tú, antes de las 8 h (ya tienes la llave contigo). */
+  async volverAUsarLlave(): Promise<void> {
+    await guardarPreferencias({ llaveIgnoradaHasta: null });
+    this.registrar('Volvemos a vigilar tu llave.');
+    await this.iniciarLlave();
+  }
+
+  /**
+   * Vincula la llave con su código y calibra: con los dos celulares a 1 m, mide la señal unos segundos.
+   * Esa señal a 1 m es la base para estimar la distancia (cada celular emite distinto).
+   */
+  async vincularLlave(codigo: string): Promise<{ ok: boolean; detalle: string }> {
+    this.detenerLlave();
+    const rssis: number[] = [];
+    let error: string | null = null;
+    try {
+      const detener = await escucharLlave(codigo, (l) => rssis.push(l.rssi), (d) => (error = d));
+      await new Promise((listo) => setTimeout(listo, CALIBRACION_MS));
+      detener();
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'No se pudo buscar la llave por Bluetooth.';
+    }
+    const rssiA1m = calibrarRssiA1m(rssis);
+    if (rssiA1m === null) {
+      await this.iniciarLlave();
+      return {
+        ok: false,
+        detalle: error ?? 'No encontramos tu llave. Revisa que el otro celular esté en "Usar como llave", con el Bluetooth prendido y el mismo código.',
+      };
+    }
+    await guardarPreferencias({ llave: { codigo, rssiA1m }, llaveIgnoradaHasta: null });
+    this.registrar(`Llave vinculada: ${rssis.length} lecturas, señal a 1 m de ${rssiA1m} dBm.`);
+    await this.iniciarLlave();
+    return {
+      ok: true,
+      detalle: this.estado.activa ? 'Listo: ya estamos vigilando tu llave.' : 'Listo: vigilaremos tu llave cuando actives la protección.',
+    };
+  }
+
+  /** Quitar la llave exige el PIN (el ladrón no debe poder apagarla). */
+  async desvincularLlave(pin: string): Promise<boolean> {
+    if (!(await verificarPin(pin))) return false;
+    this.detenerLlave();
+    await guardarPreferencias({ llave: null, llaveIgnoradaHasta: null });
+    this.cambiar({ llave: null });
+    this.registrar('Llave desvinculada.');
+    return true;
+  }
+
   // --- Herramientas del equipo -------------------------------------------------------------------------
 
   cambiarModoDemo(modoDemo: boolean): void {
     this.detector = new DetectorArrebato(modoDemo ? CONFIG_DEMO : CONFIG_POR_DEFECTO);
     this.detenerCuentaFamilia();
     this.cambiar({ modoDemo, alerta: null });
-    this.registrar(modoDemo ? 'Modo demo: la huida corriendo cuenta.' : 'Modo normal: solo huida en vehículo.');
+    const llave = preferencias().llave;
+    if (this.vigilante && llave) {
+      this.vigilante = new VigilanteLlave(this.configLlave(), llave.rssiA1m);
+      if (this.estado.llave) this.cambiar({ llave: { ...this.estado.llave, distanciaMaxM: this.configLlave().distanciaMaxM } });
+    }
+    this.registrar(
+      modoDemo
+        ? `Modo demo: la huida corriendo cuenta; la llave alerta a ${CONFIG_LLAVE_DEMO.distanciaMaxM} m durante ${CONFIG_LLAVE_DEMO.sostenidoMs / 1000} s.`
+        : 'Modo normal: solo huida en vehículo.',
+    );
   }
 
   empezarGrabacion(etiqueta: Etiqueta): void {
@@ -565,6 +782,11 @@ class ServicioProteccion {
       this.registrar(`No se pudo exportar: ${e instanceof Error ? e.message : 'error'}`, 'error');
     }
   }
+}
+
+function horaCorta(t: number): string {
+  const d = new Date(t);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 export const servicio = new ServicioProteccion();

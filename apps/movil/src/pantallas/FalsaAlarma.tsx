@@ -13,7 +13,8 @@ const MOTIVOS = ['Iba en auto o taxi', 'Subí a un bus o combi', 'Se me cayó', 
 export function FalsaAlarma({ onVerAviso, onCerrar }: { onVerAviso: () => void; onCerrar: () => void }) {
   const { estado, servicio } = useProteccion();
   const prefs = usePreferencias();
-  const [pin, setPin] = useState(false);
+  /** `olvide`: "Olvidé mi llave" (también pide el PIN). */
+  const [pin, setPin] = useState<false | 'bien' | 'olvide'>(false);
   const [motivo, setMotivo] = useState<string | null>(null);
   const alerta = estado.alerta;
   if (!alerta) return null;
@@ -56,7 +57,8 @@ export function FalsaAlarma({ onVerAviso, onCerrar }: { onVerAviso: () => void; 
       </View>
 
       <View style={{ flex: 1 }} />
-      <Boton texto={avisada ? 'Fue falsa alarma: avisar que estoy bien' : 'Fue falsa alarma'} icono="huella" onPress={() => setPin(true)} />
+      <Boton texto={avisada ? 'Fue falsa alarma: avisar que estoy bien' : 'Fue falsa alarma'} icono="huella" onPress={() => setPin('bien')} />
+      {alerta.evento.via === 'separacion_llave' && <Boton texto="Olvidé mi llave (no vigilarla 8 h)" variante="terciario" onPress={() => setPin('olvide')} />}
       <Boton texto={`Ver lo que recibió ${quienes}`} variante="terciario" onPress={onVerAviso} />
       {alerta.enlace && (
         <Boton
@@ -67,12 +69,12 @@ export function FalsaAlarma({ onVerAviso, onCerrar }: { onVerAviso: () => void; 
         />
       )}
       <PedirPin
-        visible={pin}
-        titulo="Fue falsa alarma"
+        visible={pin !== false}
+        titulo={pin === 'olvide' ? 'Olvidé mi llave' : 'Fue falsa alarma'}
         mensajeError={() => servicio.mensajePin()}
         explicacion={avisada ? `Escribe tu PIN y le diremos a ${quienes} que estás bien.` : 'Escribe tu PIN para cancelar la alerta.'}
         alConfirmar={async (p) => {
-          const ok = await servicio.cancelarAlerta(p);
+          const ok = await servicio.cancelarAlerta(p, { olvideLaLlave: pin === 'olvide' });
           if (ok) onCerrar();
           return ok;
         }}

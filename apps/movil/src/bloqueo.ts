@@ -104,12 +104,12 @@ export async function abrirPermisoPantallaCompleta(): Promise<boolean> {
  * Pone el "¿Todo bien?" encima de la pantalla de bloqueo (como un despertador). Devuelve `true` si
  * Android puede abrirlo solo; `false` si el dueño tendría que desbloquear antes de cancelar.
  */
-export function mostrarSobreBloqueo(segundos: number): boolean {
+export function mostrarSobreBloqueo(segundos: number, motivo = 'Notamos un movimiento brusco y luego velocidad.'): boolean {
   if (!modulo) return false;
   try {
     return modulo.mostrarSobreBloqueo(
       '¿Todo bien?',
-      `Notamos un movimiento brusco y luego velocidad. Si fue tuyo, confírmalo con tu PIN. Avisaremos en 0:${String(segundos).padStart(2, '0')}.`,
+      `${motivo} Si fue tuyo, confírmalo con tu PIN. Avisaremos en 0:${String(segundos).padStart(2, '0')}.`,
     );
   } catch {
     return false;

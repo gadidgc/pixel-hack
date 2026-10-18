@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BackHandler, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pinValido } from '../pin';
+import { explicacionAlerta } from '../servicio';
 import { useProteccion } from '../useProteccion';
 import { T } from '../ui/componentes';
 import { Icono } from '../ui/iconos';
@@ -34,11 +35,13 @@ export function AlertaSobreBloqueo() {
 
   const esperando = alerta.familia === 'esperando';
   const s = alerta.segundosParaFamilia;
+  const porLlave = alerta.evento.via === 'separacion_llave';
 
-  const confirmar = async (valor: string) => {
+  /** `olvideLaLlave`: además deja de vigilar la llave 8 h (la dejaste en casa). También pide el PIN. */
+  const confirmar = async (valor: string, olvideLaLlave = false) => {
     if (!pinValido(valor)) return setError('El PIN tiene de 4 a 6 números.');
     setOcupado(true);
-    const ok = await servicio.cancelarAlerta(valor).catch(() => false);
+    const ok = await servicio.cancelarAlerta(valor, { olvideLaLlave }).catch(() => false);
     setOcupado(false);
     setPin('');
     if (!ok) setError(servicio.mensajePin() ?? 'PIN incorrecto.');
@@ -73,7 +76,7 @@ export function AlertaSobreBloqueo() {
         </T>
         <T v="cuerpo15" suave>
           {esperando
-            ? 'Notamos un movimiento brusco y luego velocidad. Si fue tuyo, escribe tu PIN de Alerta Arrebato y no avisaremos a nadie.'
+            ? `${explicacionAlerta(alerta.evento)} Si fue tuyo, escribe tu PIN de Alerta Arrebato y no avisaremos a nadie.`
             : 'Ya avisamos a tu red. Si estás bien, escribe tu PIN de Alerta Arrebato y les diremos que fue una falsa alarma.'}
         </T>
       </View>
@@ -117,6 +120,19 @@ export function AlertaSobreBloqueo() {
           {ocupado ? 'Comprobando…' : 'Estoy bien'}
         </T>
       </Pressable>
+      {porLlave && (
+        <Pressable
+          onPress={() => void confirmar(pin, true)}
+          disabled={ocupado || pin.length < 4}
+          accessibilityRole="button"
+          accessibilityHint="Escribe tu PIN primero. No vigilaremos tu llave por 8 horas."
+          style={{ minHeight: 48, borderRadius: RADIO.total, backgroundColor: c.superficie2, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <T v="cuerpo15Fuerte" color={pin.length >= 4 ? c.texto : c.textoSuave}>
+            Olvidé mi llave (8 h)
+          </T>
+        </Pressable>
+      )}
       <T v="apoyo13" suave style={{ textAlign: 'center' }}>
         Tu celular sigue bloqueado. Después usa tu clave de Android para entrar.
       </T>

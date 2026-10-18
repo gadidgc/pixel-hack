@@ -14,6 +14,8 @@ import { EJEMPLO_CONTACTO, WebContacto, type Coordenada, type DatosContacto } fr
 interface AlertaPublica {
   nombre: string;
   estado: 'en_espera' | 'avisada' | 'cancelada';
+  /** `separacion_llave`: robo silencioso (sin jalón). */
+  via: string | null;
   velocidadMs: number | null;
   tJalon: number | null;
   jalon: Coordenada | null;
@@ -52,9 +54,11 @@ function aDatos(a: AlertaPublica): DatosContacto {
   if (a.estado === 'cancelada' && a.cancelada) pasos.push({ hora: hora(a.cancelada, true), texto: `${a.nombre} confirmó que está bien`, clave: true, ahora: true });
   else if (ultima) pasos.push({ hora: hora(ultima.t, true), texto: hacia ? `Va hacia el ${hacia}${kmh !== null ? ` · ${kmh} km/h` : ''}` : 'Última ubicación', clave: true, ahora: true });
   if (a.encargado) pasos.push({ hora: '', texto: `${a.encargado} se está encargando` });
-  if (a.tJalon) pasos.push({ hora: hora(a.tJalon, true), texto: 'Jalón: le arrancharon el celular', clave: true });
+  const silencioso = a.via === 'separacion_llave';
+  if (a.tJalon) pasos.push({ hora: hora(a.tJalon, true), texto: silencioso ? 'Su celular se alejó de su llave' : 'Jalón: le arrancharon el celular', clave: true });
   return {
     nombre: a.nombre,
+    titulo: silencioso ? `El celular de ${a.nombre} se alejó de su llave` : undefined,
     pasos,
     velocidadKmh: kmh,
     horaJalon: a.tJalon ? hora(a.tJalon) : '—',

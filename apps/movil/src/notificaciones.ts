@@ -32,14 +32,15 @@ export async function pedirPermisoNotificaciones(): Promise<boolean> {
   return granted;
 }
 
-export async function avisarTodoBien(segundos: number): Promise<string | null> {
+/** `motivo`: qué notamos (un arrebato o que el celular se alejó de la llave). */
+export async function avisarTodoBien(segundos: number, motivo = 'Notamos un movimiento brusco y luego velocidad.'): Promise<string | null> {
   if (Platform.OS === 'web') return null;
   try {
     await preparar();
     return await Notifications.scheduleNotificationAsync({
       content: {
         title: '¿Todo bien?',
-        body: `Notamos un movimiento brusco y luego velocidad. Si fue tuyo, confírmalo y no avisaremos a nadie. Avisaremos en 0:${String(segundos).padStart(2, '0')}.`,
+        body: `${motivo} Si fue tuyo, confírmalo y no avisaremos a nadie. Avisaremos en 0:${String(segundos).padStart(2, '0')}.`,
         sound: false,
         ...(Platform.OS === 'android' ? { channelId: CANAL } : {}),
       },

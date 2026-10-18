@@ -4,7 +4,7 @@ import { Icono } from '../ui/iconos';
 import { RADIO, TIPO, useTema } from '../ui/tema';
 
 /** F1 · 1/4 Bienvenida. */
-export function Bienvenida({ onSeguir }: { onSeguir: () => void }) {
+export function Bienvenida({ onSeguir, onModoLlave }: { onSeguir: () => void; onModoLlave?: () => void }) {
   const c = useTema();
   return (
     <Pantalla>
@@ -43,6 +43,7 @@ export function Bienvenida({ onSeguir }: { onSeguir: () => void }) {
         ))}
       </View>
       <Boton texto="Empezar" icono="flecha" onPress={onSeguir} />
+      {onModoLlave && <Boton texto="Este celular será la llave de otro" variante="terciario" onPress={onModoLlave} />}
       <T v="apoyo13" suave style={[TIPO.apoyo13, { textAlign: 'center' }]}>
         Alerta Arrebato no reemplaza a la Policía. Si estás en peligro, llama al 105.
       </T>

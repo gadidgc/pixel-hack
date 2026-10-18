@@ -56,8 +56,11 @@ export type MotivoDescarte =
   /** El dueño canceló a mano. */
   | 'cancelado';
 
-/** Cómo se confirmó la huida. */
-export type ViaConfirmacion = 'velocidad_gps' | 'desplazamiento_gps' | 'solo_sensores';
+/**
+ * Cómo se confirmó la huida. `separacion_llave` no la da este detector: la arma la app cuando la llave
+ * Bluetooth se aleja (robo silencioso, ver llave.ts), para reutilizar el mismo camino de la alerta.
+ */
+export type ViaConfirmacion = 'velocidad_gps' | 'desplazamiento_gps' | 'solo_sensores' | 'separacion_llave';
 
 export interface PosicionSimple {
   t: number;

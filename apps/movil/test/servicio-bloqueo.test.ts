@@ -25,6 +25,8 @@ vi.mock('../src/bloqueo', () => ({
   mostrarSobreBloqueo: dobles.mostrar,
   ocultarSobreBloqueo: dobles.ocultar,
 }));
+// Sin llave vinculada: este archivo prueba el arrebato (la llave, en servicio-llave.test.ts).
+vi.mock('../src/llave', () => ({ escucharLlave: vi.fn() }));
 vi.mock('../src/alertas', () => ({
   enviar: dobles.enviar,
   hayBackend: () => true,
@@ -144,7 +146,7 @@ describe('"¿Todo bien?" sobre la pantalla de bloqueo', () => {
   it('tras bloquear, muestra la pregunta encima del bloqueo y no repite la notificación', () => {
     reproducirCaso('arrebato_moto');
     expect(dobles.mostrar).toHaveBeenCalledTimes(1);
-    expect(dobles.mostrar).toHaveBeenCalledWith(10);
+    expect(dobles.mostrar).toHaveBeenCalledWith(10, expect.stringContaining('movimiento brusco'));
     expect(servicio.obtener().alerta?.sobreBloqueo).toBe(true);
     expect(dobles.avisar).not.toHaveBeenCalled();
   });
@@ -159,7 +161,7 @@ describe('"¿Todo bien?" sobre la pantalla de bloqueo', () => {
     reproducirCaso('arrebato_moto');
     expect(dobles.mostrar).not.toHaveBeenCalled();
     expect(servicio.obtener().alerta?.sobreBloqueo).toBe(false);
-    expect(dobles.avisar).toHaveBeenCalledWith(10);
+    expect(dobles.avisar).toHaveBeenCalledWith(10, expect.stringContaining('movimiento brusco'));
   });
   it('si Android no deja la pantalla completa, lo registra y usa la notificación normal', () => {
     dobles.mostrar.mockReturnValue(false);
@@ -198,7 +200,7 @@ describe('respaldos del bloqueo', () => {
     dobles.mostrar.mockReturnValue(false);
     reproducirCaso('arrebato_moto');
     expect(servicio.obtener().alerta?.segundosParaFamilia).toBe(25);
-    expect(dobles.avisar).toHaveBeenCalledWith(25);
+    expect(dobles.avisar).toHaveBeenCalledWith(25, expect.stringContaining('movimiento brusco'));
     expect(dobles.enviar).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'alerta', esperaS: 25 }));
     await vi.advanceTimersByTimeAsync(10_000);
     expect(servicio.obtener().alerta?.familia).toBe('esperando');

@@ -12,6 +12,8 @@ export type { Coordenada };
 
 export interface DatosContacto {
   nombre: string;
+  /** Título si no fue un arrebato (robo silencioso: el celular se alejó de su llave). */
+  titulo?: string;
   pasos: Paso[];
   velocidadKmh: number | null;
   horaJalon: string;
@@ -149,7 +151,7 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme }: Props) {
           )}
         </View>
         <T v="titulo" accessibilityRole="header">
-          {cancelada ? `${datos.nombre} está bien` : `Le arrancharon el celular a ${datos.nombre}`}
+          {cancelada ? `${datos.nombre} está bien` : (datos.titulo ?? `Le arrancharon el celular a ${datos.nombre}`)}
         </T>
         <T v="cuerpo15" suave>
           {cancelada

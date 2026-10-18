@@ -12,6 +12,7 @@ Lima, 17 y 18 de octubre de 2026 · Equipo: Gabriel, Cesar, Mauricio, Piero.
 - ¿Y Google? Límites de su bloqueo y apps parecidas: [docs/limites-google-y-apps-parecidas.md](docs/limites-google-y-apps-parecidas.md)
 - Resultados del banco de pruebas: [packages/detector/reportes/evaluacion.md](packages/detector/reportes/evaluacion.md)
 - Rúbrica y contexto del evento: [CONTEXT.md](CONTEXT.md)
+- Robo silencioso (de la mochila o de la mesa) con una llave por Bluetooth: [docs/robo-silencioso-llave.md](docs/robo-silencioso-llave.md)
 
 ## Cómo funciona (en 20 segundos)
 1. **Jalón:** pico de aceleración (≥ 1,5 g sin gravedad) y giro brusco (≥ 4 rad/s) en menos de medio segundo.
@@ -62,6 +63,7 @@ En la web, los sensores solo funcionan con **HTTPS** y abriendo la página direc
 - Reproductor de grabaciones CSV reales en la terminal.
 
 ## Ideas pendientes (todavía no funciona)
+- **Robo silencioso con llave Bluetooth (Android): programado, falta probarlo con dos celulares.** Otro celular hace de llave; si el celular protegido se aleja más de 5 m durante 5 s (modo demo), se bloquea y pregunta "¿Todo bien?"; con el PIN se puede elegir "Olvidé mi llave" (8 h sin vigilarla). Tiene pruebas automáticas con lecturas simuladas, no con un Bluetooth real. La distancia es aproximada (±2 a 3 m) y el celular llave tiene que quedarse con la app abierta. Detalle: [docs/robo-silencioso-llave.md](docs/robo-silencioso-llave.md).
 - **Bloqueo: falta probar** que la ruta GPS siga enviándose con el celular bloqueado, en la calle y con la red avisada.
 - WhatsApp a cualquier persona sin que escriba antes: falta que Meta apruebe las plantillas (en revisión). El SMS ya llega a cualquiera, pero sin enlace (filtro antifraude de Zavu). Ver [docs/avisos-whatsapp-sms.md](docs/avisos-whatsapp-sms.md).
 - Mapa con calles reales en la página del contacto (hoy la ruta real se dibuja sobre un mapa esquemático; el botón abre Google Maps).
@@ -74,7 +76,8 @@ En la web, los sensores solo funcionan con **HTTPS** y abriendo la página direc
 Diseño: [sistema de diseño](https://claude.ai/artifact/HW9kceGpSuZaAxxFtccVMj) y [14 pantallas](https://claude.ai/artifact/3kUXLiWYpeJsixzCv4dpZp). Detalle por flujo (F1–F8) en [PLAN §7](docs/PLAN.md#7-interfaz).
 - **Onboarding (F1):** Bienvenida → Permisos → Contacto (red de confianza, invitación por WhatsApp) → Prueba (un arrebato grabado pasa por el detector real) y PIN.
 - **Inicio (F2):** estado de la protección, lecturas en vivo, pausa de 30 min y apagar con PIN.
-- **Alerta (F4):** "¿Todo bien?" en silencio antes de avisar a tu red; falsa alarma con motivo y PIN.
+- **Alerta (F4):** "¿Todo bien?" en silencio antes de avisar a tu red; falsa alarma con motivo y PIN. Si la alerta vino de la llave, también "Olvidé mi llave".
+- **Llave (Android):** "Este celular es tu llave" (muestra el código y anuncia por Bluetooth) y **Tú › Llave** para vincularla y ver si está cerca.
 - **Contacto (F5)** y **Me robaron (F6):** páginas web, `?ver=contacto` y `?ver=yo`.
 - **Grabar (F7)** evidencia en video o audio (el audio sigue grabando si cambias de pestaña; el video se detiene y se guarda); **Cerca (F8)** mapa con reportes reales de la comunidad a 1 km (backend `/api/reportes`) y "Reportar algo"; la evidencia grabada se sube a R2 (`/api/evidencias`) y queda unida a la alerta abierta; **Tú**: ajustes y herramientas del equipo.
 

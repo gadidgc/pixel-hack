@@ -5,6 +5,7 @@ import { revisarBackend, type SaludBackend } from '../alertas';
 import { abrirAjustesDeFondo, pedirSinOptimizacionBateria, sinOptimizacionBateria } from '../bateria';
 import { PedirPin } from '../componentes/PedirPin';
 import { ConfiguracionBloqueo } from '../componentes/ConfiguracionBloqueo';
+import { ConfiguracionLlave } from '../componentes/ConfiguracionLlave';
 import { guardarPin, verificarPin } from '../pin';
 import { guardarPreferencias } from '../preferencias';
 import { useProteccion, usePreferencias } from '../useProteccion';
@@ -16,7 +17,19 @@ import { RADIO, useTema } from '../ui/tema';
  * Ajustes ("Tú"). Solo muestra lo que de verdad funciona: tu red, el tiempo de "¿Todo bien?", el PIN,
  * los permisos y la batería. "Activarse al salir" y "lugares conocidos" del diseño quedan para después.
  */
-export function Tu({ onPestana, onRed, onHerramientas, onMeRobaron }: { onPestana: (p: Pestana) => void; onRed: () => void; onHerramientas: () => void; onMeRobaron: () => void }) {
+export function Tu({
+  onPestana,
+  onRed,
+  onHerramientas,
+  onMeRobaron,
+  onModoLlave,
+}: {
+  onPestana: (p: Pestana) => void;
+  onRed: () => void;
+  onHerramientas: () => void;
+  onMeRobaron: () => void;
+  onModoLlave: () => void;
+}) {
   const c = useTema();
   const prefs = usePreferencias();
   const { estado } = useProteccion();
@@ -77,6 +90,9 @@ export function Tu({ onPestana, onRed, onHerramientas, onMeRobaron }: { onPestan
         </Grupo>
 
         <ConfiguracionBloqueo />
+
+        {/* Robo silencioso: por ahora solo Android (Bluetooth de bajo consumo, modules/llave-ble). */}
+        {Platform.OS === 'android' && <ConfiguracionLlave onModoLlave={onModoLlave} />}
 
         <Rotulo>PERMISOS Y BATERÍA</Rotulo>
         <Grupo>

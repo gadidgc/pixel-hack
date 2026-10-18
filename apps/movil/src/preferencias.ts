@@ -19,10 +19,19 @@ export interface Preferencias {
   esperaFamiliaS: number;
   /** La protección estaba encendida: si el sistema reabre la app (o se reinicia), vuelve a encenderla sola. */
   proteccionActiva: boolean;
+  /**
+   * La llave del robo silencioso (otro celular por Bluetooth): su código de vinculación y la señal medida
+   * a 1 m al vincularla (dBm). `null` sin llave.
+   */
+  llave: { codigo: string; rssiA1m: number } | null;
+  /** "Olvidé mi llave": hasta cuándo no se vigila (época ms). `null` si se vigila. */
+  llaveIgnoradaHasta: number | null;
+  /** Si ESTE celular hace de llave de otro: su código (fijo, para no tener que vincular otra vez). */
+  codigoComoLlave: string | null;
 }
 
 const CLAVE = 'alerta-arrebato-preferencias';
-const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false };
+const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false, llave: null, llaveIgnoradaHasta: null, codigoComoLlave: null };
 
 let actuales: Preferencias = INICIAL;
 let cargadas = false;

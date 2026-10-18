@@ -17,6 +17,7 @@ import { Grabar } from './src/pantallas/Grabar';
 import { Herramientas } from './src/pantallas/Herramientas';
 import { Inicio } from './src/pantallas/Inicio';
 import { MeRobaron } from './src/pantallas/MeRobaron';
+import { ModoLlave } from './src/pantallas/ModoLlave';
 import { Permisos } from './src/pantallas/Permisos';
 import { Prueba } from './src/pantallas/Prueba';
 import { TodoBien } from './src/pantallas/TodoBien';
@@ -54,9 +55,26 @@ function datosDeLaAlerta(estado: EstadoProteccion, nombre: string): DatosContact
   const a = estado.alerta;
   if (!a) return EJEMPLO_CONTACTO;
   const v = a.evento.velocidadMs;
+  const quien = nombre || 'tu contacto';
+  if (a.evento.via === 'separacion_llave') {
+    // Robo silencioso: no hubo jalón; su celular se alejó de su llave (de la mochila o de la mesa).
+    return {
+      nombre: quien,
+      titulo: `El celular de ${quien} se alejó de su llave`,
+      pasos: [
+        { hora: hora(a.evento.t, true), texto: 'Su celular siguió lejos de su llave', clave: true, ahora: true },
+        { hora: hora(a.evento.tJalon, true), texto: 'Su celular se alejó de su llave', clave: true },
+      ],
+      velocidadKmh: null,
+      ruta: servicio.rutaReciente(),
+      jalon: a.evento.posicionJalon,
+      horaJalon: hora(a.evento.tJalon),
+      haceTexto: `hace ${Math.max(0, Math.round((Date.now() - a.evento.tJalon) / 1000))} s`,
+    };
+  }
   // El contacto solo ve el robo (jalón y huida), no los pasos internos de la app.
   return {
-    nombre: nombre || 'tu contacto',
+    nombre: quien,
     pasos: [
       { hora: hora(a.evento.t, true), texto: v === null ? 'Huida confirmada' : `Huida en vehículo confirmada · ${Math.round(v * 3.6)} km/h`, clave: true, ahora: true },
       { hora: hora(a.evento.tJalon, true), texto: 'Jalón: le arrancharon el celular', clave: true },
@@ -110,6 +128,8 @@ function Navegacion() {
   const [paso, setPaso] = useState<PasoBienvenida>('bienvenida');
   const [pestana, setPestana] = useState<Pestana>('inicio');
   const [extra, setExtra] = useState<Extra>(null);
+  // Este celular hace de llave de otro (robo silencioso): también antes del primer uso.
+  const [modoLlave, setModoLlave] = useState(false);
   const web = paginaWeb();
   // Grabar se monta la primera vez que la abres y ya no se desmonta (ver Grabar.tsx).
   const [grabarMontado, setGrabarMontado] = useState(false);
@@ -128,6 +148,7 @@ function Navegacion() {
   if (web?.tipo === 'contacto') return <ContactoEnVivo id={web.id} contacto={web.contacto} />;
   if (web?.tipo === 'yo') return <MeRobaron />;
   if (!prefs) return <View style={{ flex: 1, backgroundColor: COLORES.noche.fondo }} />;
+  if (modoLlave && !estado.alerta) return <ModoLlave onSalir={() => setModoLlave(false)} />;
 
   // F1 · Primer uso
   if (!prefs.bienvenidaHecha) {
@@ -135,7 +156,7 @@ function Navegacion() {
       await guardarPreferencias({ bienvenidaHecha: true });
       void servicio.activar();
     };
-    if (paso === 'bienvenida') return <Bienvenida onSeguir={() => setPaso('permisos')} />;
+    if (paso === 'bienvenida') return <Bienvenida onSeguir={() => setPaso('permisos')} onModoLlave={Platform.OS === 'android' ? () => setModoLlave(true) : undefined} />;
     if (paso === 'permisos') return <Permisos onSeguir={() => setPaso('contacto')} onVolver={() => setPaso('bienvenida')} />;
     if (paso === 'contacto') return <Contacto onSeguir={() => setPaso('prueba')} onVolver={() => setPaso('permisos')} />;
     return <Prueba onListo={terminar} onVolver={() => setPaso('contacto')} />;
@@ -164,7 +185,9 @@ function Navegacion() {
   } else if (pestana === 'grabar') {
     enGrabar = true;
   } else if (pestana === 'tu') {
-    contenido = <Tu onPestana={setPestana} onRed={() => setExtra('red')} onHerramientas={() => setExtra('herramientas')} onMeRobaron={() => setExtra('meRobaron')} />;
+    contenido = (
+      <Tu onPestana={setPestana} onRed={() => setExtra('red')} onHerramientas={() => setExtra('herramientas')} onMeRobaron={() => setExtra('meRobaron')} onModoLlave={() => setModoLlave(true)} />
+    );
   } else {
     contenido = <Inicio onPestana={setPestana} onCerca={() => setPestana('cerca')} />;
   }
