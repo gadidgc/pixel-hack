@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Pressable, Switch, View } from 'react-native';
+import { Alert, Pressable, Switch, View } from 'react-native';
 import { hayBackend } from '../alertas';
+import { consultarBloqueo, faltaParaBloqueo } from '../bloqueo';
 import { ETIQUETAS, type Etiqueta } from '../grabadora';
 import { correrSimulacion, ESCENARIOS_APP, type ResultadoSimulacion } from '../simulacion';
 import { describirEvento, useProteccion } from '../useProteccion';
@@ -68,6 +69,34 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
         icono="movimiento"
         deshabilitado={!estado.activa}
         onPress={estado.grabando ? () => void servicio.detenerGrabacion() : () => servicio.empezarGrabacion(etiqueta)}
+      />
+
+      <Rotulo>ENSAYAR LA ALERTA COMPLETA</Rotulo>
+      <T v="apoyo" suave>
+        En 5 s dispara una alerta de verdad con un arrebato simulado: bloquea el celular, pregunta "¿Todo bien?" sobre la pantalla de bloqueo y avisa a tu red si no cancelas con tu PIN. Sal a otra app o apaga la pantalla para probarlo.
+      </T>
+      <Boton
+        texto={!estado.activa ? 'Activa la protección para ensayar' : 'Ensayar en 5 s'}
+        variante="secundario"
+        principal={false}
+        deshabilitado={!estado.activa || Boolean(estado.alerta)}
+        onPress={() => {
+          // Se revisa en el momento: si falta algo, se dice ANTES de ensayar (en el Samsung no se bloqueó por esto).
+          const bloqueo = consultarBloqueo();
+          const falta = faltaParaBloqueo(bloqueo);
+          Alert.alert(
+            'Ensayar la alerta completa',
+            falta
+              ? `Ojo: ${falta} Así el celular NO se bloqueará: solo verás la notificación y se avisará a tu red si no cancelas. Arréglalo en Tú › Bloqueo antirrobo.`
+              : bloqueo.disponible
+                ? 'Es una alerta real: bloquea el celular y, si no cancelas con tu PIN a tiempo, avisa a tu red.'
+                : 'Es una alerta real: este celular no se puede bloquear desde la app (iPhone o web), pero verás el "¿Todo bien?" y, si no cancelas con tu PIN a tiempo, se avisará a tu red.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              falta ? { text: 'Ir a arreglarlo', onPress: onVolver } : { text: 'Ensayar', onPress: () => servicio.ensayarAlertaCompleta(5) },
+            ],
+          );
+        }}
       />
 
       <Rotulo>SIMULAR (SIN MOVERSE)</Rotulo>

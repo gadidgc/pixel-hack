@@ -14,13 +14,15 @@ interface Props {
   /** Al crear el PIN se pide dos veces. */
   crear?: boolean;
   textoConfirmar?: string;
+  /** Si el PIN no sirvió por otra razón (por ejemplo, demasiados intentos), el mensaje a mostrar. */
+  mensajeError?: () => string | null;
 }
 
 /**
  * Ventana para escribir (o crear) el PIN del dueño. Cancelar una alerta, pausar o apagar la protección
  * nunca es un botón simple: pide el PIN (components/Boton y components/AvisoDiscreto).
  */
-export function PedirPin({ visible, titulo, explicacion, alConfirmar, alCerrar, crear = false, textoConfirmar }: Props) {
+export function PedirPin({ visible, titulo, explicacion, alConfirmar, alCerrar, crear = false, textoConfirmar, mensajeError }: Props) {
   const c = useTema();
   const [pin, setPin] = useState('');
   const [repetir, setRepetir] = useState('');
@@ -41,7 +43,7 @@ export function PedirPin({ visible, titulo, explicacion, alConfirmar, alCerrar, 
     const ok = await alConfirmar(pin).catch(() => false);
     setOcupado(false);
     if (ok) cerrar();
-    else setError(crear ? 'No se pudo guardar el PIN.' : 'PIN incorrecto.');
+    else setError(crear ? 'No se pudo guardar el PIN.' : (mensajeError?.() ?? 'PIN incorrecto.'));
   };
 
   const campo = {

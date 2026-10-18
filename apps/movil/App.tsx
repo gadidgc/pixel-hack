@@ -5,7 +5,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { usePantallaBloqueada } from './src/bloqueo';
 import { guardarPreferencias } from './src/preferencias';
+import { AlertaSobreBloqueo } from './src/pantallas/AlertaSobreBloqueo';
 import { Bienvenida } from './src/pantallas/Bienvenida';
 import { Cerca } from './src/pantallas/Cerca';
 import { Contacto } from './src/pantallas/Contacto';
@@ -115,6 +117,8 @@ function Navegacion() {
     if (pestana === 'grabar') setGrabarMontado(true);
   }, [pestana]);
   const listas = Boolean(prefs?.bienvenidaHecha);
+  // Con la app encima de la pantalla de bloqueo, solo se ve el "¿Todo bien?": nada de pestañas ni ajustes.
+  const bloqueada = usePantallaBloqueada(Boolean(estado.alerta?.sobreBloqueo));
   useEffect(() => {
     if (listas && !web && Platform.OS !== 'web') void servicio.reanudarSiEstabaActiva();
     // Solo al abrir la app.
@@ -136,6 +140,8 @@ function Navegacion() {
     if (paso === 'contacto') return <Contacto onSeguir={() => setPaso('prueba')} onVolver={() => setPaso('permisos')} />;
     return <Prueba onListo={terminar} onVolver={() => setPaso('contacto')} />;
   }
+
+  if (estado.alerta?.sobreBloqueo && bloqueada) return <AlertaSobreBloqueo />;
 
   // Durante una alerta: cuando ya se avisó (o se está avisando) a la red, esa pantalla manda.
   const alerta = estado.alerta;

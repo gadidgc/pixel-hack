@@ -12,6 +12,7 @@ import {
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Platform } from 'react-native';
 import { enviar, hayBackend, type ResultadoEnvio } from './alertas';
+import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, type ResultadoBloqueo } from './bloqueo';
 import { Grabadora, type Etiqueta } from './grabadora';
 import { avisarTodoBien, pedirPermisoNotificaciones, quitarAviso } from './notificaciones';
 import { hayPin, verificarPin } from './pin';
@@ -44,6 +45,10 @@ export interface PasoAlerta {
 
 export interface AlertaEnCurso {
   evento: Extract<EventoDetector, { tipo: 'alerta' }>;
+  /** Orden del sistema, independiente del envío al panel y del PIN de la app. */
+  bloqueo: ResultadoBloqueo | null;
+  /** El "¿Todo bien?" se muestra encima de la pantalla de bloqueo: se cancela sin desbloquear Android. */
+  sobreBloqueo: boolean;
   /** Resultado del envío al panel; `null` mientras se envía. */
   panel: ResultadoEnvio | null;
   familia: EstadoFamilia;
@@ -93,6 +98,12 @@ export function describirEvento(e: EventoDetector): string {
   }
 }
 
+/** Segundos extra para avisar a la red cuando el dueño tiene que desbloquear Android antes de cancelar. */
+export const SEGUNDOS_EXTRA_DESBLOQUEO = 15;
+/** PIN incorrectos seguidos antes de hacer esperar, y cuánto (crece con cada intento de más). */
+const INTENTOS_PIN = 5;
+const ESPERA_PIN_MS = 30_000;
+
 class ServicioProteccion {
   private estado: EstadoProteccion = {
     activa: false,
@@ -121,6 +132,10 @@ class ServicioProteccion {
   private cuentaPendiente: { evento: Extract<EventoDetector, { tipo: 'alerta' }>; nombre: string; contactos: Contacto[]; limite: number } | null = null;
   private ultimaRevisionCuenta = 0;
   private idNotificacion: string | null = null;
+  private ensayo: { hora: number; plantilla: Extract<EventoDetector, { tipo: 'alerta' }> } | null = null;
+  private envioAlerta: Promise<ResultadoEnvio> | null = null;
+  private pinFallidos = 0;
+  private pinEsperarHasta = 0;
 
   obtener(): EstadoProteccion {
     return this.estado;
@@ -132,7 +147,10 @@ class ServicioProteccion {
   }
 
   private cambiar(cambios: Partial<EstadoProteccion>): void {
+    const antes = this.estado.alerta;
     this.estado = { ...this.estado, ...cambios };
+    // Terminó la alerta: la app deja de verse sobre la pantalla de bloqueo y vuelve la de Android.
+    if (antes?.sobreBloqueo && !this.estado.alerta) ocultarSobreBloqueo();
     for (const o of this.oyentes) o(this.estado);
   }
 
@@ -281,16 +299,28 @@ class ServicioProteccion {
    * falsa alarma.
    */
   async cancelarAlerta(pin: string): Promise<boolean> {
+    if (this.mensajePin()) return false;
     if (!(await verificarPin(pin))) {
+      this.pinFallidos++;
+      if (this.pinFallidos >= INTENTOS_PIN) {
+        // Sobre la pantalla de bloqueo cualquiera puede probar PINs: frenamos el adivinar por fuerza bruta.
+        this.pinEsperarHasta = Date.now() + ESPERA_PIN_MS * (this.pinFallidos - INTENTOS_PIN + 1);
+      }
       this.registrar('PIN incorrecto: la alerta sigue.', 'error');
       return false;
     }
+    this.pinFallidos = 0;
+    this.pinEsperarHasta = 0;
     const alerta = this.estado.alerta;
     this.detenerCuentaFamilia();
     void quitarAviso(this.idNotificacion);
-    const eventos = this.detector.cancelar();
-    if (alerta && (alerta.panel?.enviado || alerta.familia === 'avisada')) {
-      for (const e of eventos) void enviar({ tipo: 'cancelada', evento: e });
+    this.detector.cancelar();
+    // El backend cuenta por su lado y avisa a la red si no le llega "cancelada". Se manda SIEMPRE que haya
+    // backend (también en un ensayo, donde el detector no tiene alerta, y aunque el envío de la alerta siga
+    // en camino): esperamos a que llegue la alerta para que "cancelada" no llegue antes que ella.
+    if (alerta && hayBackend()) {
+      const evento = alerta.evento;
+      void (this.envioAlerta ?? Promise.resolve()).finally(() => void enviar({ tipo: 'cancelada', evento }));
     }
     this.cambiar({ alerta: null });
     this.registrar(
@@ -301,6 +331,12 @@ class ServicioProteccion {
     return true;
   }
 
+  /** Si hubo demasiados PIN incorrectos, cuánto falta para poder intentar de nuevo; si no, `null`. */
+  mensajePin(): string | null {
+    const faltan = Math.ceil((this.pinEsperarHasta - Date.now()) / 1000);
+    return faltan > 0 ? `Demasiados intentos. Espera ${faltan} s para volver a intentar.` : null;
+  }
+
   /** Motivo opcional de una falsa alarma ("Iba en auto", "Se me cayó"…): nos ayuda a mejorar el detector. */
   enviarMotivo(motivo: string): void {
     if (hayBackend()) void enviar({ tipo: 'motivo_falsa_alarma', motivo });
@@ -308,11 +344,28 @@ class ServicioProteccion {
   }
 
   private iniciarAlerta(evento: Extract<EventoDetector, { tipo: 'alerta' }>): void {
-    const espera = preferencias().esperaFamiliaS;
+    const elegida = preferencias().esperaFamiliaS;
+    // Los intentos de PIN cuentan por alerta: errores de otros días no deben dejar a la dueña sin poder cancelar.
+    this.pinFallidos = 0;
+    this.pinEsperarHasta = 0;
     const conVelocidad = evento.velocidadMs !== null ? ` y luego ${Math.round(evento.velocidadMs * 3.6)} km/h` : '';
+
+    // 0) Bloqueo de Android, lo primero: si el celular estaba desbloqueado en la mano, cada segundo cuenta.
+    // Es síncrono y no espera al servidor ni a la cuenta para avisar a la familia.
+    const bloqueo = bloquearAlDetectar();
+    // Con el celular bloqueado, el "¿Todo bien?" se abre ENCIMA de la pantalla de bloqueo (como un
+    // despertador): el dueño cancela con el PIN de la app sin tener que desbloquear Android primero.
+    const sobreBloqueo = bloqueo.estado === 'solicitado' && mostrarSobreBloqueo(elegida);
+    // Respaldo: si Android no deja la pregunta sobre el bloqueo, el dueño tiene que desbloquear Android
+    // antes de escribir el PIN. Le damos 15 s más para que una falsa alarma no avise a su familia.
+    const extra = bloqueo.estado === 'solicitado' && !sobreBloqueo ? SEGUNDOS_EXTRA_DESBLOQUEO : 0;
+    const espera = elegida + extra;
+
     this.cambiar({
       alerta: {
         evento,
+        bloqueo,
+        sobreBloqueo,
         panel: null,
         familia: 'esperando',
         detalleFamilia: '',
@@ -325,11 +378,17 @@ class ServicioProteccion {
         ],
       },
     });
-    void avisarTodoBien(espera).then((id) => (this.idNotificacion = id));
+    this.registrar(`Bloqueo de pantalla: ${bloqueo.detalle}`, bloqueo.estado === 'solicitado' ? 'info' : 'aviso');
+    if (bloqueo.estado === 'solicitado' && !sobreBloqueo) {
+      this.registrar(`Android no deja mostrar el "¿Todo bien?" sobre la pantalla de bloqueo: para cancelar hay que desbloquear. Esperamos ${extra} s más antes de avisar.`, 'aviso');
+    }
+    // Sobre la pantalla de bloqueo ya va nuestro aviso de pantalla completa; no repetimos la notificación.
+    if (!sobreBloqueo) void avisarTodoBien(espera).then((id) => (this.idNotificacion = id));
 
     // 1) Al panel, al instante y en silencio, con la ruta de los últimos segundos.
     const { nombre, contactos } = preferencias();
-    void enviar({ tipo: 'alerta', evento, ruta: [...this.ruta], nombre, contactos, esperaS: espera }).then((panel) => {
+    this.envioAlerta = enviar({ tipo: 'alerta', evento, ruta: [...this.ruta], nombre, contactos, esperaS: espera });
+    void this.envioAlerta.then((panel) => {
       if (this.estado.alerta?.evento !== evento) return;
       this.cambiar({ alerta: { ...this.estado.alerta, panel, enlace: panel.enlace ?? this.estado.alerta.enlace } });
       this.registrar(`Panel: ${panel.detalle}`, panel.enviado ? 'info' : 'aviso');
@@ -409,6 +468,34 @@ class ServicioProteccion {
     };
   }
 
+  /**
+   * Ensayo de la alerta COMPLETA para el equipo y la demo (sin moto): en `retrasoS` segundos dispara una
+   * alerta real con un arrebato simulado: bloquea Android, muestra el "¿Todo bien?" sobre el bloqueo,
+   * avisa al panel y, si nadie cancela con el PIN, a la red. El retraso deja tiempo para ir a otra app o
+   * apagar la pantalla y probar que la pregunta aparece igual.
+   */
+  ensayarAlertaCompleta(retrasoS: number): boolean {
+    if (!this.estado.activa || this.estado.alerta) return false;
+    const r = reproducir(simular('arrebato_moto', 1).entradas, CONFIG_POR_DEFECTO);
+    if (!r.alerta) return false;
+    const plantilla = r.alerta;
+    this.registrar(`Ensayo: alerta completa en ${retrasoS} s (bloquea de verdad y avisa si no cancelas).`, 'aviso');
+    this.ensayo = { hora: Date.now() + retrasoS * 1000, plantilla };
+    // Con la app en segundo plano los temporizadores de JS se congelan: también se revisa con cada lote
+    // de sensores (alImu), igual que la cuenta para avisar a la familia.
+    setTimeout(() => this.revisarEnsayo(), retrasoS * 1000);
+    return true;
+  }
+
+  private revisarEnsayo(): void {
+    const e = this.ensayo;
+    if (!e || Date.now() < e.hora) return;
+    this.ensayo = null;
+    if (!this.estado.activa || this.estado.alerta) return;
+    const t = Date.now();
+    this.atender([{ ...e.plantilla, t, tJalon: t - (e.plantilla.t - e.plantilla.tJalon) }]);
+  }
+
   // --- Datos -------------------------------------------------------------------------------------------
 
   private atender(eventos: EventoDetector[]): void {
@@ -430,6 +517,7 @@ class ServicioProteccion {
       this.revisarCuentaFamilia();
     }
     this.grabadora.agregar({ tipo: 'imu', muestra: m });
+    if (this.ensayo) this.revisarEnsayo();
     if (this.enPausa()) return;
     this.atender(this.detector.procesarImu(m));
   }
@@ -438,7 +526,7 @@ class ServicioProteccion {
     this.grabadora.agregar({ tipo: 'gps', lectura: l });
     this.ruta = [...this.ruta.filter((x) => l.t - x.t <= 60_000), l];
     // Durante una alerta mandamos la ruta de huida en vivo (1 lectura por segundo, solo en ese momento).
-    if (this.detector.estado === 'alerta' && hayBackend()) void enviar({ tipo: 'ubicacion', lectura: l });
+    if ((this.detector.estado === 'alerta' || this.estado.alerta) && hayBackend()) void enviar({ tipo: 'ubicacion', lectura: l });
     if (!this.estado.tieneGps) this.cambiar({ tieneGps: true });
     if (this.enPausa()) return;
     this.atender(this.detector.procesarGps(l));

@@ -1,0 +1,37 @@
+name: Compilar bloqueo Android
+on:
+  pull_request:
+    paths:
+      - 'apps/movil/**'
+      - 'packages/detector/**'
+      - 'package*.json'
+      - '.github/workflows/compilar-bloqueo-android.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EXPO_PUBLIC_URL_ALERTAS: ninguno
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: npm ci
+      - run: npm run test -w @pixel-hack/movil
+      - run: npm run typecheck
+      - run: npx expo prebuild --platform android --no-install
+        working-directory: apps/movil
+      - name: Compilar APK con el módulo de bloqueo
+        working-directory: apps/movil/android
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --no-daemon
