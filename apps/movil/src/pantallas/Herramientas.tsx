@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Alert, Pressable, Switch, View } from 'react-native';
+import { Alert, Platform, Pressable, Share, Switch, View } from 'react-native';
 import { hayBackend } from '../alertas';
 import { consultarBloqueo, faltaParaBloqueo } from '../bloqueo';
 import { textoEstadoLlave } from '../componentes/ConfiguracionLlave';
+import { diagnosticoSensores } from '../sensores';
+import type { EstadoProteccion } from '../servicio';
 import { ETIQUETAS, type Etiqueta } from '../grabadora';
 import { correrSimulacion, ESCENARIOS_APP, type ResultadoSimulacion } from '../simulacion';
 import { describirEvento, useProteccion } from '../useProteccion';
@@ -20,6 +22,23 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
   const [etiqueta, setEtiqueta] = useState<Etiqueta>('caminar');
   const [simulacion, setSimulacion] = useState<ResultadoSimulacion | null>(null);
   const tel = estado.telemetria;
+  const [copiado, setCopiado] = useState(false);
+
+  async function compartirRegistro() {
+    const texto = textoRegistro(estado);
+    try {
+      if (Platform.OS === 'web') {
+        await navigator.clipboard.writeText(texto);
+        setCopiado(true);
+        setTimeout(() => setCopiado(false), 2000);
+      } else {
+        // Hoja de compartir del sistema: trae "Copiar" y también WhatsApp, correo, etc.
+        await Share.share({ message: texto });
+      }
+    } catch {
+      servicio.registrar('No se pudo copiar el registro.', 'error');
+    }
+  }
 
   return (
     <Pantalla style={{ gap: 16 }}>
@@ -153,6 +172,39 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
           </T>
         ))}
       </Tarjeta>
+      <Boton
+        texto={copiado ? 'Copiado' : 'Copiar registro'}
+        variante="secundario"
+        principal={false}
+        icono="compartir"
+        onPress={() => void compartirRegistro()}
+      />
     </Pantalla>
   );
+}
+
+/**
+ * El registro como texto para pegarlo en el chat del equipo. Arriba van los datos del celular y del estado,
+ * para saber de un vistazo si faltó un permiso, si está en Expo Go o si el modo demo estaba apagado.
+ */
+function textoRegistro(estado: EstadoProteccion): string {
+  const sino = (v: boolean | null) => (v === null ? '—' : v ? 'sí' : 'no');
+  const constantes = Platform.constants as { Brand?: string; Model?: string };
+  const celular = Platform.OS === 'android' ? `${constantes.Brand ?? ''} ${constantes.Model ?? ''}`.trim() : Platform.OS;
+  const diag = diagnosticoSensores();
+  const tel = estado.telemetria;
+  const lineas = [
+    'Alerta Arrebato · registro',
+    `Celular: ${celular} (${Platform.OS} ${Platform.Version})`,
+    `Protección: ${estado.activa ? 'activa' : 'apagada'} · Modo demo: ${sino(estado.modoDemo)} · Segundo plano: ${sino(estado.segundoPlano)}`,
+    `Giroscopio: ${sino(estado.tieneGiroscopio)} · GPS: ${sino(estado.tieneGps)} · Permisos que faltan: ${estado.permisosFaltantes.length ? estado.permisosFaltantes.join(', ') : 'ninguno'}`,
+    diag
+      ? `Sensores: ${diag.muestras} muestras, última hace ${diag.msDesdeUltimaMuestra} ms, ${diag.reinicios} reinicios, wake lock ${sino(diag.wakeLock)}`
+      : 'Sensores: sin módulo nativo (Expo Go o web)',
+    tel ? `Ahora: ${tel.estado} · ${tel.aceleracionLinealG.toFixed(2)} g · giro ${tel.giroRadS?.toFixed(1) ?? '—'} rad/s` : 'Ahora: —',
+    '',
+    // En pantalla el más nuevo va arriba; para leerlo como historia, del más viejo al más nuevo.
+    ...[...estado.registros].reverse().map((r) => `${hora(r.t, true)} [${r.tipo}] ${r.texto}`),
+  ];
+  return lineas.join('\n');
 }
