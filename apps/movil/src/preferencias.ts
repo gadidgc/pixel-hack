@@ -52,6 +52,11 @@ export interface Preferencias {
   proteccionActiva: boolean;
   bloqueo: PerfilBloqueo;
   /**
+   * Id anónimo de esta instalación (no es un dato personal). Se guarda para que no cambie al reabrir la app:
+   * con él la dueña cancela con su PIN una alerta enviada antes de que el sistema cerrara la app.
+   */
+  dispositivo: string;
+  /**
    * iPhone: el número de la propia dueña. Al confirmar un arrebato le mandamos un SMS con la palabra de
    * bloqueo y su automatización de Atajos bloquea la pantalla. Vacío = no lo configuró.
    */
@@ -73,7 +78,19 @@ export function perfilParaEnviar(p: PerfilBloqueo): Partial<PerfilBloqueo> | und
 }
 
 const CLAVE = 'alerta-arrebato-preferencias';
-const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false, bloqueo: PERFIL_VACIO, numeroPropio: '' };
+const INICIAL: Preferencias = {
+  bienvenidaHecha: false,
+  nombre: '',
+  contactos: [],
+  esperaFamiliaS: 10,
+  proteccionActiva: false,
+  bloqueo: PERFIL_VACIO,
+  dispositivo: '',
+  numeroPropio: '',
+};
+
+/** Id para esta sesión hasta que carguen las preferencias (o si no se pueden guardar). */
+const DISPOSITIVO_RESPALDO = `${Platform.OS}-${Math.random().toString(36).slice(2, 10)}`;
 
 let actuales: Preferencias = INICIAL;
 let cargadas = false;
@@ -114,8 +131,17 @@ export async function cargarPreferencias(): Promise<Preferencias> {
     actuales = INICIAL;
   }
   cargadas = true;
+  if (!actuales.dispositivo) {
+    // Primera vez (o versión anterior de la app): fijamos el id de esta instalación.
+    actuales = { ...actuales, dispositivo: DISPOSITIVO_RESPALDO };
+    await escribir(JSON.stringify(actuales)).catch(() => undefined);
+  }
   for (const o of oyentes) o(actuales);
   return actuales;
+}
+
+export function idDispositivo(): string {
+  return actuales.dispositivo || DISPOSITIVO_RESPALDO;
 }
 
 export function preferencias(): Preferencias {

@@ -79,7 +79,7 @@ export async function reportar(tipo: TipoReporte, nota: string, pos: { lat: numb
   const r = await pedir('/api/reportes', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dispositivo: idDispositivo, tipo, nota: nota.trim() || undefined, lat: pos.lat, lon: pos.lon }),
+    body: JSON.stringify({ dispositivo: idDispositivo(), tipo, nota: nota.trim() || undefined, lat: pos.lat, lon: pos.lon }),
   });
   if (!r.ok) return r;
   return { ok: true, datos: r.datos.reporte as Reporte };

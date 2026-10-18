@@ -10,7 +10,7 @@ export const MAX_BYTES = 50 * 1024 * 1024;
 
 /** La posición va en cabeceras (no en la URL) para que no quede en los registros. */
 export function cabecerasEvidencia(mime: string, pos: { lat: number; lon: number } | null): Record<string, string> {
-  const h: Record<string, string> = { 'Content-Type': mime, 'X-Dispositivo': idDispositivo };
+  const h: Record<string, string> = { 'Content-Type': mime, 'X-Dispositivo': idDispositivo() };
   if (pos) {
     h['X-Lat'] = pos.lat.toFixed(5);
     h['X-Lon'] = pos.lon.toFixed(5);
