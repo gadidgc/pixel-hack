@@ -68,7 +68,7 @@ function datosDeLaAlerta(estado: EstadoProteccion, nombre: string): DatosContact
 }
 
 export default function App() {
-  const [fuentes] = useFonts({
+  const [fuentes, errorFuentes] = useFonts({
     Lexend_300Light,
     Lexend_500Medium,
     Lexend_600SemiBold,
@@ -78,11 +78,19 @@ export default function App() {
     IBMPlexMono_400Regular,
     IBMPlexMono_500Medium,
   });
+  // Si una fuente falla o tarda (red lenta, Safari de iPhone), abrimos igual con la letra del sistema:
+  // la página del contacto no puede quedarse en un círculo de carga.
+  const [sinEsperar, setSinEsperar] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setSinEsperar(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
+  const listo = fuentes || Boolean(errorFuentes) || sinEsperar;
   return (
     <SafeAreaProvider>
       <TemaContexto.Provider value={COLORES.noche}>
         <StatusBar style="light" />
-        {fuentes ? (
+        {listo ? (
           <Navegacion />
         ) : (
           <View style={{ flex: 1, backgroundColor: COLORES.noche.fondo, alignItems: 'center', justifyContent: 'center' }}>
