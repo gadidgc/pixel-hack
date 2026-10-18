@@ -3,6 +3,7 @@ import { FiltroGravedad } from './filtro-gravedad';
 import { distanciaM } from './geo';
 import { G, autocorrelacionMaxima, desviacion, mediana, norma, VentanaTemporal } from './matematica';
 import type {
+  DiagnosticoDescarte,
   EstadoDetector,
   EventoDetector,
   LecturaGps,
@@ -41,6 +42,12 @@ interface JalonEnCurso {
   quietoPendiente: number | null;
   /** El GPS mostró movimiento (más que caminar) después del jalón. */
   movimientoVisto: boolean;
+  /** Para el diagnóstico del descarte (no se usa para decidir). */
+  lecturasGps: number;
+  lecturasGpsValidas: number;
+  mejorPrecisionM: number | null;
+  maxVelocidadMs: number | null;
+  maxDesplazamientoM: number | null;
 }
 
 const TELEMETRIA_INICIAL: Telemetria = {
@@ -165,7 +172,13 @@ export class DetectorArrebato {
     if (valida) this.tGpsAnterior = l.t;
 
     const jalon = this.jalon;
+    if (this.estadoActual === 'posible_jalon' && jalon && l.t > jalon.t) {
+      jalon.lecturasGps++;
+      if (l.precision !== null) jalon.mejorPrecisionM = Math.min(jalon.mejorPrecisionM ?? Infinity, l.precision);
+    }
     if (this.estadoActual === 'posible_jalon' && jalon && valida && l.t > jalon.t) {
+      jalon.lecturasGpsValidas++;
+      if (velocidad !== null) jalon.maxVelocidadMs = Math.max(jalon.maxVelocidadMs ?? 0, velocidad);
       jalon.huboGpsValido = true;
       jalon.ultimaVelocidad = velocidad;
       const posicion: PosicionSimple = { t: l.t, lat: l.lat, lon: l.lon, precision: l.precision };
@@ -176,6 +189,7 @@ export class DetectorArrebato {
       }
 
       const desplazamiento = distanciaM(jalon.posicion.lat, jalon.posicion.lon, l.lat, l.lon);
+      jalon.maxDesplazamientoM = Math.max(jalon.maxDesplazamientoM ?? 0, desplazamiento);
       // El desplazamiento solo cuenta si es claramente mayor que el error de las dos lecturas.
       const errorConjunto = (jalon.posicion.precision ?? 10) + (l.precision ?? 10);
       // Y la velocidad promedio desde el jalón también debe ser de huida (40 m en 10 s también se hacen en bici).
@@ -372,7 +386,7 @@ export class DetectorArrebato {
     const { si: enVehiculo, velocidadPrevia } = this.yaEnVehiculo(t);
     if (enVehiculo) {
       this.tUltimoDescarte = t;
-      eventos.push({ tipo: 'descartado', t, motivo: 'ya_en_vehiculo', tJalon: t });
+      eventos.push({ tipo: 'descartado', t, motivo: 'ya_en_vehiculo', tJalon: t, diagnostico: null });
       return;
     }
 
@@ -391,6 +405,11 @@ export class DetectorArrebato {
       huidaVista: false,
       quietoPendiente: null,
       movimientoVisto: false,
+      lecturasGps: 0,
+      lecturasGpsValidas: 0,
+      mejorPrecisionM: null,
+      maxVelocidadMs: null,
+      maxDesplazamientoM: null,
     };
     this.estadoActual = 'posible_jalon';
     eventos.push({
@@ -515,8 +534,22 @@ export class DetectorArrebato {
     });
   }
 
+  private diagnosticar(t: number): DiagnosticoDescarte | null {
+    const jalon = this.jalon;
+    if (!jalon) return null;
+    const valores = this.magnitudes.entre(jalon.t + 1000, t).map((e) => e.dato);
+    return {
+      lecturasGps: jalon.lecturasGps,
+      lecturasGpsValidas: jalon.lecturasGpsValidas,
+      mejorPrecisionM: jalon.mejorPrecisionM,
+      maxVelocidadMs: jalon.maxVelocidadMs,
+      maxDesplazamientoM: jalon.maxDesplazamientoM,
+      energiaG: valores.length >= 10 ? desviacion(valores) : null,
+    };
+  }
+
   private descartar(t: number, motivo: MotivoDescarte, eventos: EventoDetector[]): void {
-    eventos.push({ tipo: 'descartado', t, motivo, tJalon: this.jalon?.t ?? null });
+    eventos.push({ tipo: 'descartado', t, motivo, tJalon: this.jalon?.t ?? null, diagnostico: this.diagnosticar(t) });
     // Guardamos el jalón por si la huida aparece tarde (segunda oportunidad). Un "cancelado" no cuenta.
     this.descartado =
       this.jalon && this.config.segundaOportunidades.includes(motivo) ? { jalon: this.jalon, t, lecturasRapidas: 0 } : null;

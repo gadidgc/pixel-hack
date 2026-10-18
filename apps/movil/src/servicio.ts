@@ -9,6 +9,7 @@ import {
   type ConfigDetector,
   type EspacioDemo,
   type EventoDetector,
+  type DiagnosticoDescarte,
   type LecturaGps,
   type MuestraImu,
   type Telemetria,
@@ -95,12 +96,22 @@ export interface ResultadoPrueba {
   envio: ResultadoEnvio;
 }
 
+/** "GPS 6 (4 válidas, ±12 m) · máx 1.8 m/s · 7 m · energía 0.42 g": para saber por qué no hubo alerta. */
+export function describirDiagnostico(d: DiagnosticoDescarte): string {
+  const precision = d.mejorPrecisionM !== null ? `, ±${Math.round(d.mejorPrecisionM)} m` : '';
+  const gps = `GPS ${d.lecturasGps} (${d.lecturasGpsValidas} válidas${precision})`;
+  const velocidad = d.maxVelocidadMs !== null ? ` · máx ${d.maxVelocidadMs.toFixed(1)} m/s` : ' · sin velocidad';
+  const metros = d.maxDesplazamientoM !== null ? ` · ${Math.round(d.maxDesplazamientoM)} m` : '';
+  const energia = d.energiaG !== null ? ` · energía ${d.energiaG.toFixed(2)} g` : '';
+  return gps + velocidad + metros + energia;
+}
+
 export function describirEvento(e: EventoDetector): string {
   switch (e.tipo) {
     case 'posible_jalon':
       return `Posible jalón: ${e.picoAceleracionG.toFixed(1)} g, giro ${e.picoGiroRadS?.toFixed(1) ?? '—'} rad/s`;
     case 'descartado':
-      return `Descartado: ${e.motivo.replace(/_/g, ' ')}`;
+      return `Descartado: ${e.motivo.replace(/_/g, ' ')}${e.diagnostico ? ` · ${describirDiagnostico(e.diagnostico)}` : ''}`;
     case 'alerta':
       return `Alerta (${e.via.replace(/_/g, ' ')}, confianza ${e.confianza}) a ${((e.t - e.tJalon) / 1000).toFixed(1)} s del jalón`;
   }

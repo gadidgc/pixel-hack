@@ -66,6 +66,21 @@ export interface PosicionSimple {
   precision: number | null;
 }
 
+/** Lo que vio el detector después del jalón: sirve para entender por qué no hubo alerta. */
+export interface DiagnosticoDescarte {
+  /** Lecturas GPS que llegaron después del jalón, y cuántas tenían precisión aceptable. */
+  lecturasGps: number;
+  lecturasGpsValidas: number;
+  /** Mejor precisión (m) entre esas lecturas; `null` si no llegó ninguna. */
+  mejorPrecisionM: number | null;
+  /** Velocidad más alta (m/s) entre las lecturas válidas; `null` si ninguna la traía. */
+  maxVelocidadMs: number | null;
+  /** Lo más lejos (m) que llegó el GPS desde el punto del jalón; `null` sin lecturas válidas. */
+  maxDesplazamientoM: number | null;
+  /** Desviación de la magnitud (g) desde 1 s después del jalón: cuánto "se corrió". `null` sin datos. */
+  energiaG: number | null;
+}
+
 export type EventoDetector =
   | {
       tipo: 'posible_jalon';
@@ -83,6 +98,8 @@ export type EventoDetector =
       motivo: MotivoDescarte;
       /** Momento del pico que se descartó (si lo hubo). */
       tJalon: number | null;
+      /** Qué vio el detector entre el jalón y el descarte (para el registro de la app). `null` sin jalón. */
+      diagnostico: DiagnosticoDescarte | null;
     }
   | {
       tipo: 'alerta';
