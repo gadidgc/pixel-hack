@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Linking, TextInput, View } from "react-native";
+import { Linking, Pressable, TextInput, View } from "react-native";
 import { hayBackend } from "../alertas";
 import { PALABRA_BLOQUEO_ATAJOS } from "../bloqueo";
-import { telefonoOculto } from "../preferencias";
+import { guardarPreferencias, telefonoOculto, type Preferencias } from "../preferencias";
 import { servicio } from "../servicio";
 import { usePreferencias } from "../useProteccion";
 import { Boton, T } from "../ui/componentes";
@@ -48,9 +48,17 @@ function ListaPasos({ pasos }: { pasos: string[] }) {
  * automatización "Al recibir un SMS con la palabra → Bloquear pantalla" y, al confirmar un arrebato, el
  * backend le manda ese SMS a su número. Necesita señal: tarda unos segundos (el escudo de Tiempo de uso no).
  */
+/** Cuándo sale el SMS de Atajos. Uno solo por alerta: Zavu deja 1 SMS por minuto al mismo número. */
+const OPCIONES_BLOQUEO: { valor: Preferencias["bloqueoIphoneAl"]; texto: string }[] = [
+  { valor: "detectar", texto: "Al detectar" },
+  { valor: "vencer", texto: "Al llegar a 0" },
+];
+
 export function GuiaAtajos() {
   const c = useTema();
-  const numeroPropio = usePreferencias()?.numeroPropio ?? "";
+  const prefs = usePreferencias();
+  const numeroPropio = prefs?.numeroPropio ?? "";
+  const bloqueoAl = prefs?.bloqueoIphoneAl ?? "detectar";
   const [numero, setNumero] = useState(numeroPropio);
   // Las preferencias cargan después del primer render: mostramos el número guardado en cuanto llega.
   useEffect(() => {
@@ -129,6 +137,36 @@ export function GuiaAtajos() {
         {numeroPropio
           ? `Listo: al confirmar un arrebato mandaremos el SMS a ${telefonoOculto(numeroPropio)}.`
           : "Pendiente: prueba con tu número para activarlo."}
+      </T>
+      <T v="cuerpoFuerte" style={{ marginTop: 8 }}>
+        ¿Cuándo bloqueamos tu iPhone?
+      </T>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {OPCIONES_BLOQUEO.map((o) => (
+          <Pressable
+            key={o.valor}
+            onPress={() => void guardarPreferencias({ bloqueoIphoneAl: o.valor })}
+            accessibilityRole="button"
+            accessibilityState={{ selected: bloqueoAl === o.valor }}
+            style={{
+              minHeight: 40,
+              paddingHorizontal: 14,
+              borderRadius: RADIO.total,
+              justifyContent: "center",
+              backgroundColor: bloqueoAl === o.valor ? c.texto : c.superficie2,
+            }}
+          >
+            <T v="dato" color={bloqueoAl === o.valor ? c.fondo : c.texto}>
+              {o.texto}
+            </T>
+          </Pressable>
+        ))}
+      </View>
+      <T v="apoyo" suave>
+        {bloqueoAl === "detectar"
+          ? 'Apenas detectamos el arrebato. El "¿Todo bien?" sigue contando: para cancelar, desbloquea y pon tu PIN.'
+          : 'Solo si la cuenta del "¿Todo bien?" llega a 0 sin tu PIN.'}
+        {" "}Mandamos un solo SMS: el servicio no deja enviar dos al mismo número en menos de un minuto.
       </T>
       <T v="cuerpoFuerte" style={{ marginTop: 8 }}>
         Que no lo dejen sin señal tan fácil

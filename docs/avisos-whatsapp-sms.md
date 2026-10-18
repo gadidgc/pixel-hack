@@ -38,7 +38,11 @@ Si la dueña configuró su número en la guía de Atajos (Tú › Bloqueo antirr
 backend le manda **al instante** (sin esperar la cuenta) el SMS `Vigia AA-BLOQUEO. Si no fuiste
 tu, ignora este mensaje.` a **su propio número**. Su automatización de Atajos bloquea la pantalla al recibirlo.
 Solo SMS (un WhatsApp no dispara la automatización), sin enlace y sin "robo". El número no se guarda en la
-base: solo queda enmascarado en `envios` con tipo `bloqueo_iphone`. El botón **Probar** usa el tipo
+base: solo queda enmascarado en `envios` con tipo `bloqueo_iphone`. **Va un solo SMS de bloqueo por alerta**, porque Zavu deja 1 SMS por minuto al
+mismo número (probado: lo frena aunque salga desde otro número de la cuenta). La dueña elige cuándo en
+Tú › Bloqueo antirrobo: **"Al detectar"** (por defecto: al instante, el "¿Todo bien?" sigue contando) o **"Al llegar
+a 0"** (solo si vence sin PIN; si el ladrón cierra la app, lo manda la cuenta del servidor). Si Zavu lo frena, el
+cron lo reintenta. El botón **Probar** usa el tipo
 `probar_bloqueo`.
 
 ## Límites que hay que conocer (para no sorprendernos en la demo)
