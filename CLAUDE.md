@@ -45,6 +45,11 @@ npm run typecheck           # tipos de todo el repo
 npm run movil               # levanta la app (Expo). Tecla w = web, a = Android, i = iPhone
 ```
 
+## Avisos por WhatsApp y SMS (ya funcionan)
+- El backend avisa a la red por **WhatsApp (Meta, número +51 914 652 364 "ExamPrazol")** y **SMS (Zavu, +1 928 251 8311)** a la vez. Estado, límites, cómo probar y qué decir en la demo: [docs/avisos-whatsapp-sms.md](docs/avisos-whatsapp-sms.md). Léelo antes de tocar `apps/api/src/mensajes.ts`.
+- El SMS **no lleva enlace** (el filtro de Zavu lo bloquea como phishing). No agregues enlaces ni la palabra "robo" al texto del SMS sin probarlo antes.
+- Las claves (`META_WA_TOKEN`, `ZAVU_API_KEY`) viven como secretos en Cloudflare; nunca en el repo.
+
 ## Reglas para tocar el detector
 - **Toda la lógica de detección vive en `packages/detector`**, nunca en la app. La app solo pasa datos y muestra resultados.
 - El detector **no usa el reloj del sistema**: todo depende del `t` de las muestras, para que una grabación se reproduzca igual en las pruebas y en el celular.

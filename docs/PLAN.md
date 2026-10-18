@@ -246,7 +246,7 @@ Muestra los eventos y si coincide con la etiqueta (`arrebato-…` debe alertar; 
 
 ## 6. Backend, panel y aviso
 
-**Ya está construido** en [apps/api](../apps/api) (Cloudflare Workers + D1; ver su README). La app manda todo ahí ([src/alertas.ts](../apps/movil/src/alertas.ts)); `EXPO_PUBLIC_URL_ALERTAS` sirve para apuntar a otro backend (por ejemplo, el local). Si el backend no responde, la alerta queda solo en la app y **la pantalla lo dice**. Publicado en https://alerta-arrebato.gabrieldgc1999.workers.dev. Falta la clave de Zavu.
+**Ya está construido** en [apps/api](../apps/api) (Cloudflare Workers + D1; ver su README). La app manda todo ahí ([src/alertas.ts](../apps/movil/src/alertas.ts)); `EXPO_PUBLIC_URL_ALERTAS` sirve para apuntar a otro backend (por ejemplo, el local). Si el backend no responde, la alerta queda solo en la app y **la pantalla lo dice**. Publicado en https://alerta-arrebato.gabrieldgc1999.workers.dev. Avisa por **WhatsApp (Meta) y SMS (Zavu)** a la vez: estado, límites y cómo probarlo en [avisos-whatsapp-sms.md](avisos-whatsapp-sms.md).
 
 ### 6.1 Contrato (lo que manda la app)
 `POST <EXPO_PUBLIC_URL_ALERTAS>` con JSON:
@@ -273,14 +273,14 @@ Muestra los eventos y si coincide con la etiqueta (`arrebato-…` debe alertar; 
 ### 6.2 Lo que se construyó
 - **Cloudflare Worker + D1**: recibe el POST, guarda la alerta y la ruta, y sirve la web de la app en la misma URL (**una sola URL pública con HTTPS**). La página del contacto lee la alerta cada 2 s (sin WebSocket: más simple y suficiente).
 - **Página del contacto** `/a/<id>?c=<n>`: ruta real sobre un mapa esquemático, rumbo y velocidad, Google Maps, 105 y "Yo me encargo". Pendiente: mapa con calles reales (Leaflet + OpenStreetMap).
-- **WhatsApp/SMS al contacto de confianza: Zavu** (cupón disponible el domingo 18; ver CONTEXT §4). Mensaje: "🚨 Posible robo del celular de X a las 19:42. Ruta en vivo: <link al panel>".
+- **WhatsApp con Meta** (plantillas aprobadas; llega a cualquiera) y **SMS con Zavu** (plan Pro con el cupón del evento; sin enlace por el filtro antifraude). Detalle en [avisos-whatsapp-sms.md](avisos-whatsapp-sms.md).
 - Opcional: **n8n** (1 mes de Pro gratis) para enrutar alertas sin código.
 - **CORS:** la web de la app y el backend en el mismo dominio evita problemas.
 
 ### 6.3 Sponsors que usamos (para el pitch y la entrega)
 | Sponsor | Para qué | Estado |
 |---|---|---|
-| Zavu | WhatsApp/SMS al contacto | Código listo; falta la clave (domingo) |
+| Zavu | SMS al contacto (a cualquier número de Perú) | Funcionando (plan Pro con el cupón) |
 | Cloudflare (Workers + D1) | Web, API y base de datos en una URL | Publicado |
 | n8n | Enrutar alertas (opcional) | Opcional |
 | IALABS / Maritime | Hosting (si lo confirman) | Por confirmar |
@@ -314,7 +314,7 @@ Las preferencias (nombre, red, tiempo de espera) se guardan **solo en el celular
 
 **No son pantallas, son contenido del sistema:**
 - **Notificación fija de Android:** "Estás protegida · Desde las HH:MM. Usa tu celular normal."
-- **Mensaje de WhatsApp:** el texto está en el diseño; lo manda el backend de Piero con Zavu (§6.2).
+- **Mensaje de WhatsApp:** el texto está en el diseño; lo manda el backend: WhatsApp con Meta y SMS con Zavu (§6.2).
 
 **Pendiente a propósito (no lo hicimos):**
 - Activarse sola al salir de casa o de lugares conocidos.
