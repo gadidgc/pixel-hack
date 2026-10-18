@@ -1,5 +1,58 @@
 # Bloqueo de pantalla ante un arrebato
 
+## La experiencia que buscamos (decisión de diseño)
+
+Hay dos casos y tiran en direcciones opuestas:
+
+| | Arrebato real | Falsa alarma (caída, bache) |
+|---|---|---|
+| ¿Quién tiene el celular? | El ladrón | La dueña |
+| Valor de bloquear | Alto: muchas veces lo arranchan **desbloqueado, en uso** (WhatsApp, banca). | Ninguno |
+| Costo de bloquear | Ninguno: la dueña ya no lo tiene. | Alto si para cancelar tiene que desbloquear Android, abrir la app y escribir el PIN antes de que acabe la cuenta. |
+
+Bloquear más tarde quita el costo de la falsa alarma, pero también el valor. Por eso:
+
+1. **Bloquear al instante** (antes incluso de mandar la alerta al panel).
+2. **Abrir el "¿Todo bien?" encima de la pantalla de bloqueo**, como un despertador o una llamada
+   entrante (aviso de pantalla completa + `setShowWhenLocked`). La dueña escribe el PIN de la app
+   y listo: un solo PIN, como antes. Android sigue bloqueado detrás.
+3. Con el celular bloqueado **solo se ve esa pregunta**: sin pestañas ni ajustes, y con teclado
+   propio (el del sistema puede no abrirse sobre el bloqueo). Al terminar la alerta se quita y
+   vuelve la pantalla de bloqueo normal.
+4. **Respaldos:** si Android no deja la pantalla completa (permiso quitado en Android 14+), se
+   usa la notificación normal y se dan **15 s más** antes de avisar a la red, para que alcance a
+   desbloquear. Tras **5 PIN incorrectos** hay que esperar 30 s (más 30 s por cada intento extra):
+   sobre la pantalla de bloqueo cualquiera puede probar PINs.
+5. **Primer uso:** el bloqueo se ofrece en la pantalla de permisos como recomendado (no obligatorio).
+6. **iPhone:** no podemos bloquearlo. En vez de solo decir "no disponible", guiamos a activar la
+   [Protección en caso de robo de Apple](https://support.apple.com/120340) en «Siempre» y el
+   bloqueo automático en 30 s.
+
+### Qué hace la competencia
+
+- **Theft Detection Lock de Google** (Android 10+, en los servicios de Google Play) hace algo
+  parecido: con el acelerómetro detecta que te lo arranchan y huyen, y bloquea la pantalla. No
+  avisa a nadie ni manda la ruta; eso es lo que agregamos nosotros. Según pruebas de prensa
+  ([Android Authority](https://www.androidauthority.com/android-theft-detection-lock-test-3491674/),
+  [Tech Advisor](https://www.techadvisor.com/article/3145647/android-theft-protection-5-minutes-to-secure-your-phone.html))
+  es difícil de disparar y solo actúa con la pantalla en uso. Las falsas alarmas reportadas
+  son anécdotas, no cifras (fuente secundaria).
+- **Apple** no da a las apps una forma de bloquear el iPhone; su respuesta es la Protección en
+  caso de robo (iOS 17.3+), que pide Face ID y una espera de una hora para cambios delicados
+  lejos de lugares conocidos.
+
+### Límites de Android que condicionan el diseño
+
+- Desde Android 10, una app en segundo plano **no puede abrir pantallas** por su cuenta; un
+  servicio en primer plano no es excepción
+  ([Android: restricciones de inicio en segundo plano](https://developer.android.com/guide/components/activities/background-starts)).
+  Por eso usamos un **aviso de pantalla completa** (como los despertadores).
+- Desde Android 14, ese permiso solo viene dado para apps de llamadas y alarmas; Play Store se lo
+  quita al resto al instalar y el usuario puede quitarlo
+  ([AOSP: límites de pantalla completa](https://source.android.com/docs/core/permissions/fsi-limits)).
+  La app lo revisa (`canUseFullScreenIntent`) y en Tú ofrece un botón para darlo. Si falta, se
+  aplica el respaldo de 15 s.
+
 ## Alcance y límite de iPhone
 
 Android: se implementa DevicePolicyManager.lockNow() cuando el detector emite
@@ -65,7 +118,10 @@ La ejecución del workflow no sustituye las siguientes pruebas manuales:
 - Sin Internet: comprobar el bloqueo; registrar el fallo de envío sin afirmar que se avisó.
 - Sin clave o permiso revocado: comprobar que se informa el problema y la alerta continúa.
 - Después del bloqueo: comprobar GPS, cuenta familiar y envío con pantalla apagada.
-- PIN incorrecto y correcto: comprobar cancelación solo con el correcto tras desbloquear Android.
+- Con el celular bloqueado por la alerta: comprobar que aparece el "¿Todo bien?" encima del
+  bloqueo, que solo se ve esa pantalla (atrás/inicio llevan al bloqueo de Android) y que el PIN
+  correcto cancela sin desbloquear Android. El incorrecto no; 5 incorrectos hacen esperar 30 s.
+- Sin permiso de pantalla completa: comprobar la notificación normal y los 15 s extra.
 - Caída descartada y prueba guiada: comprobar que no bloquean.
 - iPhone y web: comprobar el aviso de función no disponible, sin orden nativa de bloqueo.
 
