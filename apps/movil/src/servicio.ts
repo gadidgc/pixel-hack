@@ -431,9 +431,6 @@ class ServicioProteccion {
     if (bloqueo.estado === 'solicitado' && !sobreBloqueo) {
       this.registrar(`${Platform.OS === 'ios' ? 'iPhone' : 'Android'} no deja mostrar el "¿Todo bien?" sobre la pantalla de bloqueo: para cancelar hay que desbloquear. Esperamos ${extra} s más antes de avisar.`, 'aviso');
     }
-    // El celular vibra (sin sonido) mientras dura la pregunta, para que el dueño se entere aunque lo tenga
-    // en el bolsillo y alcance a cancelar si fue falsa alarma. Para en `detenerCuentaFamilia`.
-    Vibration.vibrate(PATRON_VIBRACION_TODO_BIEN, true);
     // Sobre la pantalla de bloqueo ya va nuestro aviso de pantalla completa; no repetimos la notificación.
     if (!sobreBloqueo) void avisarTodoBien(espera).then((id) => (this.idNotificacion = id));
 
@@ -462,6 +459,10 @@ class ServicioProteccion {
     // pantalla apagada, los setInterval de JS se congelan pero los sensores (servicio en primer plano) siguen.
     // El backend también cuenta por su lado (`esperaS`): si el ladrón apaga el celular, avisa igual.
     this.detenerCuentaFamilia();
+    // El celular vibra (sin sonido) mientras dura la pregunta, para que el dueño se entere aunque lo tenga
+    // en el bolsillo y alcance a cancelar si fue falsa alarma. Va DESPUÉS de `detenerCuentaFamilia`, que
+    // la apaga: así la vibración dura lo mismo que la cuenta.
+    Vibration.vibrate(PATRON_VIBRACION_TODO_BIEN, true);
     this.cuentaPendiente = { evento, nombre, contactos, limite: Date.now() + espera * 1000 };
     this.cuentaFamilia = setInterval(() => this.revisarCuentaFamilia(), 1000);
   }

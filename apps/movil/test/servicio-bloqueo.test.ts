@@ -201,6 +201,12 @@ describe('"¿Todo bien?" sobre la pantalla de bloqueo', () => {
     reproducirCaso('arrebato_moto');
     expect(dobles.vibrar).toHaveBeenCalledTimes(1);
     expect(dobles.vibrar).toHaveBeenCalledWith(expect.any(Array), true);
+    // Nada la apaga mientras la pregunta sigue esperando respuesta.
+    const ultimaVibracion = dobles.vibrar.mock.invocationCallOrder[0];
+    expect(dobles.dejarDeVibrar.mock.invocationCallOrder.every((orden) => orden < ultimaVibracion)).toBe(true);
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(servicio.obtener().alerta?.familia).toBe('esperando');
+    expect(dobles.dejarDeVibrar.mock.invocationCallOrder.every((orden) => orden < ultimaVibracion)).toBe(true);
     dobles.dejarDeVibrar.mockClear();
     expect(await servicio.cancelarAlerta('1234')).toBe(true);
     expect(dobles.dejarDeVibrar).toHaveBeenCalled();
