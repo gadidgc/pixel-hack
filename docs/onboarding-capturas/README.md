@@ -4,7 +4,8 @@ Capturas del simulador de iPhone (iPhone 17 Pro, build Release) antes y después
 Diseño de referencia: lienzo "Onboarding nuevo" (https://claude.ai/artifact/ShZvNcrkX6HRiE1f3eqxyQ).
 
 - `antes/`: la bienvenida vieja (4 pasos; el de permisos ocupaba 4 pantallas de scroll con Atajos y Tiempo de uso).
-- `nuevo/`: la nueva, una idea por pantalla: bienvenida → nombre → contacto → permisos → («Siempre», solo si falta) → PIN → prueba.
+- `nuevo/`: la nueva, una idea por pantalla: bienvenida → nombre → contacto → permisos → («Siempre», solo si falta) → PIN →
+  bloqueo con Atajos (solo iPhone) → prueba.
 
 Ojo al leerlas:
 

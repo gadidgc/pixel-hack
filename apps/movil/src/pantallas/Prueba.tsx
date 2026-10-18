@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Linking, View } from 'react-native';
-import { PasoBienvenida } from '../componentes/PasoBienvenida';
+import { PasoBienvenida, TOTAL_PASOS } from '../componentes/PasoBienvenida';
 import { servicio, type ResultadoPrueba } from '../servicio';
 import { usePreferencias } from '../useProteccion';
 import { Boton, T } from '../ui/componentes';
@@ -8,7 +8,7 @@ import { Icono } from '../ui/iconos';
 import { RADIO, useTema } from '../ui/tema';
 
 /**
- * F1 · Paso 5: prueba guiada. Corre un arrebato grabado por el MISMO detector y manda un mensaje de PRUEBA
+ * F1 · Último paso: prueba guiada. Corre un arrebato grabado por el MISMO detector y manda un mensaje de PRUEBA
  * a la red. Al terminar se enciende la protección y se ESPERA el resultado: si no se pudo (casi siempre
  * por la ubicación "Siempre"), lo decimos aquí con el camino para arreglarlo, en vez de dejar a la persona
  * en un Inicio que dice "Protección apagada" sin explicar por qué.
@@ -57,7 +57,7 @@ export function Prueba({
   if (falla) {
     return (
       <PasoBienvenida
-        paso={5}
+        paso={TOTAL_PASOS}
         onVolver={() => setFalla(null)}
         titulo="Falta encender la protección"
         texto={falla.texto}
@@ -89,7 +89,7 @@ export function Prueba({
   if (!resultado) {
     return (
       <PasoBienvenida
-        paso={5}
+        paso={TOTAL_PASOS}
         onVolver={onVolver}
         titulo={`Probemos con ${contacto}`}
         texto="Simulamos un arrebato y le mandamos un mensaje marcado como PRUEBA."
@@ -118,7 +118,7 @@ export function Prueba({
 
   return (
     <PasoBienvenida
-      paso={5}
+      paso={TOTAL_PASOS}
       onVolver={onVolver}
       titulo={detectado && enviado ? '¡Funciona!' : detectado ? 'Detectado, pero sin mensaje' : 'No se detectó'}
       texto={

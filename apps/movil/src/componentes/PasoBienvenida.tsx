@@ -3,8 +3,12 @@ import { KeyboardAvoidingView, Platform, View } from 'react-native';
 import { FUENTES, RADIO, useTema } from '../ui/tema';
 import { Pantalla, Pasos, T } from '../ui/componentes';
 
-/** Pasos con barra de progreso (la bienvenida no cuenta): nombre, contacto, permisos, PIN y prueba. */
-export const TOTAL_PASOS = 5;
+/**
+ * Pasos con barra de progreso (la bienvenida no cuenta): nombre, contacto, permisos, PIN y prueba.
+ * En iPhone se suma el bloqueo con Atajos (Apple no deja que la app bloquee la pantalla sola).
+ */
+export const CON_ATAJOS = Platform.OS === 'ios';
+export const TOTAL_PASOS = CON_ATAJOS ? 6 : 5;
 
 /**
  * Esqueleto de un paso de la bienvenida (diseño: lienzo "Onboarding nuevo"): barra de progreso, un título

@@ -7,7 +7,9 @@ import { ActivityIndicator, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { usePantallaBloqueada } from './src/bloqueo';
 import { guardarPreferencias } from './src/preferencias';
+import { CON_ATAJOS } from './src/componentes/PasoBienvenida';
 import { AlertaSobreBloqueo } from './src/pantallas/AlertaSobreBloqueo';
+import { AtajosBienvenida } from './src/pantallas/AtajosBienvenida';
 import { Bienvenida } from './src/pantallas/Bienvenida';
 import { BloqueoCuentas } from './src/pantallas/BloqueoCuentas';
 import { Cerca } from './src/pantallas/Cerca';
@@ -32,7 +34,7 @@ import { useProteccion, usePreferencias } from './src/useProteccion';
 import { hora, type Pestana } from './src/ui/componentes';
 import { COLORES, TemaContexto } from './src/ui/tema';
 
-type PasoBienvenida = 'bienvenida' | 'nombre' | 'contacto' | 'permisos' | 'siempre' | 'pin' | 'prueba';
+type PasoBienvenida = 'bienvenida' | 'nombre' | 'contacto' | 'permisos' | 'siempre' | 'pin' | 'atajos' | 'prueba';
 type Extra = null | 'red' | 'cuentas' | 'herramientas' | 'meRobaron' | 'vistaContacto' | 'alerta';
 
 /**
@@ -185,8 +187,11 @@ function Navegacion() {
     if (paso === 'contacto') return <ContactoBienvenida onSeguir={() => setPaso('permisos')} onVolver={() => setPaso('nombre')} />;
     if (paso === 'permisos') return <Permisos onSeguir={() => setPaso('pin')} onFaltaSiempre={() => setPaso('siempre')} onVolver={() => setPaso('contacto')} />;
     if (paso === 'siempre') return <Siempre onSeguir={() => setPaso('pin')} onVolver={() => setPaso('permisos')} />;
-    if (paso === 'pin') return <PinBienvenida onSeguir={() => setPaso('prueba')} onVolver={() => setPaso('permisos')} />;
-    return <Prueba onListo={terminar} onEntrarSinProteccion={entrarSinProteccion} onVolver={() => setPaso('pin')} />;
+    // iPhone: después del PIN, el bloqueo con Atajos (en Android y la web no hace falta).
+    const despuesDelPin: PasoBienvenida = CON_ATAJOS ? 'atajos' : 'prueba';
+    if (paso === 'pin') return <PinBienvenida onSeguir={() => setPaso(despuesDelPin)} onVolver={() => setPaso('permisos')} />;
+    if (paso === 'atajos') return <AtajosBienvenida onSeguir={() => setPaso('prueba')} onVolver={() => setPaso('pin')} />;
+    return <Prueba onListo={terminar} onEntrarSinProteccion={entrarSinProteccion} onVolver={() => setPaso(CON_ATAJOS ? 'atajos' : 'pin')} />;
   }
 
   if (estado.alerta?.sobreBloqueo && bloqueada) return <AlertaSobreBloqueo />;
