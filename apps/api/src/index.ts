@@ -1,5 +1,5 @@
 import { armarKit, leerPerfil, validarMarca } from './bloqueo';
-import { MENSAJES, mandarMensaje, mandarSmsBloqueo, proveedores, type EnvMensajes, type Mensaje as MensajeWhatsApp } from './mensajes';
+import { MENSAJES, llamar, mandarMensaje, mandarSmsBloqueo, proveedores, type EnvMensajes, type Mensaje as MensajeWhatsApp } from './mensajes';
 import {
   JUNTAR_GRABACIONES_GRADOS,
   JUNTAR_GRABACIONES_MS,
@@ -196,6 +196,24 @@ async function avisarFamilia(env: Env, fila: FilaAlerta, origen: string): Promis
   }
   await reportarDesdeAlerta(env, fila, ahora);
   const tJalon = fila.t_jalon ?? fila.creada;
+  // A la vez que el SMS, una llamada a cada contacto (si están encendidas): que su celular suene.
+  const llamadas = Promise.all(contactos.map((c) => llamar(env, c.telefono, fila.nombre, fila.id))).then(async (rs) => {
+    const hechas = rs.map((x, i) => ({ x, c: contactos[i] })).filter(({ x }) => x.detalle !== 'llamadas apagadas');
+    if (!hechas.length) return;
+    await env.DB.batch(
+      hechas.map(({ x, c }) =>
+        env.DB.prepare('INSERT INTO envios (alerta_id, tipo, destino, canal, ok, detalle, creado) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(
+          fila.id,
+          'llamada',
+          enmascarar(c.telefono),
+          x.canal,
+          x.ok ? 1 : 0,
+          x.detalle,
+          Date.now(),
+        ),
+      ),
+    );
+  });
   const r = await avisar(
     env,
     fila.id,
@@ -205,6 +223,7 @@ async function avisarFamilia(env: Env, fila: FilaAlerta, origen: string): Promis
       mensaje: MENSAJES.alerta(fila.nombre, tJalon, enlace(origen, fila.id, i)),
     })),
   );
+  await llamadas.catch((e) => console.error('No se pudo registrar la llamada', e));
   return { avisados: r.avisados, total: contactos.length, detalle: r.detalle };
 }
 

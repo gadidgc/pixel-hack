@@ -1,4 +1,15 @@
-# Avisos a la red: WhatsApp y SMS (estado al 17 de octubre, 22:45)
+# Avisos a la red: SMS con enlace, llamada y WhatsApp (estado al 18 de octubre, 04:30)
+
+> **Cambio del 18 de octubre, 04:30.** Desde las 23:52 del 17 el WhatsApp fallaba (token de Meta vencido, error
+> 401/190); Gabriel lo renovó, pero las plantillas siguen "En revisión". Por eso ahora:
+> - **El SMS lleva el enlace** a la ruta en vivo, con un texto neutro (sin "robo" ni "alerta" en el cuerpo). Si
+>   el filtro de Zavu lo bloquea igual, se manda al toque el SMS de antes, sin enlace.
+> - **Zavu llama a cada contacto** (agente "Alerta Arrebato" con voz en español en el sender `pixel`):
+>   "te llama la aplicacion Alerta Arrebato… revisa el mensaje de texto con su ubicacion". Se apaga con
+>   `ZAVU_LLAMADAS` en `apps/api/wrangler.jsonc`. Cada llamada queda en `envios` con tipo `llamada`.
+> - **Falta probar con un envío real** que el SMS con enlace pase el filtro (ver `envios`: "enviado sin enlace"
+>   quiere decir que lo bloqueó).
+
 
 Cuando la app confirma un arrebato, el backend ([apps/api](../apps/api)) avisa a los contactos de confianza
 por **dos canales a la vez**. Si uno falla, el otro igual llega.
@@ -6,7 +17,8 @@ por **dos canales a la vez**. Si uno falla, el otro igual llega.
 | Canal | Desde | A quién le llega | Qué dice |
 |---|---|---|---|
 | **WhatsApp** (Meta, WhatsApp Cloud API) | +51 914 652 364 (sale como **"ExamPrazol"**, número prestado de otro proyecto de Gabriel) | Con plantilla aprobada: **a cualquiera**. Mientras Meta revisa las plantillas: solo a quien le escribió a ese número en las últimas 24 h. | La alerta completa **con el enlace a la ruta en vivo** |
-| **SMS** (Zavu, sponsor, plan Pro) | +1 928 251 8311 | **A cualquier número** | Un aviso neutro **sin enlace**: "…su app envió una alerta a las 21:04. Revisa tu WhatsApp…" |
+| **SMS** (Zavu, sponsor, plan Pro) | +1 928 251 8311 | **A cualquier número** | Un aviso neutro **con el enlace** a la ruta en vivo (si el filtro lo bloquea, sin enlace) |
+| **Llamada** (Zavu, voz) | +1 928 251 8311 | **A cualquier número** | Una voz en español: revisa el SMS con la ubicación y llama a la persona |
 
 Probado de verdad en un celular del equipo: llegaron la alerta por WhatsApp y por SMS, y el "está bien" al cancelar.
 
