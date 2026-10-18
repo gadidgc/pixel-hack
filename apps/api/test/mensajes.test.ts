@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MENSAJES, PALABRA_BLOQUEO, SMS_BLOQUEO, llamar, mandarMensaje, mandarSmsBloqueo, saludoLlamada } from '../src/mensajes';
+import { MENSAJES, PALABRA_BLOQUEO, SMS_BLOQUEO, codigoContacto, leerCodigo, llamar, mandarMensaje, mandarSmsBloqueo, saludoLlamada } from '../src/mensajes';
 
-const mensaje = MENSAJES.alerta('Lucia', Date.UTC(2026, 9, 18, 0, 42), 'https://x.dev/a/abc');
+const mensaje = MENSAJES.alerta('Lucia', Date.UTC(2026, 9, 18, 0, 42), 'https://x.dev/a/abc', '28KAAK1');
 
 function simularFetch(respuestas: Record<string, number>) {
   const llamadas: Array<{ url: string; cuerpo: Record<string, unknown> }> = [];
@@ -41,26 +41,10 @@ describe('mandarMensaje', () => {
     const r = await mandarMensaje({ META_WA_TOKEN: 't', META_WA_NUMERO_ID: '1', ZAVU_API_KEY: 'zv_live_x' }, { telefono: '+51987654321', mensaje, idempotencia: 'a' });
     expect(r.ok).toBe(true);
     expect(llamadas.filter((l) => !l.url.endsWith('/v1/urls')).map((l) => l.cuerpo.channel ?? 'meta')).toEqual(['meta', 'sms', 'meta']);
-    // Por SMS va el texto neutro CON el enlace a la ruta (sin "robo": el filtro de Zavu lo bloquea).
+    // Por SMS va el código, sin enlace (Zavu rechaza nuestros enlaces) y sin "robo".
     expect(llamadas.find((l) => l.cuerpo.channel === 'sms')?.cuerpo.text).toBe(mensaje.sms);
-    expect(mensaje.sms).toContain('https://x.dev/a/abc');
-    expect(mensaje.sms).not.toMatch(/robo|alerta:/i);
-  });
-
-  it.each(['sms_compliance_blocked', 'url_rejected'])('si Zavu bloquea el SMS con enlace (%s), manda el mismo aviso sin enlace', async (codigo) => {
-    const textos: string[] = [];
-    vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
-      const cuerpo = JSON.parse(String(init.body));
-      if (!url.endsWith('/v1/messages')) return new Response('{}', { status: 200 });
-      textos.push(cuerpo.text);
-      const bloqueado = textos.length === 1;
-      // Zavu manda `url_rejected` sin el objeto `error` (así llegó de verdad, con 403).
-      const cuerpoError = codigo === 'url_rejected' ? { code: codigo, message: 'Message blocked' } : { error: { code: codigo } };
-      return new Response(JSON.stringify(bloqueado ? cuerpoError : {}), { status: bloqueado ? (codigo === 'url_rejected' ? 403 : 422) : 202 });
-    });
-    const r = await mandarMensaje({ ZAVU_API_KEY: 'zv_live_x' }, { telefono: '+51987654321', mensaje, idempotencia: 'a' });
-    expect(r.ok).toBe(true);
-    expect(textos).toEqual([mensaje.sms, mensaje.smsSinEnlace]);
+    expect(mensaje.sms).toContain('28KAAK1');
+    expect(mensaje.sms).not.toMatch(/https?:|robo/i);
   });
 
   it('con la clave de prueba de Zavu solo la usa de respaldo si Meta falla', async () => {
@@ -97,16 +81,31 @@ describe('SMS de bloqueo de iPhone (Atajos)', () => {
 describe('llamada al contacto (Zavu voz)', () => {
   it('apagada si no está ZAVU_LLAMADAS = "si"', async () => {
     const llamadas = simularFetch({ zavu: 202 });
-    const r = await llamar({ ZAVU_API_KEY: 'zv_live_x' }, '+51987654321', 'Lucia', 'abc');
+    const r = await llamar({ ZAVU_API_KEY: 'zv_live_x' }, '+51987654321', 'Lucia', 'abc', '28KAAK1');
     expect(r).toMatchObject({ ok: false, detalle: 'llamadas apagadas' });
     expect(llamadas).toHaveLength(0);
   });
   it('encendida, llama con el saludo en español y sin "robo"', async () => {
     const llamadas = simularFetch({ zavu: 202 });
-    const r = await llamar({ ZAVU_API_KEY: 'zv_live_x', ZAVU_LLAMADAS: 'si' }, '+51987654321', 'Lucia', 'abc');
+    const r = await llamar({ ZAVU_API_KEY: 'zv_live_x', ZAVU_LLAMADAS: 'si' }, '+51987654321', 'Lucia', 'abc', '28KAAK1');
     expect(r.ok).toBe(true);
     expect(llamadas[0].url).toBe('https://api.zavu.dev/v1/calls');
-    expect(llamadas[0].cuerpo).toMatchObject({ to: '+51987654321', language: 'es', greeting: saludoLlamada('Lucia') });
-    expect(saludoLlamada('Lucia')).not.toMatch(/robo/i);
+    expect(llamadas[0].cuerpo).toMatchObject({ to: '+51987654321', language: 'es', greeting: saludoLlamada('Lucia', '28KAAK1') });
+    expect(saludoLlamada('Lucia', '28KAAK1')).toContain('2, 8, K, A, A, K, 1');
+    expect(saludoLlamada('Lucia', '28KAAK1')).not.toMatch(/robo/i);
+  });
+});
+
+describe('código del aviso', () => {
+  it('ida y vuelta: id + contacto → código → id corto + contacto', () => {
+    expect(codigoContacto('28kaakxhwadjbbet', 0)).toBe('28KAAK1');
+    expect(leerCodigo('28KAAK1')).toEqual({ prefijo: '28kaak', indice: 0 });
+    expect(leerCodigo(' 28-kaak 3 ')).toEqual({ prefijo: '28kaak', indice: 2 });
+  });
+  it('acepta EJEMPLO y rechaza lo que no tiene la forma', () => {
+    expect(leerCodigo('ejemplo')).toBe('ejemplo');
+    expect(leerCodigo('28KAAK9')).toBeNull();
+    expect(leerCodigo('28KAA1')).toBeNull();
+    expect(leerCodigo("'; DROP")).toBeNull();
   });
 });

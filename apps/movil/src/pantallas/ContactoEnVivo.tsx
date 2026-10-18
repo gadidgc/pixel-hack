@@ -73,7 +73,8 @@ function aDatos(a: AlertaPublica): DatosContacto {
   };
 }
 
-export function ContactoEnVivo({ id, contacto }: { id: string; contacto: number | null }) {
+/** `onCerrar`: dentro de la app ("Recibí un aviso"), para volver; en la web no hay a dónde volver. */
+export function ContactoEnVivo({ id, contacto, onCerrar }: { id: string; contacto: number | null; onCerrar?: () => void }) {
   const [alerta, setAlerta] = useState<AlertaPublica | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,7 +102,7 @@ export function ContactoEnVivo({ id, contacto }: { id: string; contacto: number 
     };
   }, [id]);
 
-  if (id === 'ejemplo') return <WebContacto datos={EJEMPLO_CONTACTO} ejemplo />;
+  if (id === 'ejemplo') return <WebContacto datos={EJEMPLO_CONTACTO} ejemplo onCerrar={onCerrar} />;
   if (!alerta) {
     return (
       <View style={{ flex: 1, backgroundColor: COLORES.dia.fondo, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 }}>
@@ -113,6 +114,7 @@ export function ContactoEnVivo({ id, contacto }: { id: string; contacto: number 
     <WebContacto
       datos={aDatos(alerta)}
       ejemplo={false}
+      onCerrar={onCerrar}
       onConfirmarRobo={async () => {
         try {
           const r = await fetch(`${urlBackend()}/api/alertas/${id}/robo`, {

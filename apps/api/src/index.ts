@@ -1,5 +1,5 @@
 import { armarKit, leerPerfil, validarMarca } from './bloqueo';
-import { MENSAJES, llamar, mandarMensaje, mandarSmsBloqueo, proveedores, type EnvMensajes, type Mensaje as MensajeWhatsApp } from './mensajes';
+import { MENSAJES, codigoContacto, leerCodigo, llamar, mandarMensaje, mandarSmsBloqueo, proveedores, type EnvMensajes, type Mensaje as MensajeWhatsApp } from './mensajes';
 import {
   JUNTAR_GRABACIONES_GRADOS,
   JUNTAR_GRABACIONES_MS,
@@ -20,6 +20,7 @@ import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, 
  * Backend de Alerta Arrebato en Cloudflare Workers + D1. Una sola URL pública con HTTPS:
  * - `POST /api/eventos`: lo que manda la app (contrato en docs/PLAN.md §6.1).
  * - `GET  /api/alertas/:id`: lo que ve el contacto en `/a/:id` (sin teléfonos).
+ * - `GET  /api/codigo/:codigo`: el código del SMS/llamada ("Recibí un aviso") → `{ id, contacto }`.
  * - `POST /api/alertas/:id/encargado`: "Yo me encargo" (avisa al resto de la red).
  * - `POST /api/alertas/:id/robo`: el contacto confirma que SÍ fue un robo; la página muestra el kit de bloqueo.
  * - `POST /api/alertas/:id/bloqueo`: marca un paso del kit como hecho (lo ve toda la red).
@@ -207,7 +208,7 @@ async function avisarFamilia(env: Env, fila: FilaAlerta, origen: string): Promis
   await reportarDesdeAlerta(env, fila, ahora);
   const tJalon = fila.t_jalon ?? fila.creada;
   // A la vez que el SMS, una llamada a cada contacto (si están encendidas): que su celular suene.
-  const llamadas = Promise.all(contactos.map((c) => llamar(env, c.telefono, fila.nombre, fila.id))).then(async (rs) => {
+  const llamadas = Promise.all(contactos.map((c, i) => llamar(env, c.telefono, fila.nombre, fila.id, codigoContacto(fila.id, i)))).then(async (rs) => {
     const hechas = rs.map((x, i) => ({ x, c: contactos[i] })).filter(({ x }) => x.detalle !== 'llamadas apagadas');
     if (!hechas.length) return;
     await env.DB.batch(
@@ -230,7 +231,7 @@ async function avisarFamilia(env: Env, fila: FilaAlerta, origen: string): Promis
     'alerta',
     contactos.map((c, i) => ({
       contacto: c,
-      mensaje: MENSAJES.alerta(fila.nombre, tJalon, enlace(origen, fila.id, i)),
+      mensaje: MENSAJES.alerta(fila.nombre, tJalon, enlace(origen, fila.id, i), codigoContacto(fila.id, i)),
     })),
   );
   await llamadas.catch((e) => console.error('No se pudo registrar la llamada', e));
@@ -416,6 +417,21 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
   }
 }
 
+/**
+ * "Recibí un aviso": el código del SMS o de la llamada → qué alerta abrir y qué contacto es. Solo alertas de las
+ * últimas 24 h. No devuelve nada más (ni nombre ni teléfonos): eso lo lee después `/api/alertas/:id`.
+ */
+async function buscarCodigo(env: Env, texto: string): Promise<Response> {
+  const codigo = leerCodigo(decodeURIComponent(texto));
+  if (codigo === 'ejemplo') return json({ ok: true, id: 'ejemplo', contacto: null });
+  if (!codigo) return json({ ok: false, detalle: 'el código tiene 7 letras y números, como 28KAAK1' }, 400);
+  const fila = await env.DB.prepare(`SELECT id FROM alertas WHERE substr(id, 1, 6) = ? AND prueba = 0 AND creada > ? ORDER BY creada DESC LIMIT 1`)
+    .bind(codigo.prefijo, Date.now() - RETENCION_CONTACTOS_MS)
+    .first<{ id: string }>();
+  if (!fila) return json({ ok: false, detalle: 'no encontramos un aviso con ese código (dura 24 horas)' }, 404);
+  return json({ ok: true, id: fila.id, contacto: codigo.indice });
+}
+
 /** Lo que ve el contacto. Nunca devuelve los teléfonos de la red; la línea de la dueña, solo en el kit (tras confirmar el robo). */
 async function verAlerta(env: Env, id: string, origen: string): Promise<Response> {
   const fila = await env.DB.prepare('SELECT * FROM alertas WHERE id = ? AND prueba = 0').bind(id).first<FilaAlerta>();
@@ -460,7 +476,7 @@ async function marcarEncargado(env: Env, id: string, peticion: Request, origen: 
   const tomada = await env.DB.prepare('UPDATE alertas SET encargado = ?, actualizada = ? WHERE id = ? AND encargado IS NULL').bind(quien, Date.now(), id).run();
   if (!tomada.meta.changes) return json({ ok: true, detalle: 'ya había alguien a cargo' });
   const resto = contactos.map((c, i) => ({ c, i })).filter((x) => x.i !== indice);
-  const r = await avisar(env, id, 'encargado', resto.map((x) => ({ contacto: x.c, mensaje: MENSAJES.encargado(quien, fila.nombre, enlace(origen, id, x.i)) })));
+  const r = await avisar(env, id, 'encargado', resto.map((x) => ({ contacto: x.c, mensaje: MENSAJES.encargado(quien, fila.nombre, enlace(origen, id, x.i), codigoContacto(id, x.i)) })));
   return json({ ok: true, encargado: quien, avisados: r.avisados, detalle: r.detalle });
 }
 
@@ -766,6 +782,8 @@ export default {
         }
         return await procesar(env, ctx, validarMensaje(cuerpo), origenEnlaces(env, url));
       }
+      const codigo = url.pathname.match(/^\/api\/codigo\/([^/]{1,20})$/);
+      if (codigo && peticion.method === 'GET') return await buscarCodigo(env, codigo[1]);
       const ver = url.pathname.match(/^\/api\/alertas\/([a-z0-9]{16})(?:\/(encargado|robo|bloqueo))?$/);
       if (ver && !ver[2] && peticion.method === 'GET') return await verAlerta(env, ver[1], url.origin);
       if (ver && ver[2] === 'encargado' && peticion.method === 'POST') return await marcarEncargado(env, ver[1], peticion, origenEnlaces(env, url));

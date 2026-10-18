@@ -55,7 +55,7 @@ describe('teléfonos y textos', () => {
 
   it('el SMS de alerta va sin tildes (GSM-7, 160 caracteres por parte) y con la hora de Lima', () => {
     const t = Date.UTC(2026, 9, 18, 0, 42); // 19:42 en Lima (UTC-5)
-    const { texto, plantilla } = MENSAJES.alerta('Lucia', t, 'https://alerta-arrebato.workers.dev/a/abcdefghijkmnpqr?c=0');
+    const { texto, plantilla } = MENSAJES.alerta('Lucia', t, 'https://alerta-arrebato.workers.dev/a/abcdefghijkmnpqr?c=0', 'ABCDEF1');
     expect(plantilla.variables).toEqual(['Lucia', '19:42', 'https://alerta-arrebato.workers.dev/a/abcdefghijkmnpqr?c=0']);
     expect(texto).toContain('19:42');
     expect(/[áéíóúñ¿¡]/i.test(texto)).toBe(false);

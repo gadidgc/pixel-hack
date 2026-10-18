@@ -1,15 +1,14 @@
 # Avisos a la red: SMS con enlace, llamada y WhatsApp (estado al 18 de octubre, 04:30)
 
-> **Cambio del 18 de octubre, 04:30.** Desde las 23:52 del 17 el WhatsApp fallaba (token de Meta vencido, error
-> 401/190); Gabriel lo renovó, pero las plantillas siguen "En revisión". Por eso ahora:
-> - **El SMS lleva el enlace** a la ruta en vivo, con un texto neutro (sin "robo" ni "alerta" en el cuerpo). Si
->   el filtro de Zavu lo bloquea igual, se manda al toque el SMS de antes, sin enlace.
-> - **Zavu llama a cada contacto** (agente "Alerta Arrebato" con voz en español en el sender `pixel`):
->   "te llama la aplicacion Alerta Arrebato… revisa el mensaje de texto con su ubicacion". Se apaga con
->   `ZAVU_LLAMADAS` en `apps/api/wrangler.jsonc`. Cada llamada queda en `envios` con tipo `llamada`.
-> - **Los enlaces usan `https://alerta.gadidgc.com`** (dominio de Gabriel, `ORIGEN_ENLACES` en `wrangler.jsonc`): Zavu rechaza los enlaces `*.workers.dev` en SMS aunque la cuenta tenga KYC. La app sigue usando workers.dev.
-> - **Falta probar con un envío real** que el SMS con enlace pase el filtro (ver `envios`: "enviado sin enlace"
->   quiere decir que lo bloqueó).
+> **Cambio del 18 de octubre, 05:00.** Zavu rechaza los enlaces en SMS (revisión automática "AI"/"Security"),
+> aunque la cuenta tenga KYC y el dominio sea propio (`alerta.gadidgc.com`). Por eso:
+> - **El SMS lleva un código** (ej. `28KAAK1`: 6 letras del id de la alerta + número del contacto), sin enlace.
+>   El contacto lo escribe en la app (**"Recibí un aviso"**, en Inicio y en la bienvenida) o en la web
+>   **alerta.gadidgc.com/aviso** (sin instalar nada, sirve en iPhone). Abre la misma página en vivo del enlace.
+> - **Zavu llama a cada contacto** y la voz lee el código letra por letra (agente "Alerta Arrebato" con voz en
+>   el sender `pixel`; se apaga con `ZAVU_LLAMADAS`).
+> - **WhatsApp** (Meta) sigue mandando el enlace directo (token renovado el 18; plantillas aún en revisión).
+> - El APK de Android **hay que recompilarlo** para que tenga "Recibí un aviso"; la web ya lo tiene.
 
 
 Cuando la app confirma un arrebato, el backend ([apps/api](../apps/api)) avisa a los contactos de confianza
@@ -18,8 +17,8 @@ por **dos canales a la vez**. Si uno falla, el otro igual llega.
 | Canal | Desde | A quién le llega | Qué dice |
 |---|---|---|---|
 | **WhatsApp** (Meta, WhatsApp Cloud API) | +51 914 652 364 (sale como **"ExamPrazol"**, número prestado de otro proyecto de Gabriel) | Con plantilla aprobada: **a cualquiera**. Mientras Meta revisa las plantillas: solo a quien le escribió a ese número en las últimas 24 h. | La alerta completa **con el enlace a la ruta en vivo** |
-| **SMS** (Zavu, sponsor, plan Pro) | +1 928 251 8311 | **A cualquier número** | Un aviso neutro **con el enlace** a la ruta en vivo (si el filtro lo bloquea, sin enlace) |
-| **Llamada** (Zavu, voz) | +1 928 251 8311 | **A cualquier número** | Una voz en español: revisa el SMS con la ubicación y llama a la persona |
+| **SMS** (Zavu, sponsor, plan Pro) | +1 928 251 8311 | **A cualquier número** | Un aviso neutro con un **código** para abrir la ruta en la app o en alerta.gadidgc.com/aviso |
+| **Llamada** (Zavu, voz) | +1 928 251 8311 | **A cualquier número** | Una voz en español que lee el código letra por letra |
 
 Probado de verdad en un celular del equipo: llegaron la alerta por WhatsApp y por SMS, y el "está bien" al cancelar.
 

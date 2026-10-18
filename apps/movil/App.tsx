@@ -25,6 +25,7 @@ import { Nombre } from './src/pantallas/Nombre';
 import { Permisos } from './src/pantallas/Permisos';
 import { PinBienvenida } from './src/pantallas/PinBienvenida';
 import { Prueba, type MotivoSinProteccion } from './src/pantallas/Prueba';
+import { RecibiAviso } from './src/pantallas/RecibiAviso';
 import { Siempre } from './src/pantallas/Siempre';
 import { TodoBien } from './src/pantallas/TodoBien';
 import { Tu } from './src/pantallas/Tu';
@@ -35,14 +36,15 @@ import { hora, type Pestana } from './src/ui/componentes';
 import { COLORES, TemaContexto } from './src/ui/tema';
 
 type PasoBienvenida = 'bienvenida' | 'nombre' | 'contacto' | 'permisos' | 'siempre' | 'pin' | 'atajos' | 'prueba';
-type Extra = null | 'red' | 'cuentas' | 'herramientas' | 'meRobaron' | 'vistaContacto' | 'alerta';
+type Extra = null | 'red' | 'cuentas' | 'herramientas' | 'meRobaron' | 'vistaContacto' | 'alerta' | 'aviso';
 
 /**
  * En la web (la URL pública) también servimos las páginas que se abren desde OTRO celular:
  * - `/a/<id>?c=<n>`: lo que ve el contacto (F5), en vivo desde el backend. `/a/ejemplo` o `?ver=contacto`: vista de ejemplo.
  * - `/yo` o `?ver=yo`: "Me robaron" (F6).
+ * - `/aviso`: "Recibí un aviso" (el código del SMS o de la llamada), para quien no tiene la app.
  */
-type PaginaWeb = { tipo: 'contacto'; id: string; contacto: number | null } | { tipo: 'yo' } | null;
+type PaginaWeb = { tipo: 'contacto'; id: string; contacto: number | null } | { tipo: 'yo' } | { tipo: 'aviso' } | null;
 
 function paginaWeb(): PaginaWeb {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
@@ -56,6 +58,7 @@ function paginaWeb(): PaginaWeb {
   }
   if (search.includes('ver=contacto')) return { tipo: 'contacto', id: 'ejemplo', contacto: null };
   if (pathname.startsWith('/yo') || search.includes('ver=yo')) return { tipo: 'yo' };
+  if (pathname.startsWith('/aviso')) return { tipo: 'aviso' };
   return null;
 }
 
@@ -163,7 +166,10 @@ function Navegacion() {
 
   if (web?.tipo === 'contacto') return <ContactoEnVivo key={web.id} id={web.id} contacto={web.contacto} />;
   if (web?.tipo === 'yo') return <MeRobaron />;
+  if (web?.tipo === 'aviso') return <RecibiAviso />;
   if (!prefs) return <View style={{ flex: 1, backgroundColor: COLORES.noche.fondo }} />;
+  // "Recibí un aviso" se abre también desde la bienvenida: quien solo es contacto no necesita configurar nada.
+  if (extra === 'aviso') return <RecibiAviso onVolver={() => setExtra(null)} />;
 
   // F1 · Primer uso
   if (!prefs.bienvenidaHecha) {
@@ -182,7 +188,7 @@ function Navegacion() {
       setPaso('bienvenida');
       void guardarPreferencias({ bienvenidaHecha: true });
     };
-    if (paso === 'bienvenida') return <Bienvenida onSeguir={() => setPaso('nombre')} />;
+    if (paso === 'bienvenida') return <Bienvenida onSeguir={() => setPaso('nombre')} onAviso={() => setExtra('aviso')} />;
     if (paso === 'nombre') return <Nombre onSeguir={() => setPaso('contacto')} onVolver={() => setPaso('bienvenida')} />;
     if (paso === 'contacto') return <ContactoBienvenida onSeguir={() => setPaso('permisos')} onVolver={() => setPaso('nombre')} />;
     if (paso === 'permisos') return <Permisos onSeguir={() => setPaso('pin')} onFaltaSiempre={() => setPaso('siempre')} onVolver={() => setPaso('contacto')} />;
@@ -221,7 +227,7 @@ function Navegacion() {
   } else if (pestana === 'tu') {
     contenido = <Tu onPestana={setPestana} onRed={() => setExtra('red')} onCuentas={() => setExtra('cuentas')} onHerramientas={() => setExtra('herramientas')} onMeRobaron={() => setExtra('meRobaron')} />;
   } else {
-    contenido = <Inicio onPestana={setPestana} onCerca={() => setPestana('cerca')} />;
+    contenido = <Inicio onPestana={setPestana} onCerca={() => setPestana('cerca')} onAviso={() => setExtra('aviso')} />;
   }
 
   return (
