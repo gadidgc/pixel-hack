@@ -36,7 +36,7 @@ import { hora, type Pestana } from './src/ui/componentes';
 import { COLORES, TemaContexto } from './src/ui/tema';
 
 type PasoBienvenida = 'bienvenida' | 'nombre' | 'contacto' | 'permisos' | 'siempre' | 'pin' | 'atajos' | 'prueba';
-type Extra = null | 'red' | 'cuentas' | 'herramientas' | 'meRobaron' | 'vistaContacto' | 'alerta' | 'aviso';
+type Extra = null | 'red' | 'cuentas' | 'herramientas' | 'meRobaron' | 'vistaContacto' | 'alerta';
 
 /**
  * En la web (la URL pública) también servimos las páginas que se abren desde OTRO celular:
@@ -168,8 +168,6 @@ function Navegacion() {
   if (web?.tipo === 'yo') return <MeRobaron />;
   if (web?.tipo === 'aviso') return <RecibiAviso />;
   if (!prefs) return <View style={{ flex: 1, backgroundColor: COLORES.noche.fondo }} />;
-  // "Recibí un aviso" se abre también desde la bienvenida: quien solo es contacto no necesita configurar nada.
-  if (extra === 'aviso') return <RecibiAviso onVolver={() => setExtra(null)} />;
 
   // F1 · Primer uso
   if (!prefs.bienvenidaHecha) {
@@ -188,7 +186,7 @@ function Navegacion() {
       setPaso('bienvenida');
       void guardarPreferencias({ bienvenidaHecha: true });
     };
-    if (paso === 'bienvenida') return <Bienvenida onSeguir={() => setPaso('nombre')} onAviso={() => setExtra('aviso')} />;
+    if (paso === 'bienvenida') return <Bienvenida onSeguir={() => setPaso('nombre')} />;
     if (paso === 'nombre') return <Nombre onSeguir={() => setPaso('contacto')} onVolver={() => setPaso('bienvenida')} />;
     if (paso === 'contacto') return <ContactoBienvenida onSeguir={() => setPaso('permisos')} onVolver={() => setPaso('nombre')} />;
     if (paso === 'permisos') return <Permisos onSeguir={() => setPaso('pin')} onFaltaSiempre={() => setPaso('siempre')} onVolver={() => setPaso('contacto')} />;
@@ -227,7 +225,7 @@ function Navegacion() {
   } else if (pestana === 'tu') {
     contenido = <Tu onPestana={setPestana} onRed={() => setExtra('red')} onCuentas={() => setExtra('cuentas')} onHerramientas={() => setExtra('herramientas')} onMeRobaron={() => setExtra('meRobaron')} />;
   } else {
-    contenido = <Inicio onPestana={setPestana} onCerca={() => setPestana('cerca')} onAviso={() => setExtra('aviso')} />;
+    contenido = <Inicio onPestana={setPestana} onCerca={() => setPestana('cerca')} />;
   }
 
   return (

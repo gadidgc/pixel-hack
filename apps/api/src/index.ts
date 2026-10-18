@@ -1,5 +1,5 @@
 import { armarKit, leerPerfil, validarMarca } from './bloqueo';
-import { MENSAJES, codigoContacto, leerCodigo, llamar, mandarMensaje, mandarSmsBloqueo, proveedores, type EnvMensajes, type Mensaje as MensajeWhatsApp } from './mensajes';
+import { MENSAJES, codigoContacto, leerCodigo, llamar, mandarMensaje, webAviso, mandarSmsBloqueo, proveedores, type EnvMensajes, type Mensaje as MensajeWhatsApp } from './mensajes';
 import {
   JUNTAR_GRABACIONES_GRADOS,
   JUNTAR_GRABACIONES_MS,
@@ -208,7 +208,7 @@ async function avisarFamilia(env: Env, fila: FilaAlerta, origen: string): Promis
   await reportarDesdeAlerta(env, fila, ahora);
   const tJalon = fila.t_jalon ?? fila.creada;
   // A la vez que el SMS, una llamada a cada contacto (si están encendidas): que su celular suene.
-  const llamadas = Promise.all(contactos.map((c, i) => llamar(env, c.telefono, fila.nombre, fila.id, codigoContacto(fila.id, i)))).then(async (rs) => {
+  const llamadas = Promise.all(contactos.map((c, i) => llamar(env, c.telefono, fila.nombre, fila.id, codigoContacto(fila.id, i), webAviso(origen)))).then(async (rs) => {
     const hechas = rs.map((x, i) => ({ x, c: contactos[i] })).filter(({ x }) => x.detalle !== 'llamadas apagadas');
     if (!hechas.length) return;
     await env.DB.batch(
@@ -231,7 +231,7 @@ async function avisarFamilia(env: Env, fila: FilaAlerta, origen: string): Promis
     'alerta',
     contactos.map((c, i) => ({
       contacto: c,
-      mensaje: MENSAJES.alerta(fila.nombre, tJalon, enlace(origen, fila.id, i), codigoContacto(fila.id, i)),
+      mensaje: MENSAJES.alerta(fila.nombre, tJalon, enlace(origen, fila.id, i), codigoContacto(fila.id, i), webAviso(origen)),
     })),
   );
   await llamadas.catch((e) => console.error('No se pudo registrar la llamada', e));
@@ -403,7 +403,7 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
       await env.DB.prepare(`INSERT INTO alertas (id, dispositivo, nombre, estado, prueba, creada, actualizada) VALUES (?, ?, ?, 'cancelada', 1, ?, ?)`)
         .bind(id, m.dispositivo, m.nombre, ahora, ahora)
         .run();
-      const r = await avisar(env, id, 'prueba', m.contactos.map((c) => ({ contacto: c, mensaje: MENSAJES.prueba(m.nombre, `${origen}/a/ejemplo`) })));
+      const r = await avisar(env, id, 'prueba', m.contactos.map((c) => ({ contacto: c, mensaje: MENSAJES.prueba(m.nombre, `${origen}/a/ejemplo`, webAviso(origen)) })));
       return json({ ok: r.avisados > 0 || m.contactos.length === 0, avisados: r.avisados, total: m.contactos.length, detalle: r.detalle });
     }
     case 'probar_bloqueo': {
@@ -476,7 +476,7 @@ async function marcarEncargado(env: Env, id: string, peticion: Request, origen: 
   const tomada = await env.DB.prepare('UPDATE alertas SET encargado = ?, actualizada = ? WHERE id = ? AND encargado IS NULL').bind(quien, Date.now(), id).run();
   if (!tomada.meta.changes) return json({ ok: true, detalle: 'ya había alguien a cargo' });
   const resto = contactos.map((c, i) => ({ c, i })).filter((x) => x.i !== indice);
-  const r = await avisar(env, id, 'encargado', resto.map((x) => ({ contacto: x.c, mensaje: MENSAJES.encargado(quien, fila.nombre, enlace(origen, id, x.i), codigoContacto(id, x.i)) })));
+  const r = await avisar(env, id, 'encargado', resto.map((x) => ({ contacto: x.c, mensaje: MENSAJES.encargado(quien, fila.nombre, enlace(origen, id, x.i), codigoContacto(id, x.i), webAviso(origen)) })));
   return json({ ok: true, encargado: quien, avisados: r.avisados, detalle: r.detalle });
 }
 

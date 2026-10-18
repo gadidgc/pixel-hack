@@ -7,8 +7,7 @@ import { RADIO, TIPO, useTema } from '../ui/tema';
  * F1 · Bienvenida. Una sola idea: qué hace la app. Los pasos que siguen (nombre, contacto, permisos, PIN,
  * prueba) van uno por pantalla y sin scroll (diseño: lienzo "Onboarding nuevo").
  */
-/** `onAviso`: para quien instaló la app porque le llegó un aviso (no para protegerse). */
-export function Bienvenida({ onSeguir, onAviso }: { onSeguir: () => void; onAviso: () => void }) {
+export function Bienvenida({ onSeguir }: { onSeguir: () => void }) {
   const c = useTema();
   return (
     <Pantalla>
@@ -30,7 +29,6 @@ export function Bienvenida({ onSeguir, onAviso }: { onSeguir: () => void; onAvis
         <T suave>Se configura en 2 minutos. Sin cuenta ni contraseña.</T>
       </View>
       <Boton texto="Empezar" icono="flecha" onPress={onSeguir} />
-      <Boton texto="Recibí un aviso: tengo un código" variante="terciario" onPress={onAviso} />
       <T v="apoyo13" suave style={[TIPO.apoyo13, { textAlign: 'center' }]}>
         No reemplaza a la Policía. Si estás en peligro, llama al 105.
       </T>

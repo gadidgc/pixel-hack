@@ -2,13 +2,15 @@
 
 > **Cambio del 18 de octubre, 05:00.** Zavu rechaza los enlaces en SMS (revisión automática "AI"/"Security"),
 > aunque la cuenta tenga KYC y el dominio sea propio (`alerta.gadidgc.com`). Por eso:
-> - **El SMS lleva un código** (ej. `28KAAK1`: 6 letras del id de la alerta + número del contacto), sin enlace.
->   El contacto lo escribe en la app (**"Recibí un aviso"**, en Inicio y en la bienvenida) o en la web
->   **alerta.gadidgc.com/aviso** (sin instalar nada, sirve en iPhone). Abre la misma página en vivo del enlace.
-> - **Zavu llama a cada contacto** y la voz lee el código letra por letra (agente "Alerta Arrebato" con voz en
+> - **El SMS lleva todo lo necesario y un código** (ej. `28KAAK1`: 6 letras del id de la alerta + número del
+>   contacto). El contacto entra a **alerta.gadidgc.com/aviso** (la web, sin instalar nada; no hay botón en la
+>   app), escribe el código y ve la página en vivo: ruta, "Yo me encargo" y "Sí, fue un robo".
+> - Esa dirección es **siempre la misma**: antes de cada SMS el backend pregunta a Zavu (`POST /v1/urls`) si ya
+>   la aprobó. Si sí, el SMS la lleva escrita; si no, sale el SMS solo con el código (la llamada dice la web).
+>   Cuando Zavu la apruebe una vez, todos los SMS la llevan, sin cambiar código.
+> - **Zavu llama a cada contacto**: la voz dice la web y lee el código letra por letra (agente "Alerta Arrebato" con voz en
 >   el sender `pixel`; se apaga con `ZAVU_LLAMADAS`).
 > - **WhatsApp** (Meta) sigue mandando el enlace directo (token renovado el 18; plantillas aún en revisión).
-> - El APK de Android **hay que recompilarlo** para que tenga "Recibí un aviso"; la web ya lo tiene.
 
 
 Cuando la app confirma un arrebato, el backend ([apps/api](../apps/api)) avisa a los contactos de confianza

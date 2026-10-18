@@ -7,10 +7,9 @@ import { useTema } from '../ui/tema';
 import { ContactoEnVivo } from './ContactoEnVivo';
 
 /**
- * "Recibí un aviso": el contacto escribe el código que le llegó por SMS (o que le leyó la llamada) y ve la
- * misma página en vivo que abre el enlace de WhatsApp: ruta, "Yo me encargo" y "Sí, fue un robo".
- * Existe porque Zavu rechaza nuestros enlaces en SMS: el SMS lleva un código en vez del enlace.
- * También se abre en la web: `/aviso` (para quien no tiene la app, como en iPhone).
+ * "Recibí un aviso" (solo en la web: alerta.gadidgc.com/aviso): el contacto escribe el código que le llegó por
+ * SMS (o que le leyó la llamada) y ve la misma página en vivo que abre el enlace de WhatsApp: ruta, "Yo me
+ * encargo" y "Sí, fue un robo". Existe porque Zavu rechaza nuestros enlaces en SMS. No hace falta la app.
  */
 export function RecibiAviso({ onVolver }: { onVolver?: () => void }) {
   const c = useTema();

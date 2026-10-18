@@ -11,7 +11,7 @@ import { RADIO, useTema } from '../ui/tema';
 type Fase = 'apagada' | 'protegida' | 'pausada' | 'limitada';
 
 /** F2 · Inicio: estás protegida (components/EstadoProteccion + Lectura). */
-export function Inicio({ onPestana, onCerca, onAviso }: { onPestana: (p: Pestana) => void; onCerca: () => void; onAviso: () => void }) {
+export function Inicio({ onPestana, onCerca }: { onPestana: (p: Pestana) => void; onCerca: () => void }) {
   const c = useTema();
   const ex = useEscalaX();
   const { estado, servicio } = useProteccion();
@@ -171,7 +171,6 @@ export function Inicio({ onPestana, onCerca, onAviso }: { onPestana: (p: Pestana
           <Boton texto="Pausar 30 min" icono="escudoPausa" variante="secundario" principal={false} onPress={() => setPedido('pausar')} />
         )}
         {estado.activa && <Boton texto="Apagar la protección (PIN)" variante="terciario" onPress={() => setPedido('apagar')} />}
-        <Boton texto="Recibí un aviso: tengo un código" variante="terciario" onPress={onAviso} />
 
         <View style={{ marginHorizontal: -16 }}>
           <BarraPestanas actual="inicio" onCambiar={onPestana} />
