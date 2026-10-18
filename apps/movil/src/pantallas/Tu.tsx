@@ -4,6 +4,7 @@ import { AppState, Platform, Pressable, View } from 'react-native';
 import { revisarBackend, type SaludBackend } from '../alertas';
 import { abrirAjustesDeFondo, pedirSinOptimizacionBateria, sinOptimizacionBateria } from '../bateria';
 import { PedirPin } from '../componentes/PedirPin';
+import { ConfiguracionBloqueo } from '../componentes/ConfiguracionBloqueo';
 import { guardarPin, verificarPin } from '../pin';
 import { guardarPreferencias } from '../preferencias';
 import { useProteccion, usePreferencias } from '../useProteccion';
@@ -74,6 +75,8 @@ export function Tu({ onPestana, onRed, onHerramientas, onMeRobaron }: { onPestan
           </View>
           <Fila titulo="Cambiar mi PIN" detalle="Para cancelar, pausar o apagar" onPress={() => setCambiarPin('actual')} ultima derecha={<Icono nombre="candado" tam={18} color={c.textoSuave} />} />
         </Grupo>
+
+        <ConfiguracionBloqueo />
 
         <Rotulo>PERMISOS Y BATERÍA</Rotulo>
         <Grupo>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Animated, Platform, Pressable, View } from 'react-native';
+import { faltaParaBloqueo, useEstadoBloqueo } from '../bloqueo';
 import { PedirPin } from '../componentes/PedirPin';
 import { useProteccion } from '../useProteccion';
 import { BarraPestanas, Boton, Hoja, Insignia, Lecturas, Onda, Respira, T, hora, useBucle, type Pestana } from '../ui/componentes';
@@ -22,6 +23,8 @@ export function Inicio({ onPestana, onCerca }: { onPestana: (p: Pestana) => void
     if (estado.activa) setErrorActivar('');
   }, [estado.activa]);
   const tel = estado.telemetria;
+  // Si el bloqueo no está autorizado, se dice aquí, a la vista: no solo dentro de Tú.
+  const faltaBloqueo = faltaParaBloqueo(useEstadoBloqueo());
 
   const limitada = estado.activa && (estado.segundoPlano === false || estado.tieneGps === false || estado.permisosFaltantes.length > 0);
   const fase: Fase = !estado.activa ? 'apagada' : estado.pausadaHasta ? 'pausada' : limitada ? 'limitada' : 'protegida';
@@ -126,6 +129,30 @@ export function Inicio({ onPestana, onCerca }: { onPestana: (p: Pestana) => void
               },
             ]}
           />
+        )}
+
+        {faltaBloqueo && (
+          <Pressable
+            onPress={() => onPestana('tu')}
+            accessibilityRole="button"
+            accessibilityLabel={`El celular no se bloqueará si te lo roban. ${faltaBloqueo} Arreglar`}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: RADIO.s, backgroundColor: c.avisoFondo }}
+          >
+            <Icono nombre="escudoAviso" tam={18} color={c.aviso} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <T v="cuerpo15Fuerte" color={c.aviso}>
+                Tu celular no se bloqueará si te lo roban
+              </T>
+              <T v="apoyo13" color={c.aviso}>
+                {faltaBloqueo}
+              </T>
+            </View>
+            <View style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 10, backgroundColor: c.aviso, justifyContent: 'center' }}>
+              <T v="apoyo13" color="#1f1300">
+                Arreglar
+              </T>
+            </View>
+          </Pressable>
         )}
 
         {!estado.activa ? (

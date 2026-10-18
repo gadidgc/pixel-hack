@@ -43,6 +43,7 @@ export function FalsaAlarma({ onVerAviso, onCerrar }: { onVerAviso: () => void; 
         </T>
       </View>
 
+      {alerta.bloqueo && <T v="apoyo" suave>Bloqueo del sistema: {alerta.bloqueo.detalle}</T>}
       <LineaDeTiempo pasos={alerta.pasos.map((p) => ({ hora: hora(p.t, true), texto: p.texto, clave: p.clave }))} />
 
       <View style={{ gap: 8 }}>
@@ -68,6 +69,7 @@ export function FalsaAlarma({ onVerAviso, onCerrar }: { onVerAviso: () => void; 
       <PedirPin
         visible={pin}
         titulo="Fue falsa alarma"
+        mensajeError={() => servicio.mensajePin()}
         explicacion={avisada ? `Escribe tu PIN y le diremos a ${quienes} que estás bien.` : 'Escribe tu PIN para cancelar la alerta.'}
         alConfirmar={async (p) => {
           const ok = await servicio.cancelarAlerta(p);

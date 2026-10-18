@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
+import { ConfiguracionBloqueo } from '../componentes/ConfiguracionBloqueo';
 import { servicio } from '../servicio';
 import { Boton, Pantalla, Pasos, T, Tarjeta } from '../ui/componentes';
 import { Icono, type NombreIcono } from '../ui/iconos';
@@ -64,6 +65,8 @@ export function Permisos({ onSeguir, onVolver }: { onSeguir: () => void; onVolve
           No leemos tu agenda ni tus fotos. Nadie ve tu ubicación mientras no haya una alerta.
         </T>
       </View>
+      {/* El bloqueo es opcional: no frena el primer uso, pero se ofrece aquí, que es cuando se configura todo. */}
+      {Platform.OS !== 'web' && <ConfiguracionBloqueo enBienvenida />}
       {faltan && faltan.length > 0 && (
         <View style={{ flexDirection: 'row', gap: 10, padding: 14, borderRadius: RADIO.s, backgroundColor: c.avisoFondo }}>
           <Icono nombre="escudoAviso" tam={18} color={c.aviso} />
