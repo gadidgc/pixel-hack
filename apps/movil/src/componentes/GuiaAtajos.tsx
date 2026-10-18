@@ -18,6 +18,32 @@ const PASOS = [
 ];
 
 /**
+ * Que sea más difícil dejarlo sin señal: sin señal no llega el SMS que lo bloquea. Con el iPhone bloqueado, el
+ * modo avión sale del Centro de control (o de Siri); si se apagan en la pantalla de bloqueo, el ladrón necesita
+ * el código. No evita que lo apaguen con los botones. Ajustes no deja abrir esa pantalla desde una app.
+ */
+const PASOS_SIN_SENAL = [
+  "Abre Ajustes › Face ID y código (o Touch ID y código) y escribe tu código.",
+  "Baja hasta «Permitir acceso cuando está bloqueado» y apaga «Centro de control» y «Siri».",
+  "En esa misma pantalla, activa «Protección de dispositivo robado»: protege tus claves y tu cuenta de Apple.",
+];
+
+/** Lista numerada de pasos, con el número en verde. */
+function ListaPasos({ pasos }: { pasos: string[] }) {
+  const c = useTema();
+  return pasos.map((paso, i) => (
+    <View key={i} style={{ flexDirection: "row", gap: 8 }}>
+      <T v="apoyo" color={c.protegido}>
+        {i + 1}.
+      </T>
+      <T v="apoyo" style={{ flex: 1 }}>
+        {paso}
+      </T>
+    </View>
+  ));
+}
+
+/**
  * iPhone: Apple no deja que una app bloquee la pantalla, pero Atajos sí. La dueña crea una vez la
  * automatización "Al recibir un SMS con la palabra → Bloquear pantalla" y, al confirmar un arrebato, el
  * backend le manda ese SMS a su número. Necesita señal: tarda unos segundos (el escudo de Tiempo de uso no).
@@ -59,16 +85,7 @@ export function GuiaAtajos() {
         el ladrón necesitará tu código. Se configura una vez, en un minuto.
         Necesita iOS 17 o más.
       </T>
-      {PASOS.map((paso, i) => (
-        <View key={i} style={{ flexDirection: "row", gap: 8 }}>
-          <T v="apoyo" color={c.protegido}>
-            {i + 1}.
-          </T>
-          <T v="apoyo" style={{ flex: 1 }}>
-            {paso}
-          </T>
-        </View>
-      ))}
+      <ListaPasos pasos={PASOS} />
       <Boton
         texto="Abrir Atajos"
         variante="secundario"
@@ -113,6 +130,15 @@ export function GuiaAtajos() {
           ? `Listo: al confirmar un arrebato mandaremos el SMS a ${telefonoOculto(numeroPropio)}.`
           : "Pendiente: prueba con tu número para activarlo."}
       </T>
+      <T v="cuerpoFuerte" style={{ marginTop: 8 }}>
+        Que no lo dejen sin señal tan fácil
+      </T>
+      <T v="apoyo" suave>
+        Sin señal (modo avión o apagado), el SMS no llega y tu iPhone no se
+        bloquea; tu red igual recibe la alerta. Así el ladrón necesitará tu
+        código para poner el modo avión (apagarlo con los botones sí puede):
+      </T>
+      <ListaPasos pasos={PASOS_SIN_SENAL} />
     </View>
   );
 }

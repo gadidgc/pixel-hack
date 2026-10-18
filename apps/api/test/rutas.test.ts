@@ -87,6 +87,48 @@ describe('Worker: carreras y casos borde', () => {
     expect(fila).toEqual({ estado: 'cancelada', contactos_json: null });
   });
 
+  it('iPhone: si el ladrón cierra la app, la cuenta del servidor manda otra vez el SMS de bloqueo', async () => {
+    const a = await evento({ tipo: 'alerta', dispositivo, evento: jalon(1500), ruta: [], nombre: 'Lucía', contactos, esperaS: 60, numeroPropio: '987650000' });
+    const id = a.id as string;
+    // La app ya no manda `notificar_familia`: simulamos que pasó la espera y corre el cron.
+    await env.DB.prepare('UPDATE alertas SET creada = creada - 120000 WHERE id = ?').bind(id).run();
+    await worker.scheduled({} as ScheduledController, env);
+    // Uno al detectar (si alcanzó a registrarse) y uno al vencer: al menos el del vencimiento.
+    const fila = await env.DB.prepare(`SELECT COUNT(*) AS n FROM envios WHERE alerta_id = ? AND tipo = 'bloqueo_iphone'`).bind(id).first<{ n: number }>();
+    expect(fila?.n).toBeGreaterThanOrEqual(1);
+    expect(await envios(id, 'alerta')).toBe(2);
+  });
+
+  it('iPhone: cancelar con el PIN no manda el SMS de bloqueo al vencer y borra el número', async () => {
+    const a = await evento({ tipo: 'alerta', dispositivo, evento: jalon(1700), ruta: [], nombre: 'Lucía', contactos, esperaS: 60, numeroPropio: '987650001' });
+    const id = a.id as string;
+    await evento({ tipo: 'cancelada', dispositivo });
+    await env.DB.prepare('UPDATE alertas SET creada = creada - 120000 WHERE id = ?').bind(id).run();
+    await worker.scheduled({} as ScheduledController, env);
+    const fila = await env.DB.prepare('SELECT estado, numero_propio FROM alertas WHERE id = ?').bind(id).first();
+    expect(fila).toEqual({ estado: 'cancelada', numero_propio: null });
+    expect(await envios(id, 'alerta')).toBe(0);
+  });
+
+  it('iPhone: si el servidor ya avisó sin conocer el número, notificar_familia manda el SMS de bloqueo', async () => {
+    const a = await evento({ tipo: 'alerta', dispositivo, evento: jalon(1800), ruta: [], nombre: 'Lucía', contactos, esperaS: 60 });
+    const id = a.id as string;
+    await env.DB.prepare('UPDATE alertas SET creada = creada - 120000 WHERE id = ?').bind(id).run();
+    await worker.scheduled({} as ScheduledController, env);
+    expect(await envios(id, 'bloqueo_iphone')).toBe(0);
+    // `waitUntil` de las pruebas no espera: capturamos la promesa para esperarla aquí.
+    const pendientes: Promise<unknown>[] = [];
+    const ctxEsperando = { waitUntil: (p: Promise<unknown>) => void pendientes.push(p), passThroughOnException() {} } as unknown as ExecutionContext;
+    const r = await worker.fetch(
+      new Request(`${BASE}/api/eventos`, { method: 'POST', body: JSON.stringify({ tipo: 'notificar_familia', dispositivo, evento: jalon(1800), nombre: 'Lucía', contactos, numeroPropio: '987650002' }) }),
+      env,
+      ctxEsperando,
+    );
+    expect(((await r.json()) as Record<string, unknown>).yaAvisada).toBeUndefined();
+    await Promise.all(pendientes);
+    expect(await envios(id, 'bloqueo_iphone')).toBe(1);
+  });
+
   it('cancelar en espera no avisa a nadie', async () => {
     const a = await evento({ tipo: 'alerta', dispositivo, evento: jalon(2000), ruta: [], nombre: 'Lucía', contactos, esperaS: 60 });
     await evento({ tipo: 'cancelada', dispositivo });
