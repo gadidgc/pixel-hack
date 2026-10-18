@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, TextInput, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import {
   MAX_NOTA,
@@ -10,6 +10,7 @@ import {
   reportar,
   textoCuando,
   textoDistancia,
+  textoMedios,
   type Categoria,
   type Reporte,
   type TipoReporte,
@@ -205,6 +206,8 @@ export function Cerca({ onPestana }: { onPestana: (p: Pestana) => void }) {
               const col = colores[cat];
               const on = elegido === i.id;
               const reciente = ahora - i.creado < RECIENTE_MS;
+              const medios = textoMedios(i);
+              const fuente = i.origen === 'alerta' ? 'Detectado por la app' : i.tipo === 'grabacion' ? 'Grabado por un vecino' : 'Reportado por un vecino';
               return (
                 <Pressable
                   key={i.id}
@@ -212,13 +215,27 @@ export function Cerca({ onPestana }: { onPestana: (p: Pestana) => void }) {
                   accessibilityRole="button"
                   style={{ width: 236, borderRadius: 20, overflow: 'hidden', backgroundColor: c.superficie2, borderWidth: 2, borderColor: on ? c.texto : 'transparent' }}
                 >
-                  <View style={{ height: 76, padding: 10, justifyContent: 'space-between', backgroundColor: col.halo }}>
-                    <Insignia tipo={col.insignia} texto={reciente ? `${col.nombre} · AHORA` : col.nombre} />
-                    <View style={{ position: 'absolute', right: 12, top: 18 }}>
-                      <Icono nombre={ICONO[cat]} tam={36} color={col.fondo} grosor={1.8} />
+                  {/* Arriba, como en el diseño: un cuadro de la grabación; sin grabación, el color del tipo. */}
+                  <View style={{ height: 124, backgroundColor: col.halo }}>
+                    {i.miniatura ? (
+                      <Image source={{ uri: i.miniatura }} accessibilityIgnoresInvertColors style={{ width: '100%', height: 124 }} resizeMode="cover" />
+                    ) : (
+                      <View style={{ position: 'absolute', right: 14, bottom: 14 }}>
+                        <Icono nombre={ICONO[cat]} tam={44} color={col.fondo} grosor={1.8} />
+                      </View>
+                    )}
+                    <View style={{ position: 'absolute', left: 8, top: 8 }}>
+                      <Insignia tipo={col.insignia} texto={reciente ? `${col.nombre} · AHORA` : col.nombre} />
                     </View>
+                    {!!medios && (
+                      <View style={{ position: 'absolute', right: 8, bottom: 8, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6, backgroundColor: 'rgba(8,7,6,0.78)' }}>
+                        <T v="hora" style={{ fontSize: 11, color: '#f2ece3' }}>
+                          {medios}
+                        </T>
+                      </View>
+                    )}
                   </View>
-                  <View style={{ padding: 12, paddingTop: 10, gap: 3, minHeight: 112 }}>
+                  <View style={{ padding: 12, paddingTop: 10, gap: 3 }}>
                     <T v="cuerpo15Fuerte" numberOfLines={1}>
                       {TIPOS[i.tipo].nombre}
                     </T>
@@ -226,12 +243,12 @@ export function Cerca({ onPestana }: { onPestana: (p: Pestana) => void }) {
                       {textoCuando(i.creado, ahora)} · {textoDistancia(distanciaM(aqui, i))}
                     </T>
                     {!!i.nota && (
-                      <T v="apoyo13" numberOfLines={2}>
+                      <T v="apoyo13" numberOfLines={1}>
                         “{i.nota}”
                       </T>
                     )}
                     <T v="apoyo13" color={i.origen === 'alerta' ? c.protegido : c.textoSuave}>
-                      {i.origen === 'alerta' ? 'Detectado por la app' : 'Reportado por un vecino'}
+                      {fuente}
                     </T>
                   </View>
                 </Pressable>

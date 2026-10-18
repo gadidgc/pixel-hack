@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_EVIDENCIA_BYTES, cajaDe, redondear, validarBusqueda, validarEvidencia, validarReporte } from '../src/comunidad';
+import { MAX_EVIDENCIA_BYTES, MAX_MINIATURA_BYTES, cajaDe, redondear, validarBusqueda, validarEvidencia, validarMiniatura, validarReporte } from '../src/comunidad';
 import { ErrorDeDatos } from '../src/validar';
 
 describe('validarReporte', () => {
@@ -63,5 +63,25 @@ describe('validarEvidencia', () => {
     expect(() => validarEvidencia(cabeceras({ 'Content-Length': String(MAX_EVIDENCIA_BYTES + 1) }))).toThrow(ErrorDeDatos);
     expect(() => validarEvidencia(cabeceras({ 'X-Dispositivo': '' }))).toThrow(ErrorDeDatos);
     expect(() => validarEvidencia(cabeceras({ 'X-Lat': '200', 'X-Lon': '0' }))).toThrow(ErrorDeDatos);
+  });
+});
+
+describe('validarMiniatura', () => {
+  const cabeceras = (extra: Record<string, string>) => new Headers({ 'X-Dispositivo': 'android-k3j9x2ab', 'Content-Type': 'image/jpeg', 'Content-Length': '2048', ...extra });
+
+  it('acepta un JPEG chico', () => {
+    expect(validarMiniatura(cabeceras({}))).toEqual({ dispositivo: 'android-k3j9x2ab', bytes: 2048 });
+  });
+
+  it('rechaza otros formatos (SVG puede llevar código), sin largo, muy grandes o sin dispositivo', () => {
+    expect(() => validarMiniatura(cabeceras({ 'Content-Type': 'image/svg+xml' }))).toThrow(ErrorDeDatos);
+    expect(() => validarMiniatura(cabeceras({ 'Content-Type': 'text/html' }))).toThrow(ErrorDeDatos);
+    expect(() => validarMiniatura(cabeceras({ 'Content-Length': '0' }))).toThrow(ErrorDeDatos);
+    expect(() => validarMiniatura(cabeceras({ 'Content-Length': String(MAX_MINIATURA_BYTES + 1) }))).toThrow(ErrorDeDatos);
+    expect(() => validarMiniatura(cabeceras({ 'X-Dispositivo': '' }))).toThrow(ErrorDeDatos);
+  });
+
+  it('un reporte de la comunidad no puede elegir el tipo "grabacion" (solo lo crea el servidor)', () => {
+    expect(() => validarReporte({ dispositivo: 'x', tipo: 'grabacion', lat: 0, lon: 0 })).toThrow(ErrorDeDatos);
   });
 });

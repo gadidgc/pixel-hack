@@ -1,5 +1,7 @@
 import { MENSAJES, mandarMensaje, proveedores, type EnvMensajes, type Mensaje as MensajeWhatsApp } from './mensajes';
 import {
+  JUNTAR_GRABACIONES_GRADOS,
+  JUNTAR_GRABACIONES_MS,
   MAX_EVIDENCIA_BYTES,
   MAX_EVIDENCIAS_POR_HORA,
   MAX_REPORTES_POR_HORA,
@@ -8,6 +10,7 @@ import {
   redondear,
   validarBusqueda,
   validarEvidencia,
+  validarMiniatura,
   validarReporte,
 } from './comunidad';
 import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, type Punto } from './validar';
@@ -18,7 +21,9 @@ import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, 
  * - `GET  /api/alertas/:id`: lo que ve el contacto en `/a/:id` (sin teléfonos).
  * - `POST /api/alertas/:id/encargado`: "Yo me encargo" (avisa al resto de la red).
  * - `GET  /api/reportes?lat=&lon=&radioKm=` y `POST /api/reportes`: "Cerca de ti" (reportes de la comunidad).
- * - `POST /api/evidencias` y `GET /api/evidencias/:id`: video o audio guardado en R2.
+ * - `POST /api/evidencias` y `GET /api/evidencias/:id`: video o audio guardado en R2. Si trae ubicación, se publica
+ *   en "Cerca de ti" (cuelga de un reporte del mapa).
+ * - `POST/GET /api/evidencias/:id/miniatura`: un cuadro del video (JPEG) para la tarjeta del mapa.
  * - `GET  /api/salud`: si la base y Zavu están listos.
  * - Todo lo demás: la web de la app (export de Expo en apps/movil/dist).
  */
@@ -330,21 +335,33 @@ interface FilaReporte {
   nota: string | null;
   origen: string;
   creado: number;
+  videos: number;
+  audios: number;
+  /** La evidencia más nueva del reporte que ya tiene miniatura (si hay). */
+  con_miniatura: string | null;
 }
 
 /** "Cerca de ti": lo reportado en los últimos 30 días dentro de la caja, lo más nuevo primero. Sin `dispositivo`. */
-async function buscarReportes(env: Env, params: URLSearchParams): Promise<Response> {
+async function buscarReportes(env: Env, params: URLSearchParams, origen: string): Promise<Response> {
   const b = validarBusqueda(params);
   const caja = cajaDe(b);
   const ahora = Date.now();
   const { results } = await env.DB.prepare(
-    `SELECT id, tipo, lat, lon, nota, origen, creado FROM reportes
-     WHERE lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? AND creado > ?
-     ORDER BY creado DESC LIMIT 100`,
+    `SELECT r.id, r.tipo, r.lat, r.lon, r.nota, r.origen, r.creado,
+       (SELECT COUNT(*) FROM evidencias e WHERE e.reporte_id = r.id AND e.tipo = 'video') AS videos,
+       (SELECT COUNT(*) FROM evidencias e WHERE e.reporte_id = r.id AND e.tipo = 'audio') AS audios,
+       (SELECT e.id FROM evidencias e WHERE e.reporte_id = r.id AND e.miniatura = 1 ORDER BY e.creado DESC LIMIT 1) AS con_miniatura
+     FROM reportes r
+     WHERE r.lat BETWEEN ? AND ? AND r.lon BETWEEN ? AND ? AND r.creado > ?
+     ORDER BY r.creado DESC LIMIT 100`,
   )
     .bind(caja.latMin, caja.latMax, caja.lonMin, caja.lonMax, ahora - VENTANA_REPORTES_MS)
     .all<FilaReporte>();
-  return json({ ok: true, radioKm: b.radioKm, reportes: results, ahora });
+  const reportes = results.map(({ con_miniatura, ...r }) => ({
+    ...r,
+    miniatura: con_miniatura ? `${origen}/api/evidencias/${con_miniatura}/miniatura` : null,
+  }));
+  return json({ ok: true, radioKm: b.radioKm, reportes, ahora });
 }
 
 async function crearReporte(env: Env, peticion: Request): Promise<Response> {
@@ -385,10 +402,64 @@ async function subirEvidencia(env: Env, peticion: Request, origen: string): Prom
   const copia = peticion.body.pipeTo(largo.writable);
   const [objeto] = await Promise.all([env.EVIDENCIAS.put(id, largo.readable, { httpMetadata: { contentType: e.mime } }), copia]);
   const abierta = await alertaAbierta(env, e.dispositivo, ahora);
-  await env.DB.prepare('INSERT INTO evidencias (id, dispositivo, alerta_id, tipo, mime, bytes, lat, lon, creado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(id, e.dispositivo, abierta?.id ?? null, e.tipo, e.mime, objeto.size, e.lat, e.lon, ahora)
+  const reporteId = e.lat !== null && e.lon !== null ? await reporteParaGrabacion(env, e.dispositivo, e.lat, e.lon, abierta?.id ?? null, ahora) : null;
+  await env.DB.prepare('INSERT INTO evidencias (id, dispositivo, alerta_id, tipo, mime, bytes, lat, lon, creado, reporte_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(id, e.dispositivo, abierta?.id ?? null, e.tipo, e.mime, objeto.size, e.lat, e.lon, ahora, reporteId)
     .run();
-  return json({ ok: true, id, tipo: e.tipo, bytes: objeto.size, enlace: `${origen}/api/evidencias/${id}`, alerta: abierta?.id ?? null }, 201);
+  return json(
+    { ok: true, id, tipo: e.tipo, bytes: objeto.size, enlace: `${origen}/api/evidencias/${id}`, alerta: abierta?.id ?? null, reporte: reporteId },
+    201,
+  );
+}
+
+/**
+ * El reporte de "Cerca de ti" del que cuelga una grabación: el de la alerta abierta de ese celular (si ya
+ * está en el mapa); si no, el que ese celular hizo hace poco en el mismo lugar; si no, uno nuevo de tipo
+ * 'grabacion'. La ubicación ya viene redondeada a ~100 m (validarEvidencia).
+ */
+async function reporteParaGrabacion(env: Env, dispositivo: string, lat: number, lon: number, alertaId: string | null, ahora: number): Promise<string> {
+  if (alertaId) {
+    const deAlerta = await env.DB.prepare(`SELECT id FROM reportes WHERE alerta_id = ? AND origen = 'alerta'`).bind(alertaId).first<{ id: string }>();
+    if (deAlerta) return deAlerta.id;
+  }
+  const g = JUNTAR_GRABACIONES_GRADOS;
+  const reciente = await env.DB.prepare(
+    `SELECT id FROM reportes WHERE dispositivo = ? AND creado > ? AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? ORDER BY creado DESC LIMIT 1`,
+  )
+    .bind(dispositivo, ahora - JUNTAR_GRABACIONES_MS, lat - g, lat + g, lon - g, lon + g)
+    .first<{ id: string }>();
+  if (reciente) return reciente.id;
+  const id = nuevoId();
+  await env.DB.prepare(`INSERT INTO reportes (id, tipo, lat, lon, nota, dispositivo, origen, creado) VALUES (?, 'grabacion', ?, ?, NULL, ?, 'comunidad', ?)`)
+    .bind(id, lat, lon, dispositivo, ahora)
+    .run();
+  return id;
+}
+
+/** Guarda la miniatura (JPEG) de una evidencia. Solo la puede subir el mismo celular que subió la evidencia. */
+async function subirMiniatura(env: Env, id: string, peticion: Request): Promise<Response> {
+  const m = validarMiniatura(peticion.headers);
+  if (!peticion.body) return json({ ok: false, detalle: 'la imagen llegó vacía' }, 400);
+  const fila = await env.DB.prepare('SELECT dispositivo FROM evidencias WHERE id = ?').bind(id).first<{ dispositivo: string }>();
+  // Mismo mensaje si no existe o si es de otro celular: no revelamos qué ids existen.
+  if (!fila || fila.dispositivo !== m.dispositivo) return json({ ok: false, detalle: 'no existe esa evidencia' }, 404);
+  const largo = new FixedLengthStream(m.bytes);
+  const copia = peticion.body.pipeTo(largo.writable);
+  await Promise.all([env.EVIDENCIAS.put(`${id}.jpg`, largo.readable, { httpMetadata: { contentType: 'image/jpeg' } }), copia]);
+  await env.DB.prepare('UPDATE evidencias SET miniatura = 1 WHERE id = ?').bind(id).run();
+  return json({ ok: true }, 201);
+}
+
+async function verMiniatura(env: Env, id: string, peticion: Request): Promise<Response> {
+  const objeto = await env.EVIDENCIAS.get(`${id}.jpg`);
+  if (!objeto) return json({ ok: false, detalle: 'esa evidencia no tiene miniatura' }, 404);
+  const cabeceras = new Headers(CORS);
+  cabeceras.set('Content-Type', 'image/jpeg');
+  cabeceras.set('Content-Length', String(objeto.size));
+  cabeceras.set('ETag', objeto.httpEtag);
+  cabeceras.set('Cache-Control', 'public, max-age=86400');
+  cabeceras.set('X-Content-Type-Options', 'nosniff');
+  return new Response(peticion.method === 'HEAD' ? null : objeto.body, { headers: cabeceras });
 }
 
 /** Devuelve el archivo. Acepta `Range` (los navegadores lo piden para adelantar un video). */
@@ -458,11 +529,14 @@ export default {
       const ver = url.pathname.match(/^\/api\/alertas\/([a-z0-9]{16})(\/encargado)?$/);
       if (ver && !ver[2] && peticion.method === 'GET') return await verAlerta(env, ver[1], url.origin);
       if (ver && ver[2] && peticion.method === 'POST') return await marcarEncargado(env, ver[1], peticion, url.origin);
-      if (url.pathname === '/api/reportes' && peticion.method === 'GET') return await buscarReportes(env, url.searchParams);
+      if (url.pathname === '/api/reportes' && peticion.method === 'GET') return await buscarReportes(env, url.searchParams, url.origin);
       if (url.pathname === '/api/reportes' && peticion.method === 'POST') return await crearReporte(env, peticion);
       if (url.pathname === '/api/evidencias' && peticion.method === 'POST') return await subirEvidencia(env, peticion, url.origin);
       const evidencia = url.pathname.match(/^\/api\/evidencias\/([a-z0-9]{16})$/);
       if (evidencia && (peticion.method === 'GET' || peticion.method === 'HEAD')) return await verEvidencia(env, evidencia[1], peticion);
+      const miniatura = url.pathname.match(/^\/api\/evidencias\/([a-z0-9]{16})\/miniatura$/);
+      if (miniatura && peticion.method === 'POST') return await subirMiniatura(env, miniatura[1], peticion);
+      if (miniatura && (peticion.method === 'GET' || peticion.method === 'HEAD')) return await verMiniatura(env, miniatura[1], peticion);
       return json({ ok: false, detalle: 'no encontrado' }, 404);
     } catch (e) {
       if (e instanceof ErrorDeDatos) return json({ ok: false, detalle: e.message }, 400);
