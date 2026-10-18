@@ -2,7 +2,7 @@ import { Figtree_400Regular, Figtree_500Medium, Figtree_600SemiBold } from '@exp
 import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
 import { Lexend_300Light, Lexend_500Medium, Lexend_600SemiBold, useFonts } from '@expo-google-fonts/lexend';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { usePantallaBloqueada } from './src/bloqueo';
@@ -122,6 +122,17 @@ function Navegacion() {
   const listas = Boolean(prefs?.bienvenidaHecha);
   // Con la app encima de la pantalla de bloqueo, solo se ve el "¿Todo bien?": nada de pestañas ni ajustes.
   const bloqueada = usePantallaBloqueada(Boolean(estado.alerta?.sobreBloqueo));
+  // Si se borró todo desde Herramientas, la bienvenida empieza desde el primer paso.
+  // Solo al pasar de "lista" a "no lista": durante la bienvenida las preferencias cambian y no hay que reiniciarla.
+  const estabaLista = useRef(listas);
+  useEffect(() => {
+    if (estabaLista.current && !listas) {
+      setPaso('bienvenida');
+      setExtra(null);
+      setPestana('inicio');
+    }
+    estabaLista.current = listas;
+  }, [listas]);
   useEffect(() => {
     if (listas && !web && Platform.OS !== 'web') void servicio.reanudarSiEstabaActiva();
     // Solo al abrir la app.
