@@ -38,12 +38,13 @@ export function urlBackend(): string {
  * `bloqueo` (bancos, operadora, línea, IMEI, DNI opcional) viaja con la alerta para el kit de bloqueo.
  */
 export type MensajeAlerta =
-  | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[]; nombre: string; contactos: Contacto[]; esperaS: number; bloqueo?: Partial<PerfilBloqueo> }
+  | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[]; nombre: string; contactos: Contacto[]; esperaS: number; bloqueo?: Partial<PerfilBloqueo>; numeroPropio?: string }
   | { tipo: 'notificar_familia'; evento: EventoDetector; nombre: string; contactos: Contacto[]; bloqueo?: Partial<PerfilBloqueo> }
   | { tipo: 'cancelada'; evento: EventoDetector }
   | { tipo: 'ubicacion'; lectura: LecturaGps }
   | { tipo: 'prueba'; nombre: string; contactos: Contacto[] }
-  | { tipo: 'motivo_falsa_alarma'; motivo: string };
+  | { tipo: 'motivo_falsa_alarma'; motivo: string }
+  | { tipo: 'probar_bloqueo'; numeroPropio: string };
 
 export interface ResultadoEnvio {
   enviado: boolean;

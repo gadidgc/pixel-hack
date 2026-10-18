@@ -16,6 +16,15 @@ Probado de verdad en un celular del equipo: llegaron la alerta por WhatsApp y po
 3. En la app, agrega a un compañero como contacto y haz la "prueba guiada": le llega un WhatsApp y un SMS.
 4. iPhone: no hay app instalable (falta cuenta de desarrollador de Apple); el iPhone sirve como **contacto** que recibe la alerta y abre el enlace.
 
+## SMS de bloqueo de iPhone (Atajos)
+
+Si la dueña configuró su número en la guía de Atajos (Tú › Bloqueo antirrobo), al llegar una `alerta` el
+backend le manda **al instante** (sin esperar la cuenta) el SMS `Alerta Arrebato AA-BLOQUEO. Si no fuiste
+tu, ignora este mensaje.` a **su propio número**. Su automatización de Atajos bloquea la pantalla al recibirlo.
+Solo SMS (un WhatsApp no dispara la automatización), sin enlace y sin "robo". El número no se guarda en la
+base: solo queda enmascarado en `envios` con tipo `bloqueo_iphone`. El botón **Probar** usa el tipo
+`probar_bloqueo`.
+
 ## Límites que hay que conocer (para no sorprendernos en la demo)
 - **El SMS no lleva enlace.** El filtro antifraude de Zavu bloquea como "phishing" todo SMS que hable de un celular robado o tenga un enlace (`sms_compliance_blocked`). Por eso el SMS solo dice "revisa tu WhatsApp".
 - **1 SMS por minuto al mismo número** (regla de Zavu). Si se cancela la alerta antes de un minuto, el "está bien" sale solo por WhatsApp.

@@ -1,5 +1,8 @@
 {
-  "platforms": ["android"],
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["BloqueoPantallaModule"]
+  },
   "android": {
     "modules": ["pe.pixelhack.bloqueopantalla.BloqueoPantallaModule"]
   }

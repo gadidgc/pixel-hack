@@ -7,6 +7,7 @@ import type { EstadoProteccion } from '../servicio';
 import { ETIQUETAS, type Etiqueta } from '../grabadora';
 import { correrSimulacion, ESCENARIOS_APP, type ResultadoSimulacion } from '../simulacion';
 import { describirEvento, useProteccion } from '../useProteccion';
+import { preferencias } from '../preferencias';
 import { Boton, Chip, Grupo, Lecturas, Pantalla, Rotulo, T, Tarjeta, hora } from '../ui/componentes';
 import { Icono } from '../ui/iconos';
 import { useTema } from '../ui/tema';
@@ -92,7 +93,7 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
 
       <Rotulo>ENSAYAR LA ALERTA COMPLETA</Rotulo>
       <T v="apoyo" suave>
-        En 5 s dispara una alerta de verdad con un arrebato simulado: bloquea el celular, pregunta "¿Todo bien?" sobre la pantalla de bloqueo y avisa a tu red si no cancelas con tu PIN. Sal a otra app o apaga la pantalla para probarlo.
+        En 5 s dispara una alerta de verdad con un arrebato simulado: bloquea el celular (en iPhone tapa las demás apps), pregunta "¿Todo bien?" y avisa a tu red si no cancelas con tu PIN. Sal a otra app o apaga la pantalla para probarlo.
       </T>
       <Boton
         texto={!estado.activa ? 'Activa la protección para ensayar' : 'Ensayar en 5 s'}
@@ -102,14 +103,18 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
         onPress={() => {
           // Se revisa en el momento: si falta algo, se dice ANTES de ensayar (en el Samsung no se bloqueó por esto).
           const bloqueo = consultarBloqueo();
-          const falta = faltaParaBloqueo(bloqueo);
+          const falta = faltaParaBloqueo(bloqueo, preferencias().numeroPropio);
           Alert.alert(
             'Ensayar la alerta completa',
             falta
-              ? `Ojo: ${falta} Así el celular NO se bloqueará: solo verás la notificación y se avisará a tu red si no cancelas. Arréglalo en Tú › Bloqueo antirrobo.`
+              ? Platform.OS === 'ios'
+                ? `Ojo: ${falta} Así el iPhone NO se bloqueará solo: verás la notificación y se avisará a tu red si no cancelas. Arréglalo en Tú › Bloqueo antirrobo.`
+                : `Ojo: ${falta} Así el celular NO se bloqueará: solo verás la notificación y se avisará a tu red si no cancelas. Arréglalo en Tú › Bloqueo antirrobo.`
               : bloqueo.disponible
-                ? 'Es una alerta real: bloquea el celular y, si no cancelas con tu PIN a tiempo, avisa a tu red.'
-                : 'Es una alerta real: este celular no se puede bloquear desde la app (iPhone o web), pero verás el "¿Todo bien?" y, si no cancelas con tu PIN a tiempo, se avisará a tu red.',
+                ? Platform.OS === 'ios'
+                  ? 'Es una alerta real: tapa las demás apps del iPhone (al cancelar con tu PIN vuelven) y, si no cancelas con tu PIN a tiempo, avisa a tu red.'
+                  : 'Es una alerta real: bloquea el celular y, si no cancelas con tu PIN a tiempo, avisa a tu red.'
+                : 'Es una alerta real: este celular no se puede bloquear desde la app, pero verás el "¿Todo bien?" y, si no cancelas con tu PIN a tiempo, se avisará a tu red.',
             [
               { text: 'Cancelar', style: 'cancel' },
               falta ? { text: 'Ir a arreglarlo', onPress: onVolver } : { text: 'Ensayar', onPress: () => servicio.ensayarAlertaCompleta(5) },
