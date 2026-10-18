@@ -62,9 +62,10 @@ export async function escucharUbicacion(alRecibir: (l: LecturaGps) => void): Pro
     activityType: Location.ActivityType.Other,
     showsBackgroundLocationIndicator: true,
     foregroundService: {
-      notificationTitle: 'Alerta Arrebato: protección activa',
-      notificationBody: 'Vigilamos el movimiento del celular. Para apagarla, abre la app y usa tu PIN.',
-      notificationColor: '#1b5e20',
+      // F2 · Notificación fija (diseño "Notificación"): calma, sin datos técnicos.
+      notificationTitle: 'Estás protegida',
+      notificationBody: `Desde las ${new Date().toTimeString().slice(0, 5)}. Usa tu celular normal.`,
+      notificationColor: '#8ee3c0',
       killServiceOnDestroy: false,
     },
   });

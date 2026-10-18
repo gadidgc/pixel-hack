@@ -9,3 +9,4 @@ web-build/
 !.env.example
 apps/movil/ios/
 apps/movil/android/
+apps/movil/modules/*/android/build/

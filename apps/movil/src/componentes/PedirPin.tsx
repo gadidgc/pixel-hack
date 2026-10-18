@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { pinValido } from '../pin';
+import { Boton, T } from '../ui/componentes';
+import { FUENTES, RADIO, TIPO, useTema } from '../ui/tema';
 
 interface Props {
   visible: boolean;
@@ -11,10 +13,15 @@ interface Props {
   alCerrar: () => void;
   /** Al crear el PIN se pide dos veces. */
   crear?: boolean;
+  textoConfirmar?: string;
 }
 
-/** Ventana para escribir (o crear) el PIN del dueño. */
-export function PedirPin({ visible, titulo, explicacion, alConfirmar, alCerrar, crear = false }: Props) {
+/**
+ * Ventana para escribir (o crear) el PIN del dueño. Cancelar una alerta, pausar o apagar la protección
+ * nunca es un botón simple: pide el PIN (components/Boton y components/AvisoDiscreto).
+ */
+export function PedirPin({ visible, titulo, explicacion, alConfirmar, alCerrar, crear = false, textoConfirmar }: Props) {
+  const c = useTema();
   const [pin, setPin] = useState('');
   const [repetir, setRepetir] = useState('');
   const [error, setError] = useState('');
@@ -37,59 +44,62 @@ export function PedirPin({ visible, titulo, explicacion, alConfirmar, alCerrar, 
     else setError(crear ? 'No se pudo guardar el PIN.' : 'PIN incorrecto.');
   };
 
+  const campo = {
+    backgroundColor: c.superficie2,
+    borderRadius: RADIO.s,
+    paddingHorizontal: 16,
+    minHeight: 56,
+    color: c.texto,
+    fontFamily: FUENTES.datosMedio,
+    fontSize: 22,
+    letterSpacing: 8,
+    textAlign: 'center' as const,
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={cerrar}>
-      <View style={e.fondo}>
-        <View style={e.caja}>
-          <Text style={e.titulo}>{titulo}</Text>
-          <Text style={e.texto}>{explicacion}</Text>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 16 }}>
+        <View style={{ backgroundColor: c.superficie, borderRadius: RADIO.l, borderTopWidth: 1, borderTopColor: c.brillo, padding: 20, gap: 14, maxWidth: 420, width: '100%', alignSelf: 'center' }}>
+          <T v="titulo">{titulo}</T>
+          <T v="apoyo" suave>
+            {explicacion}
+          </T>
           <TextInput
-            style={e.campo}
+            style={campo}
             value={pin}
             onChangeText={(v) => setPin(v.replace(/\D/g, '').slice(0, 6))}
             keyboardType="number-pad"
             secureTextEntry
             placeholder="PIN"
+            placeholderTextColor={c.textoSuave}
             autoFocus
             accessibilityLabel="PIN"
+            onSubmitEditing={crear ? undefined : confirmar}
           />
           {crear && (
             <TextInput
-              style={e.campo}
+              style={campo}
               value={repetir}
               onChangeText={(v) => setRepetir(v.replace(/\D/g, '').slice(0, 6))}
               keyboardType="number-pad"
               secureTextEntry
               placeholder="Repite el PIN"
+              placeholderTextColor={c.textoSuave}
               accessibilityLabel="Repite el PIN"
+              onSubmitEditing={confirmar}
             />
           )}
-          {!!error && <Text style={e.error}>{error}</Text>}
-          <View style={e.fila}>
-            <Pressable style={[e.boton, e.secundario]} onPress={cerrar}>
-              <Text style={e.textoSecundario}>Volver</Text>
+          {!!error && <Text style={[TIPO.apoyo, { color: c.alerta, fontFamily: FUENTES.textoFuerte }]}>{error}</Text>}
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Pressable onPress={cerrar} accessibilityRole="button" style={{ flex: 1, minHeight: 52, borderRadius: RADIO.total, backgroundColor: c.superficie2, alignItems: 'center', justifyContent: 'center' }}>
+              <T v="cuerpo15Fuerte">Volver</T>
             </Pressable>
-            <Pressable style={[e.boton, ocupado && e.deshabilitado]} disabled={ocupado} onPress={confirmar}>
-              <Text style={e.textoBoton}>{crear ? 'Guardar PIN' : 'Confirmar'}</Text>
-            </Pressable>
+            <View style={{ flex: 1 }}>
+              <Boton texto={textoConfirmar ?? (crear ? 'Guardar PIN' : 'Confirmar')} onPress={confirmar} deshabilitado={ocupado} principal={false} />
+            </View>
           </View>
         </View>
       </View>
     </Modal>
   );
 }
-
-const e = StyleSheet.create({
-  fondo: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
-  caja: { backgroundColor: '#fff', borderRadius: 14, padding: 18, gap: 10, maxWidth: 420, width: '100%', alignSelf: 'center' },
-  titulo: { fontSize: 19, fontWeight: '700', color: '#111' },
-  texto: { fontSize: 14, color: '#444' },
-  campo: { borderWidth: 1, borderColor: '#c5ccd4', borderRadius: 10, padding: 12, fontSize: 20, letterSpacing: 6, textAlign: 'center' },
-  error: { color: '#c62828', fontWeight: '600' },
-  fila: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  boton: { flex: 1, backgroundColor: '#1565c0', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  secundario: { backgroundColor: '#eef1f4' },
-  deshabilitado: { backgroundColor: '#9aa4b0' },
-  textoBoton: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  textoSecundario: { color: '#222', fontWeight: '600', fontSize: 16 },
-});

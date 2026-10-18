@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "pe.pixelhack.alertaarrebato",
@@ -39,7 +39,8 @@
       "name": "Alerta Arrebato",
       "shortName": "Arrebato",
       "lang": "es-PE",
-      "themeColor": "#1b5e20"
+      "themeColor": "#0d0c0b",
+      "backgroundColor": "#0d0c0b"
     },
     "plugins": [
       [
@@ -59,7 +60,29 @@
         }
       ],
       "expo-sharing",
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Para grabar evidencia en video si es seguro para ti.",
+          "microphonePermission": "Para grabar el audio de la evidencia.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Para grabar evidencia solo con audio, con el celular en el bolsillo."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1b5e20"
+        }
+      ]
+    ],
+    "backgroundColor": "#0d0c0b"
   }
 }

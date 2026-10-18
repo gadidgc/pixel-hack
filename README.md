@@ -51,6 +51,7 @@ En la web, los sensores solo funcionan con **HTTPS** y abriendo la página direc
 - Simulador físico con 26 escenarios (arrebatos y trampas: caídas, mototaxi, bache, frenazo, correr al bus…), recalibrado con datos reales.
 - Validación con datasets reales de terceros (SHL, SPU) y pruebas automáticas (vitest), algunas con datos reales.
 - App Expo: protección **en segundo plano** en iPhone y Android (módulo nativo propio + GPS en segundo plano; exige ubicación "Permitir siempre"), **PIN** para cancelar o apagar, estado real de la alerta (panel y familia), modo demo, **modo grabar** (exporta CSV) y **simular** casos sin moverse.
+- **Interfaz completa** con el sistema de diseño "Negro cálido": onboarding con prueba guiada, "¿Todo bien?" con cuenta regresiva, falsa alarma con PIN, página del contacto, "Me robaron", grabar evidencia, Cerca y ajustes (ver "Pantallas").
 - Reproductor de grabaciones CSV reales en la terminal.
 
 ## Ideas pendientes (todavía no funciona)
@@ -59,7 +60,16 @@ En la web, los sensores solo funcionan con **HTTPS** y abriendo la página direc
 - Probar en celulares reales la protección en segundo plano (ya está programada: módulo nativo + GPS en segundo plano; ver PLAN §5).
 - Arrebatos simulados en bici **con GPS**, grabados por nosotros (no existen datos públicos de arrebatos desde moto).
 - Veto por Bluetooth del auto o Wi-Fi conocido (para las falsas alarmas en auto que quedan).
-- Diseño de la interfaz.
+- Datos reales en **Cerca** y en la **página del contacto** (hoy muestran datos de ejemplo, marcados como tales).
+- Activarse sola al salir de casa o de lugares conocidos, subir la evidencia a un servidor, reporte en PDF para la denuncia y huella digital (hoy se usa PIN).
+
+## Pantallas
+Diseño: [sistema de diseño](https://claude.ai/artifact/HW9kceGpSuZaAxxFtccVMj) y [14 pantallas](https://claude.ai/artifact/3kUXLiWYpeJsixzCv4dpZp). Detalle por flujo (F1–F8) en [PLAN §7](docs/PLAN.md#7-interfaz).
+- **Onboarding (F1):** Bienvenida → Permisos → Contacto (red de confianza, invitación por WhatsApp) → Prueba (un arrebato grabado pasa por el detector real) y PIN.
+- **Inicio (F2):** estado de la protección, lecturas en vivo, pausa de 30 min y apagar con PIN.
+- **Alerta (F4):** "¿Todo bien?" en silencio antes de avisar a tu red; falsa alarma con motivo y PIN.
+- **Contacto (F5)** y **Me robaron (F6):** páginas web, `?ver=contacto` y `?ver=yo`.
+- **Grabar (F7)** evidencia en video o audio; **Cerca (F8)** mapa con reportes de ejemplo; **Tú**: ajustes y herramientas del equipo.
 
 ## Reglas del repo
 - Todo cambio entra por **Pull Request** y lo aprueba otro integrante. Nadie hace push directo a `main`.

@@ -1,5 +1,6 @@
 import type { EventoDetector, LecturaGps } from '@pixel-hack/detector';
 import { Platform } from 'react-native';
+import type { Contacto } from './preferencias';
 
 /**
  * Envío de alertas al panel (backend en construcción, ver docs/PLAN.md §6).
@@ -14,11 +15,17 @@ const URL_ALERTAS = process.env.EXPO_PUBLIC_URL_ALERTAS ?? '';
  * - `notificar_familia`: 10 s después, si el dueño no la canceló con su PIN.
  * - `ubicacion`: cada lectura GPS mientras dure la alerta (la ruta de huida).
  * - `cancelada`: el dueño puso su PIN: era falsa alarma.
+ * - `prueba`: la prueba guiada; el backend manda a la red un mensaje marcado como PRUEBA.
+ * - `motivo_falsa_alarma`: opcional, para mejorar el detector.
+ * `contactos` viaja solo en una alerta o prueba, para que el backend sepa a quién escribir.
  */
 export type MensajeAlerta =
-  | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[] }
-  | { tipo: 'notificar_familia' | 'cancelada'; evento: EventoDetector }
-  | { tipo: 'ubicacion'; lectura: LecturaGps };
+  | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[]; nombre: string; contactos: Contacto[] }
+  | { tipo: 'notificar_familia'; evento: EventoDetector; nombre: string; contactos: Contacto[] }
+  | { tipo: 'cancelada'; evento: EventoDetector }
+  | { tipo: 'ubicacion'; lectura: LecturaGps }
+  | { tipo: 'prueba'; nombre: string; contactos: Contacto[] }
+  | { tipo: 'motivo_falsa_alarma'; motivo: string };
 
 export interface ResultadoEnvio {
   enviado: boolean;
@@ -33,7 +40,7 @@ export function hayBackend(): boolean {
 }
 
 export async function enviar(mensaje: MensajeAlerta): Promise<ResultadoEnvio> {
-  if (!hayBackend()) return { enviado: false, detalle: 'sin backend configurado (solo local)' };
+  if (!hayBackend()) return { enviado: false, detalle: 'falta conectar el panel; quedó solo en este celular' };
   const control = new AbortController();
   const limite = setTimeout(() => control.abort(), 5000);
   try {

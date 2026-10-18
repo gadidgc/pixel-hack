@@ -253,14 +253,21 @@ La app ya envía todo a `EXPO_PUBLIC_URL_ALERTAS` ([src/alertas.ts](../apps/movi
 ```jsonc
 { "dispositivo": "android-k3j9x2ab", "enviadoEn": 1760740000000, "tipo": "alerta", "evento": { "tJalon": ..., "via": "velocidad_gps", "confianza": "alta",
   "velocidadMs": 9.1, "posicionJalon": { "lat": -12.04, "lon": -77.04, "precision": 8, "t": ... }, "ultimaPosicion": { ... } },
-  "ruta": [ { "t": ..., "lat": ..., "lon": ..., "velocidad": 1.2, "precision": 6 }, ... ] }
-{ "dispositivo": "...", "enviadoEn": ..., "tipo": "notificar_familia", "evento": { ... } }
+  "ruta": [ { "t": ..., "lat": ..., "lon": ..., "velocidad": 1.2, "precision": 6 }, ... ],
+  "nombre": "Lucía", "contactos": [ { "nombre": "Mamá", "telefono": "+51..." }, ... ] }
+{ "dispositivo": "...", "enviadoEn": ..., "tipo": "notificar_familia", "evento": { ... }, "nombre": "...", "contactos": [ ... ] }
 { "dispositivo": "...", "enviadoEn": ..., "tipo": "ubicacion", "lectura": { "t": ..., "lat": ..., "lon": ..., "velocidad": 8.7, "precision": 6 } }
 { "dispositivo": "...", "enviadoEn": ..., "tipo": "cancelada", "evento": { "motivo": "cancelado", ... } }
+{ "dispositivo": "...", "enviadoEn": ..., "tipo": "prueba", "nombre": "...", "contactos": [ ... ] }
+{ "dispositivo": "...", "enviadoEn": ..., "tipo": "motivo_falsa_alarma", "motivo": "Iba en auto" }
 ```
 - `alerta`: al instante. El backend la muestra en el panel **sin avisar todavía a la familia**. `ruta` = los últimos 60 s.
-- `notificar_familia`: 10 s después, si el dueño no la canceló con su PIN. **Recién ahí** se manda el WhatsApp/SMS.
+- `notificar_familia`: pasado el tiempo de espera (10, 15 o 20 s, lo elige la persona en "Tú"; 10 s por defecto), si no la canceló con su PIN. **Recién ahí** se manda el WhatsApp/SMS a `contactos`.
 - `ubicacion`: cada segundo **solo mientras dura la alerta** (la ruta de huida).
+- `prueba`: la prueba guiada del onboarding. El backend manda a la red un mensaje marcado como **PRUEBA**.
+- `motivo_falsa_alarma`: opcional, lo que la persona marcó al cancelar ("Iba en auto", "Se me cayó"…). Sirve para mejorar el detector.
+- `nombre` y `contactos` viajan **solo** en `alerta`, `notificar_familia` y `prueba`, para saber a quién escribir. Fuera de eso, quedan guardados solo en el celular.
+- La pausa (30 min con PIN) no se envía: mientras dura, el detector no corre.
 - Un "posible jalón" **no** se envía: caminando hay cientos por hora (auditoría).
 
 ### 6.2 Propuesta
@@ -280,10 +287,40 @@ Solo los nombramos si de verdad los usamos.
 
 ---
 
-## 7. Interfaz (después)
+## 7. Interfaz
 
-**Propuesta completa de funcionalidades (Cesar):** [funcionalidades-app.md](funcionalidades-app.md): onboarding, alerta a la familia, "Me robaron" desde otro celular, la primera hora (bloquear todo), reporte de extorsión, panel y "cancelar con PIN". El detector de este plan es su funcionalidad ⭐ (§4.2 de esa propuesta).
-Hoy hay **una pantalla simple** a propósito: activar, lecturas en vivo, alerta con "falsa alarma", modo demo, grabar y simular. Ideas para después: pantalla de alerta grande con cuenta regresiva para cancelar con PIN, contacto de confianza, historial, onboarding de permisos, ícono y nombre definitivos.
+**Propuesta de funcionalidades (Cesar):** [funcionalidades-app.md](funcionalidades-app.md), flujos F1 a F8. El detector de este plan es su funcionalidad ⭐.
+**Diseño:** sistema de diseño "Alerta Arrebato" v2 "Negro cálido" ([artifact](https://claude.ai/artifact/HW9kceGpSuZaAxxFtccVMj)) y 14 pantallas diseñadas ([artifact](https://claude.ai/artifact/3kUXLiWYpeJsixzCv4dpZp)). Ya están implementadas en `apps/movil`.
+
+**Base visual** ([src/ui/](../apps/movil/src/ui)): colores y medidas en `tema.ts` (tema **noche** por defecto; tema **día** para las páginas del contacto y "Me robaron"), íconos propios, componentes (botón, insignia, lecturas, tarjeta, hoja, línea de tiempo, barra de pestañas y animaciones que respetan "reducir movimiento"), un mapa estilizado y las fuentes Lexend, Figtree e IBM Plex Mono.
+
+**Pantallas implementadas** ([src/pantallas/](../apps/movil/src/pantallas), navegación en [App.tsx](../apps/movil/App.tsx)):
+
+| Flujo | Pantalla | Qué hace |
+|---|---|---|
+| F1 Onboarding | Bienvenida, Permisos, Contacto, Prueba | Nombre; permisos; red de confianza con invitación por WhatsApp (link `wa.me`); prueba guiada que pasa un arrebato grabado por **el mismo detector**; creación del PIN |
+| F2 Protección | Inicio | Estado (protegida, en pausa, limitada, apagada), lecturas en vivo, pausa de 30 min con PIN, grabar, apagar con PIN |
+| F4 Alerta | TodoBien | "¿Todo bien?" en silencio con cuenta regresiva antes de avisar a la red; también llega como notificación del sistema (expo-notifications) |
+| F4 Falsa alarma | FalsaAlarma | Línea de tiempo, motivo con chips y cancelar con PIN |
+| F5 Contacto | WebContacto | Lo que ve el contacto (tema día). En la web: `?ver=contacto`. **Datos de ejemplo, marcados como tales**, hasta que exista el backend |
+| F6 Me robaron | MeRobaron | Lista de la primera hora (bloquear línea, cuentas, IMEI…). En la web: `?ver=yo` |
+| F7 Evidencia | Grabar | Video (expo-camera) o audio (expo-audio), guardado en el celular, para compartir. No está en la web |
+| F8 Cerca | Cerca | Mapa primero con puntos y carrusel de fotos. **Datos de ejemplo, marcados como tales**; fotos generadas con Nano Banana (`assets/fotos`) |
+| Ajustes | Tú | Red, tiempo de espera (10/15/20 s), cambiar PIN, permisos y batería, estado del backend, guía de la primera hora, herramientas del equipo |
+| Equipo | Herramientas | Modo demo, grabar sensores en CSV, simulaciones y registro |
+
+Las preferencias (nombre, red, tiempo de espera) se guardan **solo en el celular** ([src/preferencias.ts](../apps/movil/src/preferencias.ts), SecureStore o localStorage en la web).
+
+**No son pantallas, son contenido del sistema:**
+- **Notificación fija de Android:** "Estás protegida · Desde las HH:MM. Usa tu celular normal."
+- **Mensaje de WhatsApp:** el texto está en el diseño; lo manda el backend de Piero con Zavu (§6.2).
+
+**Pendiente a propósito (no lo hicimos):**
+- Activarse sola al salir de casa o de lugares conocidos.
+- Backend de reportes de la comunidad (Cerca usa datos de ejemplo).
+- Subir la evidencia a un servidor (hoy queda en el celular).
+- Reporte en PDF para la denuncia policial.
+- Huella digital: usamos PIN.
 
 ---
 
@@ -337,10 +374,11 @@ Cada uno trabaja en su rama `<nombre>/<tema>` y abre PR. `npm test` debe pasar.
 | Simulador físico, 26 escenarios, día normal, robustez | Probar en celulares reales (iPhone, Samsung, Xiaomi) |
 | 64 pruebas automáticas, reporte reproducible | Backend + panel con mapa |
 | **Validado con datos reales:** 93 h de SHL, 24 robos de SPU, 130 empalmes semi-reales | Arrebatos simulados en bici con GPS (grabaciones nuestras) |
-| App Expo SDK 58 (iPhone, Android, web): protección, alerta, cancelar, grabar CSV, simular | WhatsApp/SMS con Zavu |
+| App Expo SDK 58 (iPhone, Android, web): protección, alerta, cancelar, grabar CSV, simular | WhatsApp/SMS con Zavu (el texto del mensaje ya está diseñado) |
 | Flujo en vivo probado en el navegador con un "celular falso" | URL pública con HTTPS |
 | Segundo plano programado (módulo nativo Kotlin + Swift, GPS en segundo plano, permisos obligatorios), PIN, estado real de la alerta; app de iPhone con el módulo compila y abre | **Probar el segundo plano en celulares reales** (pantalla apagada, otra app abierta) |
-| Reproductor de grabaciones en la terminal | Diseño de la interfaz |
+| Reproductor de grabaciones en la terminal | Datos reales en Cerca y en la página del contacto (hoy son de ejemplo) |
+| **Interfaz implementada** (§7): sistema de diseño "Negro cálido", onboarding con prueba guiada, Inicio, "¿Todo bien?", falsa alarma, página del contacto, "Me robaron", grabar evidencia, Cerca, Tú | Activarse sola al salir de casa, subir evidencia, reporte PDF, huella |
 
 ---
 
