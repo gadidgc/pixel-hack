@@ -13,6 +13,15 @@
       "env": {
         "SIN_TIEMPO_DE_USO": "1"
       }
+    },
+    "interno": {
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "default"
+      },
+      "env": {
+        "SIN_TIEMPO_DE_USO": "1"
+      }
     }
   },
   "submit": {
