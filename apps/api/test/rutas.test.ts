@@ -131,6 +131,12 @@ describe('Worker: carreras y casos borde', () => {
     expect((await pedir('/api/codigo/hola')).status).toBe(400);
   });
 
+  it('la raíz lleva a la página de descarga (no hay app en la web)', async () => {
+    const r = await pedir('/');
+    expect(r.status).toBe(302);
+    expect(r.headers.get('Location')).toBe(`${BASE}/descargar/`);
+  });
+
   it('la descarga del APK responde a HEAD sin mandar el archivo', async () => {
     await env.EVIDENCIAS.put('app/AlertaArrebato.apk', new Uint8Array(1234));
     const r = await pedir('/api/descargar/android', { method: 'HEAD' });

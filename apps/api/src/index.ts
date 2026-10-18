@@ -30,7 +30,8 @@ import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, 
  * - `POST/GET /api/evidencias/:id/miniatura`: un cuadro del video (JPEG) para la tarjeta del mapa.
  * - `GET  /api/reportes/:id/evidencias`: las grabaciones de un reporte (video, audio con su onda), para su hoja.
  * - `GET  /api/salud`: si la base y Zavu están listos.
- * - Todo lo demás: la web de la app (export de Expo en apps/movil/dist).
+ * - `/`: redirige a `/descargar/` (la página para bajar el APK).
+ * - Todo lo demás: la web (export de Expo en apps/movil/dist), solo con las páginas del contacto (`/a/:id`, `/aviso`).
  */
 
 export interface Env extends EnvMensajes {
@@ -750,6 +751,8 @@ async function salud(env: Env): Promise<Response> {
 export default {
   async fetch(peticion: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(peticion.url);
+    // La raíz ya no abre la app en el navegador (era una demo que confundía): lleva a la descarga del APK.
+    if (url.pathname === '/') return Response.redirect(`${url.origin}/descargar/`, 302);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(peticion);
     if (peticion.method === 'OPTIONS') return new Response(null, { headers: CORS });
     try {

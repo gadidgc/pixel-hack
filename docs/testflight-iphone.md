@@ -70,7 +70,7 @@ Todo desde `apps/movil`.
      las siguientes builds de la misma versión suelen pasar sin revisión.
 
 5. Cuando Apple apruebe, copiar el enlace público (`https://testflight.apple.com/join/XXXXXXXX`) y cambiar el QR
-   de iPhone en la página `/descargar` (hasta entonces apunta a la versión web).
+   de iPhone en la página `/descargar` (hasta entonces no tiene botón de iPhone: la versión web se quitó).
 
 ## Si algo falla
 

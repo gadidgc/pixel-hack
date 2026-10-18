@@ -43,6 +43,7 @@ type Extra = null | 'red' | 'cuentas' | 'herramientas' | 'meRobaron' | 'vistaCon
  * - `/a/<id>?c=<n>`: lo que ve el contacto (F5), en vivo desde el backend. `/a/ejemplo` o `?ver=contacto`: vista de ejemplo.
  * - `/yo` o `?ver=yo`: "Me robaron" (F6).
  * - `/aviso`: "Recibí un aviso" (el código del SMS o de la llamada), para quien no tiene la app.
+ * Nada más: la app completa solo existe en el celular (Android, el APK de `/descargar/`).
  */
 type PaginaWeb = { tipo: 'contacto'; id: string; contacto: number | null } | { tipo: 'yo' } | { tipo: 'aviso' } | null;
 
@@ -61,6 +62,11 @@ function paginaWeb(): PaginaWeb {
   if (pathname.startsWith('/aviso')) return { tipo: 'aviso' };
   return null;
 }
+
+// En la web NO hay versión de la app (era una demo que confundía): solo las páginas que se abren desde otro
+// celular. Cualquier otra dirección lleva a la descarga del APK. (La raíz `/` ya la redirige el Worker.)
+const SIN_APP_EN_LA_WEB = Platform.OS === 'web' && typeof window !== 'undefined' && paginaWeb() === null;
+if (SIN_APP_EN_LA_WEB) window.location.replace('/descargar/');
 
 function datosDeLaAlerta(estado: EstadoProteccion, nombre: string): DatosContacto {
   const a = estado.alerta;
@@ -167,6 +173,7 @@ function Navegacion() {
   if (web?.tipo === 'contacto') return <ContactoEnVivo key={web.id} id={web.id} contacto={web.contacto} />;
   if (web?.tipo === 'yo') return <MeRobaron />;
   if (web?.tipo === 'aviso') return <RecibiAviso />;
+  if (SIN_APP_EN_LA_WEB) return <View style={{ flex: 1, backgroundColor: COLORES.noche.fondo }} />;
   if (!prefs) return <View style={{ flex: 1, backgroundColor: COLORES.noche.fondo }} />;
 
   // F1 · Primer uso

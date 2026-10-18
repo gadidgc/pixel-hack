@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vigía · Descarga la app</title>
-<meta name="description" content="Si te arranchan el celular, tu familia lo sabe al toque. App para iPhone y Android que avisa a tu familia por WhatsApp y SMS.">
+<meta name="description" content="Si te arranchan el celular, tu familia lo sabe al toque. App para Android que avisa a tu familia por WhatsApp y SMS.">
 <meta name="theme-color" content="#0d0c0b">
 <meta property="og:title" content="Vigía">
 <meta property="og:description" content="Te arranchan el celular. Tu familia lo sabe al toque.">
@@ -156,11 +156,6 @@
       </div>
 
       <div class="botones" id="botones">
-        <!-- iPhone: mientras no esté en TestFlight, abre la versión web de la app -->
-        <a class="boton" id="boton-iphone" href="/">
-          <span class="circulo"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f2ece3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10.5 5h3"/></svg></span>
-          <span class="boton-textos"><small>Versión web para</small><strong>iPhone</strong></span>
-        </a>
         <a class="boton" id="boton-android" href="/api/descargar/android">
           <span class="circulo"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f2ece3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><circle cx="12" cy="5.5" r="0.6"/></svg></span>
           <span class="boton-textos"><small>Descargar para</small><strong>Android</strong></span>
@@ -168,7 +163,6 @@
       </div>
 
       <div class="qrs">
-        <div class="qr"><img src="img/qr-iphone.svg" alt="Código QR para abrir la versión web de Vigía en iPhone">iPhone · web</div>
         <div class="qr"><img src="img/qr-android.svg" alt="Código QR para descargar Vigía en Android">Android</div>
         <p>¿Estás en la compu? Escanea con la cámara de tu celular.</p>
       </div>
@@ -184,16 +178,5 @@
   </aside>
 </main>
 
-<script>
-  // El botón del celular de quien visita va primero.
-  // iPadOS 13+ se presenta como "Macintosh", por eso también se mira si tiene pantalla táctil.
-  var ua = navigator.userAgent;
-  var esApple = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
-  var primero = esApple ? 'boton-iphone' : /Android/i.test(ua) ? 'boton-android' : null;
-  if (primero) {
-    var botones = document.getElementById('botones');
-    botones.insertBefore(document.getElementById(primero), botones.firstChild);
-  }
-</script>
 </body>
 </html>
