@@ -24,15 +24,20 @@ interface ModuloBloqueo {
   abrirPermisoPantallaCompleta(): Promise<boolean>;
   mostrarSobreBloqueo(titulo: string, texto: string): boolean;
   ocultarSobreBloqueo(): void;
+  /** Solo iPhone: el escudo de Tiempo de uso sigue puesto sobre las demás apps. */
+  appsBloqueadas?(): boolean;
+  /** Solo iPhone: quita el escudo (en Android el bloqueo lo quita la clave del sistema). */
+  quitarBloqueoApps?(): void;
 }
 const modulo =
-  Platform.OS === 'android'
+  Platform.OS === 'android' || Platform.OS === 'ios'
     ? requireOptionalNativeModule<ModuloBloqueo>('BloqueoPantalla')
     : null;
+const esIphone = Platform.OS === 'ios';
 
 function motivoNoDisponible(): string {
-  if (Platform.OS === 'ios')
-    return 'iPhone no deja que una app lo bloquee (Apple solo lo permite con gestión de empresa, MDM). Las alertas funcionan igual. Para que el ladrón no pueda usar tu iPhone, activa la protección de Apple:';
+  if (esIphone)
+    return 'Requiere recompilar la app de iPhone con el módulo de bloqueo (iOS 16 o más). No funciona en Expo Go. Mientras tanto, activa la protección de Apple:';
   if (Platform.OS === 'web')
     return 'La web no puede bloquear tu teléfono. Instala la app compilada de Android.';
   return 'Requiere recompilar la app Android con el módulo de bloqueo. No funciona en Expo Go.';
@@ -48,6 +53,7 @@ export function consultarBloqueo(): EstadoBloqueo {
   if (!modulo) return { ...vacio, detalle: motivoNoDisponible() };
   try {
     const estado = modulo.consultarEstado();
+    if (esIphone) return { ...estado, detalle: detalleIphone(estado) };
     const detalle = !estado.disponible
       ? 'Este Android no admite bloqueo mediante administración.'
       : !estado.bloqueoSeguro
@@ -65,6 +71,17 @@ export function consultarBloqueo(): EstadoBloqueo {
         'No pudimos consultar el bloqueo del sistema. La detección y las alertas continúan.',
     };
   }
+}
+/**
+ * iPhone no se puede bloquear desde una app (Apple solo lo deja con MDM). Lo más cercano: con Tiempo de uso
+ * tapamos todas las demás apps, también la que esté abierta cuando te lo arranchan.
+ */
+function detalleIphone(estado: Omit<EstadoBloqueo, 'detalle'>): string {
+  if (!estado.disponible) return 'Bloquear las apps necesita iOS 16 o más. Activa la protección de Apple:';
+  if (!estado.bloqueoSeguro) return 'Primero ponle un código a tu iPhone (Ajustes › Face ID y código).';
+  if (!estado.administradorActivo)
+    return 'Autoriza Tiempo de uso: si te lo arranchan, taparemos WhatsApp, tu banco y las demás apps. Apple no deja bloquear la pantalla; esto es lo más cercano.';
+  return 'Autorizado: al confirmar un arrebato taparemos las demás apps del iPhone. Para cancelar tendrás que desbloquearlo y escribir tu PIN, y las apps vuelven. Además, activa la protección de Apple:';
 }
 export async function solicitarAutorizacionBloqueo(): Promise<boolean> {
   try {
@@ -115,6 +132,22 @@ export function mostrarSobreBloqueo(segundos: number): boolean {
     return false;
   }
 }
+/** iPhone: `true` si las demás apps siguen tapadas por una alerta o una prueba. En Android, siempre `false`. */
+export function appsBloqueadas(): boolean {
+  try {
+    return modulo?.appsBloqueadas?.() ?? false;
+  } catch {
+    return false;
+  }
+}
+/** iPhone: destapa las demás apps (falsa alarma cancelada o celular recuperado, siempre con el PIN). */
+export function quitarBloqueoApps(): void {
+  try {
+    modulo?.quitarBloqueoApps?.();
+  } catch {
+    // Si falla, el dueño puede quitarlo en Ajustes › Tiempo de uso; no frenamos la cancelación.
+  }
+}
 export function ocultarSobreBloqueo(): void {
   try {
     modulo?.ocultarSobreBloqueo();
@@ -157,6 +190,12 @@ export function usePantallaBloqueada(activo: boolean): boolean {
  */
 export function faltaParaBloqueo(estado: EstadoBloqueo): string | null {
   if (!estado.disponible) return null;
+  if (esIphone) {
+    if (!estado.bloqueoSeguro) return 'Falta ponerle un código a tu iPhone.';
+    if (!estado.administradorActivo) return 'Falta autorizar Tiempo de uso para tapar tus apps.';
+    // iPhone nunca deja la pregunta sobre el bloqueo: no es algo que falte arreglar.
+    return null;
+  }
   if (!estado.bloqueoSeguro) return 'Falta poner un PIN, patrón o contraseña en Android.';
   if (!estado.administradorActivo) return 'Falta autorizar a la app para bloquear el celular.';
   if (!estado.pantallaCompleta) return 'Falta permitir el "¿Todo bien?" sobre la pantalla de bloqueo.';

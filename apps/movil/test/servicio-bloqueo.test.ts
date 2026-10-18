@@ -11,6 +11,7 @@ const dobles = vi.hoisted(() => ({
   bloquear: vi.fn(),
   mostrar: vi.fn(),
   ocultar: vi.fn(),
+  quitarApps: vi.fn(),
   avisar: vi.fn(),
   pinOk: true,
   enviar: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock('../src/bloqueo', () => ({
   bloquearAlDetectar: dobles.bloquear,
   mostrarSobreBloqueo: dobles.mostrar,
   ocultarSobreBloqueo: dobles.ocultar,
+  quitarBloqueoApps: dobles.quitarApps,
 }));
 vi.mock('../src/alertas', () => ({
   enviar: dobles.enviar,
@@ -78,6 +80,7 @@ beforeEach(async () => {
     .mockReturnValue({ estado: 'solicitado', detalle: 'Orden recibida.' });
   dobles.mostrar.mockReset().mockReturnValue(true);
   dobles.ocultar.mockReset();
+  dobles.quitarApps.mockReset();
   dobles.avisar.mockReset().mockResolvedValue(null);
   dobles.pinOk = true;
   dobles.enviar
@@ -175,6 +178,8 @@ describe('"¿Todo bien?" sobre la pantalla de bloqueo', () => {
     expect(await servicio.cancelarAlerta('1234')).toBe(true);
     expect(servicio.obtener().alerta).toBeNull();
     expect(dobles.ocultar).toHaveBeenCalledTimes(1);
+    // iPhone: la falsa alarma también destapa las apps.
+    expect(dobles.quitarApps).toHaveBeenCalledTimes(1);
   });
   it('un PIN incorrecto deja la alerta y la pregunta encima del bloqueo', async () => {
     dobles.pinOk = false;
@@ -190,6 +195,8 @@ describe('"¿Todo bien?" sobre la pantalla de bloqueo', () => {
     expect(dobles.ocultar).not.toHaveBeenCalled();
     servicio.descartarPantallaAlerta();
     expect(dobles.ocultar).toHaveBeenCalledTimes(1);
+    // Robo de verdad: en iPhone las apps siguen tapadas hasta que la dueña escriba su PIN.
+    expect(dobles.quitarApps).not.toHaveBeenCalled();
   });
 });
 

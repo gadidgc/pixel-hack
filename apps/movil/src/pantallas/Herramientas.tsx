@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Pressable, Switch, View } from 'react-native';
+import { Alert, Platform, Pressable, Switch, View } from 'react-native';
 import { hayBackend } from '../alertas';
 import { consultarBloqueo, faltaParaBloqueo } from '../bloqueo';
 import { ETIQUETAS, type Etiqueta } from '../grabadora';
@@ -73,7 +73,7 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
 
       <Rotulo>ENSAYAR LA ALERTA COMPLETA</Rotulo>
       <T v="apoyo" suave>
-        En 5 s dispara una alerta de verdad con un arrebato simulado: bloquea el celular, pregunta "¿Todo bien?" sobre la pantalla de bloqueo y avisa a tu red si no cancelas con tu PIN. Sal a otra app o apaga la pantalla para probarlo.
+        En 5 s dispara una alerta de verdad con un arrebato simulado: bloquea el celular (en iPhone tapa las demás apps), pregunta "¿Todo bien?" y avisa a tu red si no cancelas con tu PIN. Sal a otra app o apaga la pantalla para probarlo.
       </T>
       <Boton
         texto={!estado.activa ? 'Activa la protección para ensayar' : 'Ensayar en 5 s'}
@@ -87,10 +87,12 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
           Alert.alert(
             'Ensayar la alerta completa',
             falta
-              ? `Ojo: ${falta} Así el celular NO se bloqueará: solo verás la notificación y se avisará a tu red si no cancelas. Arréglalo en Tú › Bloqueo antirrobo.`
+              ? `Ojo: ${falta} Así el celular NO se bloqueará${Platform.OS === 'ios' ? ' (ni sus apps)' : ''}: solo verás la notificación y se avisará a tu red si no cancelas. Arréglalo en Tú › Bloqueo antirrobo.`
               : bloqueo.disponible
-                ? 'Es una alerta real: bloquea el celular y, si no cancelas con tu PIN a tiempo, avisa a tu red.'
-                : 'Es una alerta real: este celular no se puede bloquear desde la app (iPhone o web), pero verás el "¿Todo bien?" y, si no cancelas con tu PIN a tiempo, se avisará a tu red.',
+                ? Platform.OS === 'ios'
+                  ? 'Es una alerta real: tapa las demás apps del iPhone (al cancelar con tu PIN vuelven) y, si no cancelas con tu PIN a tiempo, avisa a tu red.'
+                  : 'Es una alerta real: bloquea el celular y, si no cancelas con tu PIN a tiempo, avisa a tu red.'
+                : 'Es una alerta real: este celular no se puede bloquear desde la app, pero verás el "¿Todo bien?" y, si no cancelas con tu PIN a tiempo, se avisará a tu red.',
             [
               { text: 'Cancelar', style: 'cancel' },
               falta ? { text: 'Ir a arreglarlo', onPress: onVolver } : { text: 'Ensayar', onPress: () => servicio.ensayarAlertaCompleta(5) },

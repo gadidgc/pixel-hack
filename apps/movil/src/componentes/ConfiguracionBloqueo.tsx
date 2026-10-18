@@ -3,12 +3,17 @@ import { Alert, AppState, Platform, View } from "react-native";
 import {
   abrirBloqueoSeguro,
   abrirPermisoPantallaCompleta,
+  appsBloqueadas,
   bloquearAlDetectar,
   consultarBloqueo,
   solicitarAutorizacionBloqueo,
 } from "../bloqueo";
+import { servicio } from "../servicio";
+import { PedirPin } from "./PedirPin";
 import { Boton, Rotulo, T, Tarjeta } from "../ui/componentes";
 import { useTema } from "../ui/tema";
+
+const esIphone = Platform.OS === "ios";
 
 /** Lo que Apple sí ofrece en iPhone (iOS 17.3+): https://support.apple.com/120340 */
 const PASOS_IPHONE = [
@@ -29,11 +34,17 @@ export function ConfiguracionBloqueo({
   const [estado, setEstado] = useState(consultarBloqueo);
   const [mensaje, setMensaje] = useState("");
   const [abriendo, setAbriendo] = useState(false);
+  // iPhone: las demás apps siguen tapadas (tras una alerta o "Probar bloqueo") hasta escribir el PIN aquí.
+  const [tapadas, setTapadas] = useState(appsBloqueadas);
+  const [pedirPin, setPedirPin] = useState(false);
   const listo =
     estado.disponible && estado.administradorActivo && estado.bloqueoSeguro;
   useEffect(() => {
     const sub = AppState.addEventListener("change", (fase) => {
-      if (fase === "active") setEstado(consultarBloqueo());
+      if (fase === "active") {
+        setEstado(consultarBloqueo());
+        setTapadas(appsBloqueadas());
+      }
     });
     return () => sub.remove();
   }, []);
@@ -43,8 +54,12 @@ export function ConfiguracionBloqueo({
       const abierto = await accion();
       setMensaje(
         abierto
-          ? "Completa el ajuste de Android y vuelve a la app para comprobarlo."
-          : "No pudimos abrir este ajuste. Revisa los ajustes de seguridad de Android.",
+          ? esIphone
+            ? "Listo. Si cambiaste algo en Ajustes, vuelve a la app para comprobarlo."
+            : "Completa el ajuste de Android y vuelve a la app para comprobarlo."
+          : esIphone
+            ? "No se autorizó. Puedes volver a intentarlo cuando quieras."
+            : "No pudimos abrir este ajuste. Revisa los ajustes de seguridad de Android.",
       );
     } finally {
       setEstado(consultarBloqueo());
@@ -54,7 +69,9 @@ export function ConfiguracionBloqueo({
   const probar = () =>
     Alert.alert(
       "Probar bloqueo real",
-      "El celular se bloqueará. Para entrar necesitarás el PIN, patrón o contraseña de Android, no el PIN de esta app.",
+      esIphone
+        ? "Se taparán las demás apps del iPhone. Para destaparlas vuelve aquí y escribe el PIN de esta app."
+        : "El celular se bloqueará. Para entrar necesitarás el PIN, patrón o contraseña de Android, no el PIN de esta app.",
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -62,6 +79,7 @@ export function ConfiguracionBloqueo({
           onPress: () => {
             setMensaje(bloquearAlDetectar().detalle);
             setEstado(consultarBloqueo());
+            setTapadas(appsBloqueadas());
           },
         },
       ],
@@ -71,14 +89,14 @@ export function ConfiguracionBloqueo({
       <Rotulo>{enBienvenida ? "RECOMENDADO" : "BLOQUEO ANTIRROBO"}</Rotulo>
       <Tarjeta style={{ gap: 12 }}>
         <T v="cuerpoFuerte">
-          {Platform.OS === "ios"
-            ? "Que no puedan usar tu iPhone"
+          {esIphone
+            ? "Que no puedan usar las apps de tu iPhone"
             : "Bloquear tu celular si te lo arranchan"}
         </T>
         <T v="apoyo" suave>
           {estado.detalle}
         </T>
-        {Platform.OS === "ios" &&
+        {esIphone &&
           PASOS_IPHONE.map((paso, i) => (
             <View key={i} style={{ flexDirection: "row", gap: 8 }}>
               <T v="apoyo" color={c.protegido}>
@@ -98,7 +116,7 @@ export function ConfiguracionBloqueo({
         )}
         {estado.disponible && !estado.bloqueoSeguro && (
           <Boton
-            texto="Configurar clave de Android"
+            texto={esIphone ? "Abrir Ajustes" : "Configurar clave de Android"}
             variante="secundario"
             deshabilitado={abriendo}
             onPress={() => void abrir(abrirBloqueoSeguro)}
@@ -108,13 +126,15 @@ export function ConfiguracionBloqueo({
           estado.bloqueoSeguro &&
           !estado.administradorActivo && (
             <Boton
-              texto="Autorizar bloqueo automático"
+              texto={
+                esIphone ? "Autorizar Tiempo de uso" : "Autorizar bloqueo automático"
+              }
               variante="secundario"
               deshabilitado={abriendo}
               onPress={() => void abrir(solicitarAutorizacionBloqueo)}
             />
           )}
-        {listo && !estado.pantallaCompleta && (
+        {listo && !esIphone && !estado.pantallaCompleta && (
           <Boton
             texto="Permitir el aviso sobre el bloqueo"
             variante="secundario"
@@ -122,7 +142,13 @@ export function ConfiguracionBloqueo({
             onPress={() => void abrir(abrirPermisoPantallaCompleta)}
           />
         )}
-        {listo && !enBienvenida && (
+        {tapadas && (
+          <Boton
+            texto="Desbloquear mis apps"
+            onPress={() => setPedirPin(true)}
+          />
+        )}
+        {listo && !enBienvenida && !tapadas && (
           <Boton
             texto="Probar bloqueo"
             variante="secundario"
@@ -136,12 +162,27 @@ export function ConfiguracionBloqueo({
         )}
         {estado.disponible && (
           <T v="apoyo13" suave>
-            El bloqueo se solicita inmediatamente al confirmar la huida. Si
-            fuiste tú, cancelas con el PIN de la app desde la misma pantalla de
-            bloqueo.
+            {esIphone
+              ? "Las apps se tapan inmediatamente al confirmar la huida. Si fuiste tú, desbloquea el iPhone y cancela con el PIN de la app: vuelven solas. Llamadas y Ajustes no se tapan (Apple no lo deja)."
+              : "El bloqueo se solicita inmediatamente al confirmar la huida. Si fuiste tú, cancelas con el PIN de la app desde la misma pantalla de bloqueo."}
           </T>
         )}
       </Tarjeta>
+      <PedirPin
+        visible={pedirPin}
+        titulo="Desbloquear mis apps"
+        explicacion="Escribe el PIN de esta app para destapar las demás apps del iPhone."
+        mensajeError={() => servicio.mensajePin()}
+        alConfirmar={async (p) => {
+          const ok = await servicio.desbloquearApps(p);
+          if (ok) {
+            setTapadas(appsBloqueadas());
+            setMensaje("Tus apps ya se pueden usar.");
+          }
+          return ok;
+        }}
+        alCerrar={() => setPedirPin(false)}
+      />
     </View>
   );
 }

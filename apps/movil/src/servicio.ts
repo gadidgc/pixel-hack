@@ -12,7 +12,7 @@ import {
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Platform } from 'react-native';
 import { enviar, hayBackend, type ResultadoEnvio } from './alertas';
-import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, type ResultadoBloqueo } from './bloqueo';
+import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, quitarBloqueoApps, type ResultadoBloqueo } from './bloqueo';
 import { Grabadora, type Etiqueta } from './grabadora';
 import { avisarTodoBien, pedirPermisoNotificaciones, quitarAviso } from './notificaciones';
 import { hayPin, verificarPin } from './pin';
@@ -315,6 +315,8 @@ class ServicioProteccion {
     this.detenerCuentaFamilia();
     void quitarAviso(this.idNotificacion);
     this.detector.cancelar();
+    // iPhone: fue falsa alarma, las demás apps vuelven (en Android no hace nada: lo quita la clave del sistema).
+    quitarBloqueoApps();
     // El backend cuenta por su lado y avisa a la red si no le llega "cancelada". Se manda SIEMPRE que haya
     // backend (también en un ensayo, donde el detector no tiene alerta, y aunque el envío de la alerta siga
     // en camino): esperamos a que llegue la alerta para que "cancelada" no llegue antes que ella.
@@ -328,6 +330,25 @@ class ServicioProteccion {
         ? 'Falsa alarma: cancelada con tu PIN. Tu red ya había sido avisada; le mandamos que estás bien.'
         : 'Falsa alarma: cancelada con tu PIN antes de avisar a tu red.',
     );
+    return true;
+  }
+
+  /**
+   * iPhone: destapa las demás apps cuando ya no hay alerta (recuperaste el celular, o tras "Probar bloqueo").
+   * Exige el PIN: el ladrón no debe poder quitarlo.
+   */
+  async desbloquearApps(pin: string): Promise<boolean> {
+    if (this.mensajePin()) return false;
+    if (!(await verificarPin(pin))) {
+      this.pinFallidos++;
+      if (this.pinFallidos >= INTENTOS_PIN) this.pinEsperarHasta = Date.now() + ESPERA_PIN_MS * (this.pinFallidos - INTENTOS_PIN + 1);
+      this.registrar('PIN incorrecto: las apps siguen bloqueadas.', 'error');
+      return false;
+    }
+    this.pinFallidos = 0;
+    this.pinEsperarHasta = 0;
+    quitarBloqueoApps();
+    this.registrar('Apps del iPhone desbloqueadas con tu PIN.');
     return true;
   }
 
@@ -380,7 +401,7 @@ class ServicioProteccion {
     });
     this.registrar(`Bloqueo de pantalla: ${bloqueo.detalle}`, bloqueo.estado === 'solicitado' ? 'info' : 'aviso');
     if (bloqueo.estado === 'solicitado' && !sobreBloqueo) {
-      this.registrar(`Android no deja mostrar el "¿Todo bien?" sobre la pantalla de bloqueo: para cancelar hay que desbloquear. Esperamos ${extra} s más antes de avisar.`, 'aviso');
+      this.registrar(`${Platform.OS === 'ios' ? 'iPhone' : 'Android'} no deja mostrar el "¿Todo bien?" sobre la pantalla de bloqueo: para cancelar hay que desbloquear. Esperamos ${extra} s más antes de avisar.`, 'aviso');
     }
     // Sobre la pantalla de bloqueo ya va nuestro aviso de pantalla completa; no repetimos la notificación.
     if (!sobreBloqueo) void avisarTodoBien(espera).then((id) => (this.idNotificacion = id));

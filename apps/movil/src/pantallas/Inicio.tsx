@@ -135,13 +135,13 @@ export function Inicio({ onPestana, onCerca }: { onPestana: (p: Pestana) => void
           <Pressable
             onPress={() => onPestana('tu')}
             accessibilityRole="button"
-            accessibilityLabel={`El celular no se bloqueará si te lo roban. ${faltaBloqueo} Arreglar`}
+            accessibilityLabel={`${Platform.OS === 'ios' ? 'Tus apps no se bloquearán' : 'El celular no se bloqueará'} si te lo roban. ${faltaBloqueo} Arreglar`}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: RADIO.s, backgroundColor: c.avisoFondo }}
           >
             <Icono nombre="escudoAviso" tam={18} color={c.aviso} />
             <View style={{ flex: 1, gap: 2 }}>
               <T v="cuerpo15Fuerte" color={c.aviso}>
-                Tu celular no se bloqueará si te lo roban
+                {Platform.OS === 'ios' ? 'Tus apps no se bloquearán si te lo roban' : 'Tu celular no se bloqueará si te lo roban'}
               </T>
               <T v="apoyo13" color={c.aviso}>
                 {faltaBloqueo}
