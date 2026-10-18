@@ -246,7 +246,7 @@ Muestra los eventos y si coincide con la etiqueta (`arrebato-…` debe alertar; 
 
 ## 6. Backend, panel y aviso
 
-**Ya está construido** en [apps/api](../apps/api) (Cloudflare Workers + D1; ver su README). La app manda todo ahí ([src/alertas.ts](../apps/movil/src/alertas.ts)); `EXPO_PUBLIC_URL_ALERTAS` sirve para apuntar a otro backend (por ejemplo, el local). Si el backend no responde, la alerta queda solo en la app y **la pantalla lo dice**. Falta: publicarlo y la clave de Zavu.
+**Ya está construido** en [apps/api](../apps/api) (Cloudflare Workers + D1; ver su README). La app manda todo ahí ([src/alertas.ts](../apps/movil/src/alertas.ts)); `EXPO_PUBLIC_URL_ALERTAS` sirve para apuntar a otro backend (por ejemplo, el local). Si el backend no responde, la alerta queda solo en la app y **la pantalla lo dice**. Publicado en https://alerta-arrebato.gabrieldgc1999.workers.dev. Falta la clave de Zavu.
 
 ### 6.1 Contrato (lo que manda la app)
 `POST <EXPO_PUBLIC_URL_ALERTAS>` con JSON:
@@ -281,7 +281,7 @@ Muestra los eventos y si coincide con la etiqueta (`arrebato-…` debe alertar; 
 | Sponsor | Para qué | Estado |
 |---|---|---|
 | Zavu | WhatsApp/SMS al contacto | Código listo; falta la clave (domingo) |
-| Cloudflare (Workers + D1) | Web, API y base de datos en una URL | Construido; falta publicar |
+| Cloudflare (Workers + D1) | Web, API y base de datos en una URL | Publicado |
 | n8n | Enrutar alertas (opcional) | Opcional |
 | IALABS / Maritime | Hosting (si lo confirman) | Por confirmar |
 Solo los nombramos si de verdad los usamos.
