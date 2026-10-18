@@ -116,7 +116,8 @@ Alerta Arrebato para que la ruta siga llegando.
   compilar e instalar desde Xcode basta la versión de desarrollo (cuenta de pago de Apple
   Developer). Para TestFlight o App Store hay que pedir la de distribución a Apple
   ([formulario](https://developer.apple.com/contact/request/family-controls-distribution)),
-  que tarda días o semanas: **pendiente**.
+  que tarda días o semanas: **pendiente**. Mientras tanto el build de TestFlight sale sin este
+  permiso (ver [testflight-iphone.md](testflight-iphone.md)).
 
 **No probado todavía en un iPhone físico:** compila para el simulador, pero falta comprobar
 que el escudo se pone con la app en segundo plano (pantalla apagada o en otra app), que tapa
