@@ -8,13 +8,21 @@ export type ResultadoSubida = { ok: true; id: string; enlace: string; conAlerta:
 /** El servidor acepta hasta 50 MB por archivo. */
 export const MAX_BYTES = 50 * 1024 * 1024;
 
+/** Lo que sabemos de la grabación además del archivo: cuánto dura y, en audio, su onda (ver onda.ts). */
+export interface DatosGrabacion {
+  duracionMs?: number;
+  onda?: string | null;
+}
+
 /** La posición va en cabeceras (no en la URL) para que no quede en los registros. */
-export function cabecerasEvidencia(mime: string, pos: { lat: number; lon: number } | null): Record<string, string> {
+export function cabecerasEvidencia(mime: string, pos: { lat: number; lon: number } | null, datos: DatosGrabacion = {}): Record<string, string> {
   const h: Record<string, string> = { 'Content-Type': mime, 'X-Dispositivo': idDispositivo() };
   if (pos) {
     h['X-Lat'] = pos.lat.toFixed(5);
     h['X-Lon'] = pos.lon.toFixed(5);
   }
+  if (datos.duracionMs !== undefined) h['X-Duracion-Ms'] = String(Math.round(datos.duracionMs));
+  if (datos.onda) h['X-Onda'] = datos.onda;
   return h;
 }
 

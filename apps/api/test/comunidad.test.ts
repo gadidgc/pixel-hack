@@ -51,7 +51,7 @@ describe('validarEvidencia', () => {
   const cabeceras = (extra: Record<string, string>) => new Headers({ 'X-Dispositivo': 'android-k3j9x2ab', 'Content-Type': 'video/mp4', 'Content-Length': '1024', ...extra });
 
   it('acepta video y audio, con o sin posición', () => {
-    expect(validarEvidencia(cabeceras({}))).toEqual({ dispositivo: 'android-k3j9x2ab', tipo: 'video', mime: 'video/mp4', bytes: 1024, lat: null, lon: null });
+    expect(validarEvidencia(cabeceras({}))).toEqual({ dispositivo: 'android-k3j9x2ab', tipo: 'video', mime: 'video/mp4', bytes: 1024, lat: null, lon: null, onda: null, duracionMs: null });
     const audio = validarEvidencia(cabeceras({ 'Content-Type': 'audio/mp4; codecs=mp4a', 'X-Lat': '-12.12111', 'X-Lon': '-77.03' }));
     expect(audio).toMatchObject({ tipo: 'audio', mime: 'audio/mp4', lat: -12.121, lon: -77.03 });
   });
@@ -63,6 +63,14 @@ describe('validarEvidencia', () => {
     expect(() => validarEvidencia(cabeceras({ 'Content-Length': String(MAX_EVIDENCIA_BYTES + 1) }))).toThrow(ErrorDeDatos);
     expect(() => validarEvidencia(cabeceras({ 'X-Dispositivo': '' }))).toThrow(ErrorDeDatos);
     expect(() => validarEvidencia(cabeceras({ 'X-Lat': '200', 'X-Lon': '0' }))).toThrow(ErrorDeDatos);
+  });
+
+  it('guarda la onda (solo en audio) y la duración; si vienen mal, las ignora sin rechazar el archivo', () => {
+    const audio = (extra: Record<string, string>) => validarEvidencia(cabeceras({ 'Content-Type': 'audio/mp4', ...extra }));
+    expect(audio({ 'X-Onda': '0123456789', 'X-Duracion-Ms': '42000' })).toMatchObject({ onda: '0123456789', duracionMs: 42000 });
+    expect(audio({ 'X-Onda': '12a4', 'X-Duracion-Ms': '-5' })).toMatchObject({ onda: null, duracionMs: null });
+    expect(audio({ 'X-Onda': '1'.repeat(97) })).toMatchObject({ onda: null });
+    expect(validarEvidencia(cabeceras({ 'X-Onda': '0123456789', 'X-Duracion-Ms': '14000' }))).toMatchObject({ onda: null, duracionMs: 14000 });
   });
 });
 

@@ -37,6 +37,9 @@ export const ICONOS = {
   compartir: [{ d: 'M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7' }, { d: 'M12 3v12' }, { d: 'M8 7l4-4 4 4' }],
   campana: [{ d: 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9' }, { d: 'M10.3 21a1.94 1.94 0 0 0 3.4 0' }],
   microfono: [{ rect: [9, 3, 6, 11, 3] }, { d: 'M5 11a7 7 0 0 0 14 0' }, { d: 'M12 18v3' }],
+  reproducir: [{ d: 'M8 5l11 7-11 7z' }],
+  pausa: [{ d: 'M9 5v14' }, { d: 'M15 5v14' }],
+  video: [{ rect: [3, 6, 13, 12, 2] }, { d: 'M16 10l5-3v10l-5-3' }],
 } satisfies Record<string, Forma[]>;
 
 export type NombreIcono = keyof typeof ICONOS;

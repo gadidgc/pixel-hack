@@ -120,12 +120,21 @@ export interface NuevaEvidencia {
   bytes: number;
   lat: number | null;
   lon: number | null;
+  /** Niveles de volumen del 0 al 9 (solo audio), para dibujar la onda en la tarjeta. */
+  onda: string | null;
+  duracionMs: number | null;
 }
+
+/** La onda llega como texto de dígitos: "0137…". */
+const ONDA = /^[0-9]{8,96}$/;
+/** Una hora: más que eso no es una grabación de la app. */
+const MAX_DURACION_MS = 3_600_000;
 
 /**
  * Cabeceras de `POST /api/evidencias` (el cuerpo es el archivo tal cual):
  * `Content-Type` video/* o audio/*, `Content-Length` (obligatorio, hasta 50 MB), `X-Dispositivo`,
- * y opcionalmente `X-Lat` / `X-Lon` (dónde se grabó; van en cabeceras y no en la URL para que no queden en registros).
+ * y opcionalmente `X-Lat` / `X-Lon` (dónde se grabó; van en cabeceras y no en la URL para que no queden en registros),
+ * `X-Duracion-Ms` y, en audio, `X-Onda` (niveles de volumen del 0 al 9 para dibujar la tarjeta).
  */
 export function validarEvidencia(cabeceras: Headers): NuevaEvidencia {
   const dispositivo = validarDispositivo(cabeceras.get('X-Dispositivo') ?? '');
@@ -146,7 +155,22 @@ export function validarEvidencia(cabeceras: Headers): NuevaEvidencia {
     bytes,
     lat: conPosicion ? redondear(coordenada(lat, 'X-Lat', 90)) : null,
     lon: conPosicion ? redondear(coordenada(lon, 'X-Lon', 180)) : null,
+    onda: leerOnda(cabeceras.get('X-Onda'), m[1] as TipoEvidencia),
+    duracionMs: leerDuracion(cabeceras.get('X-Duracion-Ms')),
   };
+}
+
+/**
+ * `X-Onda` y `X-Duracion-Ms` son opcionales y tolerantes: si vienen mal se ignoran, porque perder la
+ * grabación por un dato de adorno sería peor. La onda solo tiene sentido en audio.
+ */
+function leerOnda(valor: string | null, tipo: TipoEvidencia): string | null {
+  return tipo === 'audio' && valor !== null && ONDA.test(valor) ? valor : null;
+}
+
+function leerDuracion(valor: string | null): number | null {
+  const n = valor === null || valor === '' ? NaN : Number(valor);
+  return Number.isInteger(n) && n >= 0 && n <= MAX_DURACION_MS ? n : null;
 }
 
 /**

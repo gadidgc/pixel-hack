@@ -27,6 +27,7 @@ import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, 
  * - `POST /api/evidencias` y `GET /api/evidencias/:id`: video o audio guardado en R2. Si trae ubicación, se publica
  *   en "Cerca de ti" (cuelga de un reporte del mapa).
  * - `POST/GET /api/evidencias/:id/miniatura`: un cuadro del video (JPEG) para la tarjeta del mapa.
+ * - `GET  /api/reportes/:id/evidencias`: las grabaciones de un reporte (video, audio con su onda), para su hoja.
  * - `GET  /api/salud`: si la base y Zavu están listos.
  * - Todo lo demás: la web de la app (export de Expo en apps/movil/dist).
  */
@@ -521,6 +522,8 @@ interface FilaReporte {
   audios: number;
   /** La evidencia más nueva del reporte que ya tiene miniatura (si hay). */
   con_miniatura: string | null;
+  /** La onda del audio más nuevo del reporte (si hay). */
+  onda: string | null;
 }
 
 /** "Cerca de ti": lo reportado en los últimos 30 días dentro de la caja, lo más nuevo primero. Sin `dispositivo`. */
@@ -532,7 +535,8 @@ async function buscarReportes(env: Env, params: URLSearchParams, origen: string)
     `SELECT r.id, r.tipo, r.lat, r.lon, r.nota, r.origen, r.creado,
        (SELECT COUNT(*) FROM evidencias e WHERE e.reporte_id = r.id AND e.tipo = 'video') AS videos,
        (SELECT COUNT(*) FROM evidencias e WHERE e.reporte_id = r.id AND e.tipo = 'audio') AS audios,
-       (SELECT e.id FROM evidencias e WHERE e.reporte_id = r.id AND e.miniatura = 1 ORDER BY e.creado DESC LIMIT 1) AS con_miniatura
+       (SELECT e.id FROM evidencias e WHERE e.reporte_id = r.id AND e.miniatura = 1 ORDER BY e.creado DESC LIMIT 1) AS con_miniatura,
+       (SELECT e.onda FROM evidencias e WHERE e.reporte_id = r.id AND e.onda IS NOT NULL ORDER BY e.creado DESC LIMIT 1) AS onda
      FROM reportes r
      WHERE r.lat BETWEEN ? AND ? AND r.lon BETWEEN ? AND ? AND r.creado > ?
      ORDER BY r.creado DESC LIMIT 100`,
@@ -544,6 +548,26 @@ async function buscarReportes(env: Env, params: URLSearchParams, origen: string)
     miniatura: con_miniatura ? `${origen}/api/evidencias/${con_miniatura}/miniatura` : null,
   }));
   return json({ ok: true, radioKm: b.radioKm, reportes, ahora });
+}
+
+/** Las grabaciones de un reporte, para la hoja que se abre al tocar su tarjeta. Sin `dispositivo` ni ubicación. */
+async function evidenciasDeReporte(env: Env, id: string, origen: string): Promise<Response> {
+  const { results } = await env.DB.prepare(
+    'SELECT id, tipo, mime, miniatura, onda, duracion_ms, creado FROM evidencias WHERE reporte_id = ? ORDER BY creado ASC LIMIT 20',
+  )
+    .bind(id)
+    .all<{ id: string; tipo: string; mime: string; miniatura: number; onda: string | null; duracion_ms: number | null; creado: number }>();
+  const evidencias = results.map((e) => ({
+    id: e.id,
+    tipo: e.tipo,
+    mime: e.mime,
+    enlace: `${origen}/api/evidencias/${e.id}`,
+    miniatura: e.miniatura ? `${origen}/api/evidencias/${e.id}/miniatura` : null,
+    onda: e.onda,
+    duracionMs: e.duracion_ms,
+    creado: e.creado,
+  }));
+  return json({ ok: true, evidencias });
 }
 
 async function crearReporte(env: Env, peticion: Request): Promise<Response> {
@@ -586,8 +610,10 @@ async function subirEvidencia(env: Env, peticion: Request, origen: string): Prom
   const [objeto] = await Promise.all([env.EVIDENCIAS.put(id, largo.readable, { httpMetadata: { contentType: e.mime } }), copia]);
   const abierta = await alertaAbierta(env, e.dispositivo, ahora);
   const reporteId = e.lat !== null && e.lon !== null ? await reporteParaGrabacion(env, e.dispositivo, e.lat, e.lon, abierta?.id ?? null, ahora) : null;
-  await env.DB.prepare('INSERT INTO evidencias (id, dispositivo, alerta_id, tipo, mime, bytes, lat, lon, creado, reporte_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(id, e.dispositivo, abierta?.id ?? null, e.tipo, e.mime, objeto.size, e.lat, e.lon, ahora, reporteId)
+  await env.DB.prepare(
+    'INSERT INTO evidencias (id, dispositivo, alerta_id, tipo, mime, bytes, lat, lon, creado, reporte_id, onda, duracion_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  )
+    .bind(id, e.dispositivo, abierta?.id ?? null, e.tipo, e.mime, objeto.size, e.lat, e.lon, ahora, reporteId, e.onda, e.duracionMs)
     .run();
   return json(
     { ok: true, id, tipo: e.tipo, bytes: objeto.size, enlace: `${origen}/api/evidencias/${id}`, alerta: abierta?.id ?? null, reporte: reporteId },
@@ -718,6 +744,8 @@ export default {
       if (ver && ver[2] === 'bloqueo' && peticion.method === 'POST') return await marcarPasoBloqueo(env, ver[1], peticion);
       if (url.pathname === '/api/reportes' && peticion.method === 'GET') return await buscarReportes(env, url.searchParams, url.origin);
       if (url.pathname === '/api/reportes' && peticion.method === 'POST') return await crearReporte(env, peticion);
+      const deReporte = url.pathname.match(/^\/api\/reportes\/([a-z0-9]{16})\/evidencias$/);
+      if (deReporte && peticion.method === 'GET') return await evidenciasDeReporte(env, deReporte[1], url.origin);
       if (url.pathname === '/api/evidencias' && peticion.method === 'POST') return await subirEvidencia(env, peticion, url.origin);
       const evidencia = url.pathname.match(/^\/api\/evidencias\/([a-z0-9]{16})$/);
       if (evidencia && (peticion.method === 'GET' || peticion.method === 'HEAD')) return await verEvidencia(env, evidencia[1], peticion);

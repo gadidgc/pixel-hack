@@ -15,10 +15,12 @@ import {
   type Reporte,
   type TipoReporte,
 } from '../comunidad';
+import { BarrasOnda } from '../ui/BarrasOnda';
 import { BarraPestanas, Boton, Chip, Hoja, Insignia, Onda, T, type Pestana } from '../ui/componentes';
 import { Icono, type NombreIcono } from '../ui/iconos';
 import { MapaFondo, useEscalaX } from '../ui/mapa';
 import { RADIO, TIPO, useTema } from '../ui/tema';
+import { DetalleReporte } from './DetalleReporte';
 
 const RADIO_KM = 1;
 /** En el dibujo (390 × 520) la persona está en (195, 300) y el círculo de 1 km mide 150 px de radio. */
@@ -28,6 +30,10 @@ const RADIO_PX = 150;
 const RECIENTE_MS = 2 * 3600_000;
 
 const ICONO: Record<Categoria, NombreIcono> = { arrebato: 'arrebato', aviso: 'ojo', robo: 'bolso' };
+
+function fuenteDe(r: Reporte): string {
+  return r.origen === 'alerta' ? 'Detectado por la app' : r.tipo === 'grabacion' ? 'Grabado por un vecino' : 'Reportado por un vecino';
+}
 
 type Estado =
   | { fase: 'cargando'; texto: string }
@@ -56,6 +62,7 @@ export function Cerca({ onPestana }: { onPestana: (p: Pestana) => void }) {
   const [elegido, setElegido] = useState<string | null>(null);
   const [estado, setEstado] = useState<Estado>({ fase: 'cargando', texto: 'Buscando tu ubicación…' });
   const [reportando, setReportando] = useState(false);
+  const [abierto, setAbierto] = useState<Reporte | null>(null);
 
   const cargar = useCallback(async () => {
     setEstado({ fase: 'cargando', texto: 'Buscando tu ubicación…' });
@@ -207,24 +214,37 @@ export function Cerca({ onPestana }: { onPestana: (p: Pestana) => void }) {
               const on = elegido === i.id;
               const reciente = ahora - i.creado < RECIENTE_MS;
               const medios = textoMedios(i);
-              const fuente = i.origen === 'alerta' ? 'Detectado por la app' : i.tipo === 'grabacion' ? 'Grabado por un vecino' : 'Reportado por un vecino';
+              const fuente = fuenteDe(i);
               return (
                 <Pressable
                   key={i.id}
-                  onPress={() => setElegido(i.id)}
+                  onPress={() => {
+                    setElegido(i.id);
+                    setAbierto(i);
+                  }}
                   accessibilityRole="button"
+                  accessibilityLabel={`${TIPOS[i.tipo].nombre}, ${textoCuando(i.creado, ahora)}${medios ? `, ${medios}` : ''}. Abrir el detalle`}
                   style={{ width: 236, borderRadius: 20, overflow: 'hidden', backgroundColor: c.superficie2, borderWidth: 2, borderColor: on ? c.texto : 'transparent' }}
                 >
-                  {/* Arriba: un cuadro de la grabación; sin grabación, un mapa chico de dónde pasó respecto a ti. */}
+                  {/* Arriba: un cuadro del video; si solo hay audio, su onda real; si no hay nada, un mapa chico de dónde pasó. */}
                   <View style={{ height: 124, backgroundColor: c.mapaFondo }}>
                     {i.miniatura ? (
                       <Image source={{ uri: i.miniatura }} accessibilityIgnoresInvertColors style={{ width: '100%', height: 124 }} resizeMode="cover" />
+                    ) : i.onda ? (
+                      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 18, backgroundColor: c.superficie2 }}>
+                        <BarrasOnda onda={i.onda} alto={64} color={col.fondo} />
+                      </View>
                     ) : (
                       <MiniMapa reporte={i} aqui={aqui} color={col.fondo} colorIcono={col.texto} halo={col.halo} icono={ICONO[cat]} reciente={reciente} />
                     )}
                     <View style={{ position: 'absolute', left: 8, top: 8 }}>
                       <Insignia tipo={col.insignia} texto={reciente ? `${col.nombre} · AHORA` : col.nombre} />
                     </View>
+                    {(i.videos ?? 0) > 0 && (
+                      <View style={{ position: 'absolute', left: 8, bottom: 8, width: 32, height: 32, borderRadius: RADIO.total, backgroundColor: 'rgba(8,7,6,0.78)', alignItems: 'center', justifyContent: 'center' }}>
+                        <Icono nombre="reproducir" tam={14} color="#f2ece3" grosor={2.4} />
+                      </View>
+                    )}
                     {!!medios && (
                       <View style={{ position: 'absolute', right: 8, bottom: 8, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6, backgroundColor: 'rgba(8,7,6,0.78)' }}>
                         <T v="hora" style={{ fontSize: 11, color: '#f2ece3' }}>
@@ -257,6 +277,18 @@ export function Cerca({ onPestana }: { onPestana: (p: Pestana) => void }) {
         <View style={{ flex: 1 }} />
         <BarraPestanas actual="cerca" onCambiar={onPestana} />
       </Hoja>
+
+      {aqui && (
+        <DetalleReporte
+          reporte={abierto}
+          insignia={abierto ? { tipo: colores[TIPOS[abierto.tipo].categoria].insignia, texto: ahora - abierto.creado < RECIENTE_MS ? `${colores[TIPOS[abierto.tipo].categoria].nombre} · AHORA` : colores[TIPOS[abierto.tipo].categoria].nombre } : { tipo: 'neutra', texto: '' }}
+          cuando={abierto ? textoCuando(abierto.creado, ahora) : ''}
+          lugar={abierto ? textoLugar(aqui, abierto) : ''}
+          fuente={abierto ? fuenteDe(abierto) : ''}
+          colorFuente={abierto?.origen === 'alerta' ? c.protegido : c.textoSuave}
+          onCerrar={() => setAbierto(null)}
+        />
+      )}
 
       {aqui && (
         <HojaReportar
