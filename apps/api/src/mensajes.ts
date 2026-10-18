@@ -21,6 +21,11 @@ export interface EnvMensajes {
   ZAVU_API_KEY?: string;
   /** "si" para que, además del SMS, Zavu LLAME a cada contacto (necesita un agente con voz en el sender). */
   ZAVU_LLAMADAS?: string;
+  /**
+   * ID de un segundo sender de Zavu (otro número) solo para el SMS de bloqueo al vencer. Zavu deja 1 SMS por
+   * minuto al mismo número y el primero (al detectar) sale ~25 s antes: desde otro número no espera.
+   */
+  ZAVU_SENDER_BLOQUEO?: string;
 }
 
 export interface ResultadoMensaje {
@@ -135,11 +140,11 @@ export const SMS_BLOQUEO = `Vigia ${PALABRA_BLOQUEO}. Si no fuiste tu, ignora es
  * El SMS que bloquea el iPhone de la dueña. Solo SMS: un WhatsApp no dispara la automatización de Mensajes.
  * Necesita la clave "live" de Zavu (la de prueba no manda SMS).
  */
-export async function mandarSmsBloqueo(env: EnvMensajes, telefono: string, idempotencia: string): Promise<ResultadoMensaje> {
+export async function mandarSmsBloqueo(env: EnvMensajes, telefono: string, idempotencia: string, sender?: string): Promise<ResultadoMensaje> {
   if (!env.ZAVU_API_KEY || env.ZAVU_API_KEY.trim().startsWith('zv_test_')) {
     return { ok: false, canal: null, detalle: 'falta la clave live de Zavu para mandar SMS' };
   }
-  return porZavu(env, telefono, SMS_BLOQUEO, idempotencia, 'sms');
+  return porZavu(env, telefono, SMS_BLOQUEO, idempotencia, 'sms', sender);
 }
 
 async function llamarMeta(env: EnvMensajes, cuerpo: Record<string, unknown>): Promise<ResultadoMensaje> {
@@ -275,7 +280,14 @@ async function porSms(env: EnvMensajes, telefono: string, m: Mensaje, idempotenc
   return { ok: false, canal: null, detalle: fallos.join('; ') };
 }
 
-async function porZavu(env: EnvMensajes, telefono: string, texto: string, idempotencia: string, canal: 'sms' | 'whatsapp'): Promise<ResultadoMensaje> {
+async function porZavu(
+  env: EnvMensajes,
+  telefono: string,
+  texto: string,
+  idempotencia: string,
+  canal: 'sms' | 'whatsapp',
+  sender?: string,
+): Promise<ResultadoMensaje> {
   if (!env.ZAVU_API_KEY) return { ok: false, canal: null, detalle: 'falta configurar Zavu' };
   // Al pegar la clave a veces se cuela un espacio o un salto de línea.
   const clave = env.ZAVU_API_KEY.trim();
@@ -295,7 +307,8 @@ async function porZavu(env: EnvMensajes, telefono: string, texto: string, idempo
   try {
     const r = await fetch('https://api.zavu.dev/v1/messages', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${clave}`, 'Content-Type': 'application/json' },
+      // Sin `Zavu-Sender`, Zavu usa el sender por defecto del proyecto.
+      headers: { Authorization: `Bearer ${clave}`, 'Content-Type': 'application/json', ...(sender ? { 'Zavu-Sender': sender } : {}) },
       body: JSON.stringify({ ...cuerpo, fallbackEnabled: false, idempotencyKey: idempotencia }),
       signal: AbortSignal.timeout(8000),
     });

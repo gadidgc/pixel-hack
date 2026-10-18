@@ -59,6 +59,9 @@ const RETENCION_CONTACTOS_MS = 24 * 3600_000;
 
 /** Margen sobre la espera del celular: si en ese tiempo no llegó `notificar_familia` ni `cancelada`, avisa el servidor. */
 const MARGEN_SERVIDOR_MS = 6000;
+/** SMS de bloqueo al vencer que Zavu frenó por su límite de 1 por minuto: se reintenta desde la cuenta del servidor. */
+const INTENTOS_BLOQUEO_VENCIDO = 3;
+const VENTANA_BLOQUEO_VENCIDO_MS = 5 * 60_000;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -315,15 +318,50 @@ async function borrarNumeroPropio(env: Env, donde: string, valor: string | numbe
  * iPhone: el SMS de Atajos otra vez cuando vence el "¿Todo bien?" sin PIN (como Android, que queda bloqueado).
  * Si el primero (al detectar) no llegó o la dueña desbloqueó para cancelar y no alcanzó, este lo bloquea.
  */
-async function smsBloqueoAlVencer(env: Env, alertaId: string, numero: string): Promise<void> {
+async function smsBloqueoAlVencer(env: Env, alertaId: string, numero: string, intento = ''): Promise<void> {
   try {
-    const r = await mandarSmsBloqueo(env, numero, `${alertaId}-bloqueo-vencido`);
+    // Primero desde el otro número (si está configurado): así no choca con el límite de 1 SMS por minuto
+    // al mismo número y llega al instante. Si falla, por el sender por defecto (y si no, reintenta el cron).
+    const otro = env.ZAVU_SENDER_BLOQUEO?.trim();
+    const conOtro = otro ? await mandarSmsBloqueo(env, numero, `${alertaId}-bloqueo-vencido-otro${intento}`, otro) : null;
+    let r = conOtro;
+    if (!r?.ok) {
+      const conDefault = await mandarSmsBloqueo(env, numero, `${alertaId}-bloqueo-vencido${intento}`);
+      r = conOtro && !conDefault.ok ? { ...conDefault, detalle: `${conDefault.detalle}; otro número: ${conOtro.detalle}` } : conDefault;
+    }
     await env.DB.prepare('INSERT INTO envios (alerta_id, tipo, destino, canal, ok, detalle, creado) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .bind(alertaId, 'bloqueo_iphone', enmascarar(numero), r.canal, r.ok ? 1 : 0, r.detalle, Date.now())
       .run();
   } catch (e) {
     // El aviso a la red importa más: si esto falla, lo registramos y seguimos.
     console.error('No se pudo mandar el SMS de bloqueo', e);
+  }
+}
+
+/**
+ * Zavu deja 1 SMS por minuto al mismo número, y el SMS al vencer sale ~25 s después del de la detección:
+ * Zavu lo rechaza con `429 rate_limit_exceeded`. La cuenta del servidor (cada minuto) lo reintenta cuando
+ * ya pasó el minuto, hasta `INTENTOS_BLOQUEO_VENCIDO` veces y solo en los primeros minutos tras avisar.
+ */
+async function reintentarBloqueosVencidos(env: Env): Promise<void> {
+  const ahora = Date.now();
+  let pendientes: { id: string; numero_propio: string; intentos: number }[];
+  try {
+    ({ results: pendientes } = await env.DB.prepare(
+      `SELECT a.id, a.numero_propio, COUNT(*) AS intentos FROM alertas a
+       JOIN envios e ON e.alerta_id = a.id AND e.tipo = 'bloqueo_iphone' AND e.creado >= a.avisada
+       WHERE a.estado IN ('avisada', 'robo_confirmado') AND a.numero_propio IS NOT NULL AND a.avisada > ?
+       GROUP BY a.id
+       HAVING SUM(e.ok) = 0 AND SUM(e.detalle LIKE '%rate_limit%') > 0 AND COUNT(*) < ?`,
+    )
+      .bind(ahora - VENTANA_BLOQUEO_VENCIDO_MS, INTENTOS_BLOQUEO_VENCIDO)
+      .all<{ id: string; numero_propio: string; intentos: number }>());
+  } catch (e) {
+    console.error('No se pudo revisar los SMS de bloqueo pendientes', e);
+    return;
+  }
+  for (const p of pendientes) {
+    await smsBloqueoAlVencer(env, p.id, p.numero_propio, `-${p.intentos + 1}`);
   }
 }
 
@@ -339,7 +377,8 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
       // iPhone: lo PRIMERO es el SMS a la propia dueña, que dispara "Bloquear pantalla" en Atajos. No espera
       // a la base de datos ni a la cuenta: si el ladrón lo tiene desbloqueado en la mano, cada segundo cuenta.
       const id = nuevoId();
-      const smsBloqueo = m.numeroPropio ? mandarSmsBloqueo(env, m.numeroPropio, `${id}-bloqueo`) : null;
+      // Con `bloqueoAl: 'vencer'` la dueña eligió bloquear solo al llegar a 0: aquí no sale.
+      const smsBloqueo = m.numeroPropio && m.bloqueoAl !== 'vencer' ? mandarSmsBloqueo(env, m.numeroPropio, `${id}-bloqueo`) : null;
       // Que el Worker no lo corte aunque falle lo de abajo.
       if (smsBloqueo) ctx.waitUntil(smsBloqueo);
       // Al panel, en silencio: la red todavía NO se avisa (el dueño tiene unos segundos para cancelar).
@@ -367,7 +406,9 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
         ),
         ...guardarPuntos(env, id, m.ruta),
       ]);
-      if (m.numeroPropio) await guardarNumeroPropio(env, id, m.numeroPropio);
+      // El número queda guardado solo si toca el SMS al vencer (cuenta del servidor o `notificar_familia`).
+      // Con `bloqueoAl: 'detectar'` ya salió el de arriba: un segundo chocaría con el límite de Zavu.
+      if (m.numeroPropio && m.bloqueoAl !== 'detectar') await guardarNumeroPropio(env, id, m.numeroPropio);
       if (smsBloqueo && m.numeroPropio) {
         const numero = m.numeroPropio;
         ctx.waitUntil(
@@ -875,6 +916,7 @@ export default {
   /** Cada minuto: respaldo de la cuenta del servidor, y borra los teléfonos (también el propio) y el perfil de bloqueo de las alertas con más de 24 h. */
   async scheduled(_evento: ScheduledController, env: Env): Promise<void> {
     await avisarVencidas(env);
+    await reintentarBloqueosVencidos(env);
     const limite = Date.now() - RETENCION_CONTACTOS_MS;
     await env.DB.batch([
       env.DB.prepare('UPDATE alertas SET contactos_json = NULL, bloqueo_json = NULL WHERE (contactos_json IS NOT NULL OR bloqueo_json IS NOT NULL) AND creada < ?').bind(limite),

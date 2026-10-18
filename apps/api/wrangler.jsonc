@@ -31,7 +31,14 @@
   // `npx wrangler secret put META_WA_TOKEN`.
   // `ZAVU_LLAMADAS`: "si" = además del SMS, Zavu llama a cada contacto (agente "Alerta Arrebato" con voz en el sender).
   // `ORIGEN_ENLACES`: dominio de los enlaces de los SMS (Zavu rechaza *.workers.dev).
-  "vars": { "META_WA_NUMERO_ID": "756647020860898", "ZAVU_LLAMADAS": "si", "ORIGEN_ENLACES": "https://alerta.gadidgc.com" },
+  // `ZAVU_SENDER_BLOQUEO`: sender "Cesar" de Zavu (+1 270 639 6180), otro número solo para el SMS de bloqueo al
+  // vencer: Zavu deja 1 SMS por minuto por número y el de la detección sale ~25 s antes desde el número por defecto.
+  "vars": {
+    "META_WA_NUMERO_ID": "756647020860898",
+    "ZAVU_LLAMADAS": "si",
+    "ORIGEN_ENLACES": "https://alerta.gadidgc.com",
+    "ZAVU_SENDER_BLOQUEO": "kd7eet1s1cvw0p8xzkyfp9pnzs8gcb7p"
+  },
   // Dominio propio (de Gabriel) para los enlaces; workers.dev sigue activo porque la app lo usa.
   "routes": [{ "pattern": "alerta.gadidgc.com", "custom_domain": true }],
   "workers_dev": true,

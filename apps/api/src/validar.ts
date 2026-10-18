@@ -37,6 +37,12 @@ export type Mensaje =
       esperaS: number;
       /** iPhone: número del propio dueño, para mandarle el SMS que dispara su automatización de Atajos. */
       numeroPropio: string | null;
+      /**
+       * Cuándo va el SMS de Atajos: `detectar` = al instante (la cuenta del "¿Todo bien?" sigue igual),
+       * `vencer` = al llegar a 0 sin PIN. Zavu deja 1 SMS por minuto al mismo número, así que va UNO solo.
+       * `null` = versión vieja de la app: los dos, como antes.
+       */
+      bloqueoAl: 'detectar' | 'vencer' | null;
       bloqueo: PerfilBloqueo | null;
     }
   | {
@@ -142,8 +148,9 @@ export function validarMensaje(cuerpo: unknown): Mensaje {
       // Espera de "¿Todo bien?" elegida en la app (10, 15 o 20 s). Versiones viejas no la mandan: 10 s.
       const esperaS = o.esperaS === undefined ? 10 : Math.round(numero(o.esperaS, 'esperaS', 5, 60));
       const numeroPropio = numeroPropioOpcional(o.numeroPropio);
+      const bloqueoAl = o.bloqueoAl === 'detectar' || o.bloqueoAl === 'vencer' ? o.bloqueoAl : null;
       // `bloqueo` (kit de bloqueo) es opcional y nunca rechaza la alerta: si viene mal, se ignora.
-      return { tipo: 'alerta', dispositivo, evento: evento(o.evento), ruta, nombre: nombre(), contactos: contactos(o.contactos), esperaS, numeroPropio, bloqueo: validarPerfil(o.bloqueo) };
+      return { tipo: 'alerta', dispositivo, evento: evento(o.evento), ruta, nombre: nombre(), contactos: contactos(o.contactos), esperaS, numeroPropio, bloqueoAl, bloqueo: validarPerfil(o.bloqueo) };
     }
     case 'notificar_familia': {
       const numeroPropio = numeroPropioOpcional(o.numeroPropio);

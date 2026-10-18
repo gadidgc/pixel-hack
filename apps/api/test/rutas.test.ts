@@ -99,6 +99,30 @@ describe('Worker: carreras y casos borde', () => {
     expect(await envios(id, 'alerta')).toBe(2);
   });
 
+  it('iPhone con bloqueoAl "detectar": un solo SMS de bloqueo, al instante, y ninguno al vencer', async () => {
+    const pendientes: Promise<unknown>[] = [];
+    const ctxEsperando = { waitUntil: (p: Promise<unknown>) => void pendientes.push(p), passThroughOnException() {} } as unknown as ExecutionContext;
+    const cuerpo = { tipo: 'alerta', dispositivo, evento: jalon(1550), ruta: [], nombre: 'Lucía', contactos, esperaS: 60, numeroPropio: '987650003', bloqueoAl: 'detectar' };
+    const r = await worker.fetch(new Request(`${BASE}/api/eventos`, { method: 'POST', body: JSON.stringify(cuerpo) }), env, ctxEsperando);
+    const id = ((await r.json()) as Record<string, unknown>).id as string;
+    // Solo los envíos (la cuenta del servidor de `waitUntil` espera 60 s: esa la reemplaza el cron de abajo).
+    await Promise.race([Promise.all(pendientes.slice(0, 2)), new Promise((listo) => setTimeout(listo, 500))]);
+    expect(await envios(id, 'bloqueo_iphone')).toBe(1);
+    await env.DB.prepare('UPDATE alertas SET creada = creada - 120000 WHERE id = ?').bind(id).run();
+    await worker.scheduled({} as ScheduledController, env);
+    expect(await envios(id, 'alerta')).toBe(2);
+    expect(await envios(id, 'bloqueo_iphone')).toBe(1);
+  });
+
+  it('iPhone con bloqueoAl "vencer": ningún SMS al detectar y uno al llegar a 0', async () => {
+    const a = await evento({ tipo: 'alerta', dispositivo, evento: jalon(1600), ruta: [], nombre: 'Lucía', contactos, esperaS: 60, numeroPropio: '987650004', bloqueoAl: 'vencer' });
+    const id = a.id as string;
+    expect(await envios(id, 'bloqueo_iphone')).toBe(0);
+    await env.DB.prepare('UPDATE alertas SET creada = creada - 120000 WHERE id = ?').bind(id).run();
+    await worker.scheduled({} as ScheduledController, env);
+    expect(await envios(id, 'bloqueo_iphone')).toBe(1);
+  });
+
   it('iPhone: cancelar con el PIN no manda el SMS de bloqueo al vencer y borra el número', async () => {
     const a = await evento({ tipo: 'alerta', dispositivo, evento: jalon(1700), ruta: [], nombre: 'Lucía', contactos, esperaS: 60, numeroPropio: '987650001' });
     const id = a.id as string;

@@ -9,6 +9,7 @@ import {
   type ConfigDetector,
   type EspacioDemo,
   type EventoDetector,
+  type DiagnosticoDescarte,
   type LecturaGps,
   type MuestraImu,
   type Telemetria,
@@ -95,12 +96,22 @@ export interface ResultadoPrueba {
   envio: ResultadoEnvio;
 }
 
+/** "GPS 6 (4 válidas, ±12 m) · máx 1.8 m/s · 7 m · energía 0.42 g": para saber por qué no hubo alerta. */
+export function describirDiagnostico(d: DiagnosticoDescarte): string {
+  const precision = d.mejorPrecisionM !== null ? `, ±${Math.round(d.mejorPrecisionM)} m` : '';
+  const gps = `GPS ${d.lecturasGps} (${d.lecturasGpsValidas} válidas${precision})`;
+  const velocidad = d.maxVelocidadMs !== null ? ` · máx ${d.maxVelocidadMs.toFixed(1)} m/s` : ' · sin velocidad';
+  const metros = d.maxDesplazamientoM !== null ? ` · ${Math.round(d.maxDesplazamientoM)} m` : '';
+  const energia = d.energiaG !== null ? ` · energía ${d.energiaG.toFixed(2)} g` : '';
+  return gps + velocidad + metros + energia;
+}
+
 export function describirEvento(e: EventoDetector): string {
   switch (e.tipo) {
     case 'posible_jalon':
       return `Posible jalón: ${e.picoAceleracionG.toFixed(1)} g, giro ${e.picoGiroRadS?.toFixed(1) ?? '—'} rad/s`;
     case 'descartado':
-      return `Descartado: ${e.motivo.replace(/_/g, ' ')}`;
+      return `Descartado: ${e.motivo.replace(/_/g, ' ')}${e.diagnostico ? ` · ${describirDiagnostico(e.diagnostico)}` : ''}`;
     case 'alerta':
       return `Alerta (${e.via.replace(/_/g, ' ')}, confianza ${e.confianza}) a ${((e.t - e.tJalon) / 1000).toFixed(1)} s del jalón`;
   }
@@ -444,7 +455,10 @@ class ServicioProteccion {
     // antes de escribir el PIN. Le damos 15 s más para que una falsa alarma no avise a su familia.
     // iPhone con el SMS de Atajos: la pantalla se bloquea en segundos y también hay que desbloquear para cancelar.
     const numeroPropio = Platform.OS === 'ios' && hayBackend() ? preferencias().numeroPropio : '';
-    const extra = (bloqueo.estado === 'solicitado' && !sobreBloqueo) || numeroPropio ? SEGUNDOS_EXTRA_DESBLOQUEO : 0;
+    // Un solo SMS de bloqueo por alerta (Zavu deja 1 por minuto al mismo número): al detectar o al llegar a 0.
+    const bloqueoAl = preferencias().bloqueoIphoneAl;
+    const bloqueaAlDetectar = Boolean(numeroPropio) && bloqueoAl === 'detectar';
+    const extra = (bloqueo.estado === 'solicitado' && !sobreBloqueo) || bloqueaAlDetectar ? SEGUNDOS_EXTRA_DESBLOQUEO : 0;
     const espera = elegida + extra;
 
     this.cambiar({
@@ -473,7 +487,8 @@ class ServicioProteccion {
 
     // 1) Al panel, al instante y en silencio, con la ruta de los últimos segundos.
     const { nombre, contactos, bloqueo: perfil } = preferencias();
-    // Con `numeroPropio`, el backend le manda al instante el SMS que bloquea el iPhone (Atajos), sin esperar la cuenta.
+    // Con `numeroPropio` y `bloqueoAl: 'detectar'`, el backend le manda al instante el SMS que bloquea el iPhone
+    // (Atajos), sin esperar la cuenta. Con `'vencer'` solo lo guarda para mandarlo al llegar a 0.
     this.envioAlerta = enviar({
       tipo: 'alerta',
       evento,
@@ -482,9 +497,10 @@ class ServicioProteccion {
       contactos,
       esperaS: espera,
       bloqueo: perfilParaEnviar(perfil),
-      ...(numeroPropio ? { numeroPropio } : {}),
+      ...(numeroPropio ? { numeroPropio, bloqueoAl } : {}),
     });
-    if (numeroPropio) this.registrar('iPhone: pedimos el SMS que bloquea la pantalla con tu automatización de Atajos.');
+    if (bloqueaAlDetectar) this.registrar('iPhone: pedimos el SMS que bloquea la pantalla con tu automatización de Atajos.');
+    else if (numeroPropio) this.registrar('iPhone: el SMS que bloquea la pantalla saldrá si la cuenta llega a 0 sin tu PIN.');
     void this.envioAlerta.then((panel) => {
       if (this.estado.alerta?.evento !== evento) return;
       this.cambiar({ alerta: { ...this.estado.alerta, panel, enlace: panel.enlace ?? this.estado.alerta.enlace } });
@@ -500,7 +516,8 @@ class ServicioProteccion {
     // en el bolsillo y alcance a cancelar si fue falsa alarma. Va DESPUÉS de `detenerCuentaFamilia`, que
     // la apaga: así la vibración dura lo mismo que la cuenta.
     Vibration.vibrate(PATRON_VIBRACION_TODO_BIEN, true);
-    this.cuentaPendiente = { evento, nombre, contactos, limite: Date.now() + espera * 1000, numeroPropio };
+    // Al vencer solo se pide el SMS si no salió ya al detectar.
+    this.cuentaPendiente = { evento, nombre, contactos, limite: Date.now() + espera * 1000, numeroPropio: bloqueaAlDetectar ? '' : numeroPropio };
     this.cuentaFamilia = setInterval(() => this.revisarCuentaFamilia(), 1000);
   }
 
@@ -516,8 +533,8 @@ class ServicioProteccion {
     this.detenerCuentaFamilia();
     const { evento, nombre, contactos, numeroPropio } = p;
     this.cambiar({ alerta: { ...a, segundosParaFamilia: 0, familia: 'enviando' } });
-    // iPhone con Atajos: venció el "¿Todo bien?" sin PIN, así que pedimos otra vez el SMS que bloquea la pantalla.
-    if (numeroPropio) this.registrar('iPhone: venció la espera; pedimos otra vez el SMS que bloquea la pantalla.');
+    // iPhone con Atajos y `bloqueoAl: 'vencer'`: venció el "¿Todo bien?" sin PIN, así que pedimos el SMS que bloquea la pantalla.
+    if (numeroPropio) this.registrar('iPhone: venció la espera; pedimos el SMS que bloquea la pantalla.');
     void enviar({
       tipo: 'notificar_familia',
       evento,
