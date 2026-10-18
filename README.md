@@ -62,6 +62,7 @@ En la web, los sensores solo funcionan con **HTTPS** y abriendo la página direc
 - Reproductor de grabaciones CSV reales en la terminal.
 
 ## Ideas pendientes (todavía no funciona)
+- **iPhone: bloqueo de verdad con Atajos.** Al confirmar el arrebato el backend manda un SMS con una palabra al número de la propia dueña, y su automatización de Atajos (guiada en el primer uso) bloquea la pantalla. Programado, sin probar en un iPhone físico. Ver [bloqueo por arrebato](docs/bloqueo-por-arrebato.md).
 - **iPhone: tapar las apps con Tiempo de uso** al confirmar el arrebato (WhatsApp, banca, Safari; Teléfono y Ajustes no se pueden tapar), destaparlas al cancelar con el PIN, y guía a la Protección en caso de robo de Apple. **Programado y compila, sin probar en un iPhone físico.** Para TestFlight o App Store falta que Apple apruebe el permiso de Tiempo de uso.
 - **Bloqueo: falta probar** que la ruta GPS siga enviándose con el celular bloqueado, en la calle y con la red avisada.
 - WhatsApp a cualquier persona sin que escriba antes: falta que Meta apruebe las plantillas (en revisión). El SMS ya llega a cualquiera, pero sin enlace (filtro antifraude de Zavu). Ver [docs/avisos-whatsapp-sms.md](docs/avisos-whatsapp-sms.md).

@@ -208,15 +208,20 @@ describe('iPhone: tapar las apps con Tiempo de uso', () => {
   });
   it('sin pantalla completa no es algo que falte: iPhone nunca lo deja', async () => {
     const b = await import('../src/bloqueo');
-    expect(b.faltaParaBloqueo({ ...estadoIphone, detalle: '' })).toBeNull();
+    expect(b.faltaParaBloqueo({ ...estadoIphone, detalle: '' }, '+51987654321')).toBeNull();
   });
   it('sin autorizar Tiempo de uso, Inicio lo avisa', async () => {
     const b = await import('../src/bloqueo');
-    expect(b.faltaParaBloqueo({ ...estadoIphone, administradorActivo: false, detalle: '' })).toContain('Tiempo de uso');
+    expect(b.faltaParaBloqueo({ ...estadoIphone, administradorActivo: false, detalle: '' }, '+51987654321')).toContain('Tiempo de uso');
   });
   it('sin código en el iPhone, lo pide primero', async () => {
     const b = await import('../src/bloqueo');
-    expect(b.faltaParaBloqueo({ ...estadoIphone, bloqueoSeguro: false, administradorActivo: false, detalle: '' })).toContain('código');
+    expect(b.faltaParaBloqueo({ ...estadoIphone, bloqueoSeguro: false, administradorActivo: false, detalle: '' }, '+51987654321')).toContain('código');
+  });
+  it('sin número propio, lo primero que pide es el bloqueo con Atajos (también sin el módulo)', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.faltaParaBloqueo({ ...estadoIphone, detalle: '' })).toContain('Atajos');
+    expect(b.faltaParaBloqueo({ ...estadoIphone, disponible: false, detalle: '' })).toContain('Atajos');
   });
   it('lee y quita el escudo; un fallo nativo no rompe nada', async () => {
     entorno.modulo.appsBloqueadas.mockReturnValue(true);

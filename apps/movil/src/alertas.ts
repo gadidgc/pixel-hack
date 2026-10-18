@@ -37,12 +37,13 @@ export function urlBackend(): string {
  * `contactos` viaja solo en una alerta o prueba, para que el backend sepa a quién escribir.
  */
 export type MensajeAlerta =
-  | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[]; nombre: string; contactos: Contacto[]; esperaS: number }
+  | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[]; nombre: string; contactos: Contacto[]; esperaS: number; numeroPropio?: string }
   | { tipo: 'notificar_familia'; evento: EventoDetector; nombre: string; contactos: Contacto[] }
   | { tipo: 'cancelada'; evento: EventoDetector }
   | { tipo: 'ubicacion'; lectura: LecturaGps }
   | { tipo: 'prueba'; nombre: string; contactos: Contacto[] }
-  | { tipo: 'motivo_falsa_alarma'; motivo: string };
+  | { tipo: 'motivo_falsa_alarma'; motivo: string }
+  | { tipo: 'probar_bloqueo'; numeroPropio: string };
 
 export interface ResultadoEnvio {
   enviado: boolean;

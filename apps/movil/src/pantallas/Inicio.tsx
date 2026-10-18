@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Animated, Platform, Pressable, View } from 'react-native';
 import { faltaParaBloqueo, useEstadoBloqueo } from '../bloqueo';
 import { PedirPin } from '../componentes/PedirPin';
-import { useProteccion } from '../useProteccion';
+import { usePreferencias, useProteccion } from '../useProteccion';
 import { BarraPestanas, Boton, Hoja, Insignia, Lecturas, Onda, Respira, T, hora, useBucle, type Pestana } from '../ui/componentes';
 import { Icono, type NombreIcono } from '../ui/iconos';
 import { MapaFondo, useEscalaX } from '../ui/mapa';
@@ -24,7 +24,7 @@ export function Inicio({ onPestana, onCerca }: { onPestana: (p: Pestana) => void
   }, [estado.activa]);
   const tel = estado.telemetria;
   // Si el bloqueo no está autorizado, se dice aquí, a la vista: no solo dentro de Tú.
-  const faltaBloqueo = faltaParaBloqueo(useEstadoBloqueo());
+  const faltaBloqueo = faltaParaBloqueo(useEstadoBloqueo(), usePreferencias()?.numeroPropio);
 
   const limitada = estado.activa && (estado.segundoPlano === false || estado.tieneGps === false || estado.permisosFaltantes.length > 0);
   const fase: Fase = !estado.activa ? 'apagada' : estado.pausadaHasta ? 'pausada' : limitada ? 'limitada' : 'protegida';

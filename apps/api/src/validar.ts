@@ -25,12 +25,23 @@ export interface EventoAlerta {
 }
 
 export type Mensaje =
-  | { tipo: 'alerta'; dispositivo: string; evento: EventoAlerta; ruta: Punto[]; nombre: string; contactos: Contacto[]; esperaS: number }
+  | {
+      tipo: 'alerta';
+      dispositivo: string;
+      evento: EventoAlerta;
+      ruta: Punto[];
+      nombre: string;
+      contactos: Contacto[];
+      esperaS: number;
+      /** iPhone: número del propio dueño, para mandarle el SMS que dispara su automatización de Atajos. */
+      numeroPropio: string | null;
+    }
   | { tipo: 'notificar_familia'; dispositivo: string; evento: EventoAlerta; nombre: string; contactos: Contacto[] }
   | { tipo: 'cancelada'; dispositivo: string }
   | { tipo: 'ubicacion'; dispositivo: string; lectura: Punto }
   | { tipo: 'prueba'; dispositivo: string; nombre: string; contactos: Contacto[] }
-  | { tipo: 'motivo_falsa_alarma'; dispositivo: string; motivo: string };
+  | { tipo: 'motivo_falsa_alarma'; dispositivo: string; motivo: string }
+  | { tipo: 'probar_bloqueo'; dispositivo: string; numeroPropio: string };
 
 export class ErrorDeDatos extends Error {}
 
@@ -110,7 +121,9 @@ export function validarMensaje(cuerpo: unknown): Mensaje {
       const ruta = o.ruta.slice(-MAX_RUTA).map((p, i) => punto(p, `ruta[${i}]`));
       // Espera de "¿Todo bien?" elegida en la app (10, 15 o 20 s). Versiones viejas no la mandan: 10 s.
       const esperaS = o.esperaS === undefined ? 10 : Math.round(numero(o.esperaS, 'esperaS', 5, 60));
-      return { tipo: 'alerta', dispositivo, evento: evento(o.evento), ruta, nombre: nombre(), contactos: contactos(o.contactos), esperaS };
+      // Opcional: un número inválido no frena la alerta, solo se queda sin el SMS de bloqueo.
+      const numeroPropio = typeof o.numeroPropio === 'string' ? normalizarTelefono(o.numeroPropio.slice(0, 30)) : null;
+      return { tipo: 'alerta', dispositivo, evento: evento(o.evento), ruta, nombre: nombre(), contactos: contactos(o.contactos), esperaS, numeroPropio };
     }
     case 'notificar_familia':
       return { tipo: 'notificar_familia', dispositivo, evento: evento(o.evento), nombre: nombre(), contactos: contactos(o.contactos) };
@@ -122,6 +135,11 @@ export function validarMensaje(cuerpo: unknown): Mensaje {
       return { tipo: 'prueba', dispositivo, nombre: nombre(), contactos: contactos(o.contactos) };
     case 'motivo_falsa_alarma':
       return { tipo: 'motivo_falsa_alarma', dispositivo, motivo: texto(o.motivo, 'motivo', 80) };
+    case 'probar_bloqueo': {
+      const numeroPropio = normalizarTelefono(texto(o.numeroPropio, 'numeroPropio', 30));
+      if (!numeroPropio) throw new ErrorDeDatos('"numeroPropio" no es un teléfono válido');
+      return { tipo: 'probar_bloqueo', dispositivo, numeroPropio };
+    }
     default:
       throw new ErrorDeDatos('"tipo" desconocido');
   }

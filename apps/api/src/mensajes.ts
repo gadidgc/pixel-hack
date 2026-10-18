@@ -81,6 +81,25 @@ export const MENSAJES = {
   }),
 };
 
+/**
+ * iPhone no deja que una app lo bloquee, pero Atajos sí: la dueña crea una automatización "Al recibir un mensaje
+ * que contenga PALABRA_BLOQUEO → Bloquear pantalla". Al confirmar un arrebato le mandamos este SMS a SU número.
+ * Sin enlace y sin "robo" (el filtro de Zavu). Si cambias la palabra, cambia también la guía de la app.
+ */
+export const PALABRA_BLOQUEO = 'AA-BLOQUEO';
+export const SMS_BLOQUEO = `Alerta Arrebato ${PALABRA_BLOQUEO}. Si no fuiste tu, ignora este mensaje.`;
+
+/**
+ * El SMS que bloquea el iPhone de la dueña. Solo SMS: un WhatsApp no dispara la automatización de Mensajes.
+ * Necesita la clave "live" de Zavu (la de prueba no manda SMS).
+ */
+export async function mandarSmsBloqueo(env: EnvMensajes, telefono: string, idempotencia: string): Promise<ResultadoMensaje> {
+  if (!env.ZAVU_API_KEY || env.ZAVU_API_KEY.trim().startsWith('zv_test_')) {
+    return { ok: false, canal: null, detalle: 'falta la clave live de Zavu para mandar SMS' };
+  }
+  return porZavu(env, telefono, SMS_BLOQUEO, idempotencia, 'sms');
+}
+
 async function llamarMeta(env: EnvMensajes, cuerpo: Record<string, unknown>): Promise<ResultadoMensaje> {
   try {
     const r = await fetch(`https://graph.facebook.com/v21.0/${env.META_WA_NUMERO_ID}/messages`, {

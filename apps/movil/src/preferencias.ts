@@ -19,10 +19,15 @@ export interface Preferencias {
   esperaFamiliaS: number;
   /** La protección estaba encendida: si el sistema reabre la app (o se reinicia), vuelve a encenderla sola. */
   proteccionActiva: boolean;
+  /**
+   * iPhone: el número de la propia dueña. Al confirmar un arrebato le mandamos un SMS con la palabra de
+   * bloqueo y su automatización de Atajos bloquea la pantalla. Vacío = no lo configuró.
+   */
+  numeroPropio: string;
 }
 
 const CLAVE = 'alerta-arrebato-preferencias';
-const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false };
+const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false, numeroPropio: '' };
 
 let actuales: Preferencias = INICIAL;
 let cargadas = false;

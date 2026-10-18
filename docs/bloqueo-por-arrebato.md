@@ -65,6 +65,34 @@ iPhone: no hay una API pública equivalente para una app de consumo. Apple ofrec
 DeviceLock mediante MDM, que exige enrolar el dispositivo y disponer de un servidor
 de gestión. No usamos MDM, APIs privadas ni una pantalla que simule un bloqueo del sistema.
 
+### iPhone: bloqueo de verdad con Atajos (SMS a la propia dueña)
+
+Una app no puede bloquear el iPhone, pero la app **Atajos** sí (acción «Bloquear pantalla», iOS 16.4+), y
+una automatización «Mensaje» puede correr sola sin preguntar («Ejecutar inmediatamente», iOS 17+).
+La dueña la crea una vez, guiada en el primer uso y en Tú:
+
+1. Atajos › Automatización › + › «Mensaje» › «El mensaje contiene» `AA-BLOQUEO`.
+2. «Ejecutar inmediatamente» › «Nuevo atajo en blanco» › acción «Bloquear pantalla».
+3. Escribe su número en la app y toca **Probar**: le llega el SMS y el iPhone se bloquea.
+
+Al confirmar un arrebato, la app manda su número con la `alerta` y el backend le envía **al instante** el
+SMS con la palabra (Zavu, solo SMS). El iPhone se bloquea y el ladrón necesita el código, igual que en Android.
+
+- **Necesita señal** y tarda unos segundos (lo que tarde el SMS). Por eso se mantiene también el escudo de
+  Tiempo de uso, que es instantáneo y sin señal.
+- **Falsa alarma:** la dueña desbloquea con Face ID y cancela con el PIN. Se dan los 15 s extra.
+- Apple siempre muestra un aviso cuando corre una automatización: no se puede ocultar.
+- Cualquiera que mande un SMS con la palabra bloquea el iPhone. Es inofensivo: solo bloquea.
+- La palabra está en `apps/api/src/mensajes.ts` (`PALABRA_BLOQUEO`) y en `apps/movil/src/bloqueo.ts`
+  (`PALABRA_BLOQUEO_ATAJOS`): deben ser iguales.
+
+Fuentes (secundarias): [acción Bloquear pantalla](https://9to5mac.com/2024/05/28/make-iphone-lock-screen-shortcut/),
+[«Ejecutar inmediatamente» en automatizaciones de Mensaje](https://matthewcassinelli.com/automations-run-immediately-shortcuts-notifications),
+[Apple: disparador Mensaje](https://support.apple.com/guide/shortcuts/apdd711f9dff/ios).
+
+**No probado todavía:** que la automatización bloquee con la pantalla apagada y con el iPhone en uso por otra
+persona, y cuánto tarda el SMS en llegar.
+
 ### iPhone: tapar las apps con Tiempo de uso (no es un bloqueo)
 
 Lo más cercano que Apple permite es **Tiempo de uso** (frameworks FamilyControls y

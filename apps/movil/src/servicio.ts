@@ -379,7 +379,9 @@ class ServicioProteccion {
     const sobreBloqueo = bloqueo.estado === 'solicitado' && mostrarSobreBloqueo(elegida);
     // Respaldo: si Android no deja la pregunta sobre el bloqueo, el dueño tiene que desbloquear Android
     // antes de escribir el PIN. Le damos 15 s más para que una falsa alarma no avise a su familia.
-    const extra = bloqueo.estado === 'solicitado' && !sobreBloqueo ? SEGUNDOS_EXTRA_DESBLOQUEO : 0;
+    // iPhone con el SMS de Atajos: la pantalla se bloquea en segundos y también hay que desbloquear para cancelar.
+    const numeroPropio = Platform.OS === 'ios' && hayBackend() ? preferencias().numeroPropio : '';
+    const extra = (bloqueo.estado === 'solicitado' && !sobreBloqueo) || numeroPropio ? SEGUNDOS_EXTRA_DESBLOQUEO : 0;
     const espera = elegida + extra;
 
     this.cambiar({
@@ -408,7 +410,17 @@ class ServicioProteccion {
 
     // 1) Al panel, al instante y en silencio, con la ruta de los últimos segundos.
     const { nombre, contactos } = preferencias();
-    this.envioAlerta = enviar({ tipo: 'alerta', evento, ruta: [...this.ruta], nombre, contactos, esperaS: espera });
+    // Con `numeroPropio`, el backend le manda al instante el SMS que bloquea el iPhone (Atajos), sin esperar la cuenta.
+    this.envioAlerta = enviar({
+      tipo: 'alerta',
+      evento,
+      ruta: [...this.ruta],
+      nombre,
+      contactos,
+      esperaS: espera,
+      ...(numeroPropio ? { numeroPropio } : {}),
+    });
+    if (numeroPropio) this.registrar('iPhone: pedimos el SMS que bloquea la pantalla con tu automatización de Atajos.');
     void this.envioAlerta.then((panel) => {
       if (this.estado.alerta?.evento !== evento) return;
       this.cambiar({ alerta: { ...this.estado.alerta, panel, enlace: panel.enlace ?? this.estado.alerta.enlace } });
@@ -487,6 +499,20 @@ class ServicioProteccion {
       huidaS: r.alerta ? (r.alerta.t - base) / 1000 : null,
       envio,
     };
+  }
+
+  /**
+   * Guía de Atajos (iPhone): manda ya el SMS de bloqueo a tu número, para comprobar que la automatización
+   * bloquea la pantalla. Guarda el número si llegó el SMS.
+   */
+  async probarBloqueoPorMensaje(numeroPropio: string): Promise<ResultadoEnvio> {
+    const envio = await enviar({ tipo: 'probar_bloqueo', numeroPropio });
+    if (envio.enviado) await guardarPreferencias({ numeroPropio });
+    this.registrar(
+      envio.enviado ? 'SMS de bloqueo enviado a tu número: tu iPhone debería bloquearse en unos segundos.' : `No se pudo mandar el SMS de bloqueo: ${envio.detalle}`,
+      envio.enviado ? 'info' : 'aviso',
+    );
+    return envio;
   }
 
   /**

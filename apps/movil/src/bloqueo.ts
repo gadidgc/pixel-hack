@@ -2,6 +2,12 @@ import { requireOptionalNativeModule } from 'expo';
 import { useEffect, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 
+/**
+ * iPhone: la palabra del SMS que dispara la automatización de Atajos "Bloquear pantalla". Tiene que ser la
+ * misma que `PALABRA_BLOQUEO` en apps/api/src/mensajes.ts.
+ */
+export const PALABRA_BLOQUEO_ATAJOS = 'AA-BLOQUEO';
+
 export interface EstadoBloqueo {
   disponible: boolean;
   administradorActivo: boolean;
@@ -188,7 +194,9 @@ export function usePantallaBloqueada(activo: boolean): boolean {
  * Qué falta para que el bloqueo funcione, en una frase para mostrar en Inicio y antes de un ensayo.
  * `null` si está listo o si no se puede arreglar desde aquí (iPhone, web, Expo Go).
  */
-export function faltaParaBloqueo(estado: EstadoBloqueo): string | null {
+export function faltaParaBloqueo(estado: EstadoBloqueo, numeroPropio = ''): string | null {
+  // iPhone: el bloqueo de verdad es el de Atajos (funciona también sin el módulo, por ejemplo en iOS 15).
+  if (esIphone && !numeroPropio) return 'Falta configurar el bloqueo con Atajos.';
   if (!estado.disponible) return null;
   if (esIphone) {
     if (!estado.bloqueoSeguro) return 'Falta ponerle un código a tu iPhone.';

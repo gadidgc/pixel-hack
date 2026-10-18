@@ -9,6 +9,7 @@ import {
   solicitarAutorizacionBloqueo,
 } from "../bloqueo";
 import { servicio } from "../servicio";
+import { GuiaAtajos } from "./GuiaAtajos";
 import { PedirPin } from "./PedirPin";
 import { Boton, Rotulo, T, Tarjeta } from "../ui/componentes";
 import { useTema } from "../ui/tema";
@@ -96,6 +97,12 @@ export function ConfiguracionBloqueo({
         <T v="apoyo" suave>
           {estado.detalle}
         </T>
+        {esIphone && <GuiaAtajos />}
+        {esIphone && (
+          <T v="cuerpoFuerte" style={{ marginTop: 6 }}>
+            Además: tapar tus apps al instante
+          </T>
+        )}
         {esIphone &&
           PASOS_IPHONE.map((paso, i) => (
             <View key={i} style={{ flexDirection: "row", gap: 8 }}>

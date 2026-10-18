@@ -7,6 +7,7 @@ import type { EstadoProteccion } from '../servicio';
 import { ETIQUETAS, type Etiqueta } from '../grabadora';
 import { correrSimulacion, ESCENARIOS_APP, type ResultadoSimulacion } from '../simulacion';
 import { describirEvento, useProteccion } from '../useProteccion';
+import { preferencias } from '../preferencias';
 import { Boton, Chip, Grupo, Lecturas, Pantalla, Rotulo, T, Tarjeta, hora } from '../ui/componentes';
 import { Icono } from '../ui/iconos';
 import { useTema } from '../ui/tema';
@@ -102,7 +103,7 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
         onPress={() => {
           // Se revisa en el momento: si falta algo, se dice ANTES de ensayar (en el Samsung no se bloqueó por esto).
           const bloqueo = consultarBloqueo();
-          const falta = faltaParaBloqueo(bloqueo);
+          const falta = faltaParaBloqueo(bloqueo, preferencias().numeroPropio);
           Alert.alert(
             'Ensayar la alerta completa',
             falta

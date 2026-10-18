@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MENSAJES, mandarMensaje } from '../src/mensajes';
+import { MENSAJES, PALABRA_BLOQUEO, SMS_BLOQUEO, mandarMensaje, mandarSmsBloqueo } from '../src/mensajes';
 
 const mensaje = MENSAJES.alerta('Lucia', Date.UTC(2026, 9, 18, 0, 42), 'https://x.dev/a/abc');
 
@@ -56,5 +56,23 @@ describe('mandarMensaje', () => {
   it('sin proveedores lo dice', async () => {
     const r = await mandarMensaje({}, { telefono: '+51987654321', mensaje, idempotencia: 'a' });
     expect(r).toMatchObject({ ok: false, detalle: 'falta configurar WhatsApp (Meta o Zavu)' });
+  });
+});
+
+describe('SMS de bloqueo de iPhone (Atajos)', () => {
+  it('manda solo SMS por Zavu, con la palabra y sin enlace ni "robo"', async () => {
+    const llamadas = simularFetch({ zavu: 202 });
+    const r = await mandarSmsBloqueo({ ZAVU_API_KEY: 'zv_live_x' }, '+51987654321', 'b');
+    expect(r.ok).toBe(true);
+    expect(llamadas).toHaveLength(1);
+    expect(llamadas[0].cuerpo).toMatchObject({ to: '+51987654321', channel: 'sms' });
+    expect(String(llamadas[0].cuerpo.text)).toContain(PALABRA_BLOQUEO);
+    expect(SMS_BLOQUEO).not.toMatch(/https?:|robo/i);
+  });
+  it('con la clave de prueba de Zavu no puede mandar SMS y lo dice', async () => {
+    const llamadas = simularFetch({ zavu: 202 });
+    const r = await mandarSmsBloqueo({ ZAVU_API_KEY: 'zv_test_x', META_WA_TOKEN: 't', META_WA_NUMERO_ID: '1' }, '+51987654321', 'b');
+    expect(r.ok).toBe(false);
+    expect(llamadas).toHaveLength(0);
   });
 });
