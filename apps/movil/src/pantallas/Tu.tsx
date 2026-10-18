@@ -56,6 +56,17 @@ export function Tu({
 
   if (!prefs) return null;
   const opciones = [10, 15, 20];
+  const { bloqueo } = prefs;
+  const hayPerfil = Boolean(bloqueo.entidades.length || bloqueo.operador || bloqueo.linea || bloqueo.imei || bloqueo.dni);
+  const resumenPerfil = [
+    ...ENTIDADES.filter((e) => bloqueo.entidades.includes(e.id)).map((e) => e.nombre),
+    OPERADORES.find((o) => o.id === bloqueo.operador)?.nombre,
+    bloqueo.linea && 'tu número',
+    bloqueo.imei && 'IMEI',
+    bloqueo.dni && 'DNI',
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   return (
     <View style={{ flex: 1, backgroundColor: c.fondo }}>
@@ -151,15 +162,9 @@ export function Tu({
         <Grupo>
           <Fila
             titulo="Para bloquear tus cuentas"
-            detalle={
-              prefs.bloqueo.entidades.length || prefs.bloqueo.operador
-                ? [...ENTIDADES.filter((e) => prefs.bloqueo.entidades.includes(e.id)).map((e) => e.nombre), OPERADORES.find((o) => o.id === prefs.bloqueo.operador)?.nombre]
-                    .filter(Boolean)
-                    .join(', ') + (prefs.bloqueo.imei ? ' · IMEI guardado' : '')
-                : 'Tus bancos, tu operadora y tu IMEI, por si te roban'
-            }
+            detalle={hayPerfil ? resumenPerfil : 'Tus bancos, tu operadora y tu IMEI, por si te roban'}
             onPress={onCuentas}
-            fondo={!prefs.bloqueo.entidades.length && !prefs.bloqueo.operador ? c.avisoFondo : undefined}
+            fondo={hayPerfil ? undefined : c.avisoFondo}
             derecha={<Icono nombre="flecha" tam={18} color={c.textoSuave} />}
           />
           <Fila titulo="Qué hacer en la primera hora" detalle="Suspender la línea, bloquear el IMEI, cambiar claves" onPress={onMeRobaron} ultima derecha={<Icono nombre="flecha" tam={18} color={c.textoSuave} />} />

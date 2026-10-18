@@ -91,12 +91,15 @@ function separarImei(imei: string): string {
 /** Cuánto manda una marca propia sobre lo que dice el backend, mientras este se pone al día (lee cada 2 s). */
 const MARCA_PROPIA_MS = 6000;
 
+/** Resultado de marcar un paso: `error` con el motivo para mostrar, o `quien` (el nombre con que te ve la red). */
+export type ResultadoMarca = { error: string; quien?: undefined } | { error: null; quien: string };
+
 interface Props {
   kit: Kit;
   nombre: string;
   horaJalon: string;
-  /** Marca o desmarca un paso para toda la red. Devuelve `false` si no se pudo guardar. */
-  onMarcar: (paso: string, hecho: boolean) => Promise<boolean>;
+  /** Marca o desmarca un paso para toda la red. */
+  onMarcar: (paso: string, hecho: boolean) => Promise<ResultadoMarca>;
 }
 
 export function KitBloqueo({ kit, nombre, horaJalon, onMarcar }: Props) {
@@ -104,13 +107,14 @@ export function KitBloqueo({ kit, nombre, horaJalon, onMarcar }: Props) {
   // Lo que acaba de marcar esta persona. Solo manda unos segundos: después, la verdad es lo que dice el
   // backend (así, si otro familiar desmarca un paso, aquí también se ve).
   const [propias, setPropias] = useState<Record<string, { valor: boolean; desde: number }>>({});
-  // Pasos que marcó esta persona, para decir "Hecho por ti".
-  const [mios, setMios] = useState<Record<string, boolean>>({});
+  // Con qué nombre ve la red a esta persona (lo devuelve el backend al marcar), para decir "Hecho por ti".
+  const [yo, setYo] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const hecho = (p: PasoKit) => {
+  const propiaVigente = (p: PasoKit) => {
     const propia = propias[p.paso];
-    return propia && propia.valor !== p.hecho && Date.now() - propia.desde < MARCA_PROPIA_MS ? propia.valor : p.hecho;
+    return propia && propia.valor !== p.hecho && Date.now() - propia.desde < MARCA_PROPIA_MS ? propia : null;
   };
+  const hecho = (p: PasoKit) => propiaVigente(p)?.valor ?? p.hecho;
   const cuantos = kit.pasos.filter(hecho).length;
   const siguiente = kit.pasos.find((p) => !hecho(p))?.paso;
 
@@ -118,11 +122,11 @@ export function KitBloqueo({ kit, nombre, horaJalon, onMarcar }: Props) {
     const nuevo = !hecho(p);
     const desde = Date.now();
     setPropias((x) => ({ ...x, [p.paso]: { valor: nuevo, desde } }));
-    setMios((x) => ({ ...x, [p.paso]: nuevo }));
-    const ok = await onMarcar(p.paso, nuevo);
-    setError(ok ? '' : 'No pudimos guardar tu marca. Revisa tu conexión e inténtalo otra vez.');
+    const r = await onMarcar(p.paso, nuevo);
+    setError(r.error ?? '');
+    if (r.error === null) setYo(r.quien);
     // Si falló, volvemos a lo que dice el backend (solo si no hubo otro toque después).
-    if (!ok) setPropias((x) => (x[p.paso]?.desde === desde ? { ...x, [p.paso]: { valor: !nuevo, desde } } : x));
+    else setPropias((x) => (x[p.paso]?.desde === desde ? { ...x, [p.paso]: { valor: !nuevo, desde } } : x));
   };
 
   return (
@@ -139,7 +143,9 @@ export function KitBloqueo({ kit, nombre, horaJalon, onMarcar }: Props) {
       {kit.pasos.map((p) => {
         const listo = hecho(p);
         const actual = p.paso === siguiente;
-        const quien = listo ? (mios[p.paso] ? 'ti' : p.quien) : null;
+        // "ti" mientras tu marca no llega al backend, o cuando el backend dice que la última la hiciste tú.
+        const mia = Boolean(propiaVigente(p)) || (p.quien !== null && p.quien === yo);
+        const quien = listo ? (mia ? 'ti' : p.quien) : null;
         return (
           <View key={p.paso} style={{ borderRadius: RADIO.s, backgroundColor: actual ? c.avisoFondo : c.superficie2, padding: 12, gap: 8 }}>
             <View style={{ flexDirection: 'row', gap: 6, alignItems: 'flex-start' }}>
@@ -148,7 +154,7 @@ export function KitBloqueo({ kit, nombre, horaJalon, onMarcar }: Props) {
                   {p.titulo}
                 </T>
                 <T v="apoyo" suave>
-                  {listo ? `Hecho${quien ? ` por ${quien}` : ''}${p.hechoEn && !mios[p.paso] ? ` · ${hora(p.hechoEn)}` : ''}` : 'Pendiente'}
+                  {listo ? `Hecho${quien ? ` por ${quien}` : ''}${p.hechoEn && !propiaVigente(p) ? ` · ${hora(p.hechoEn)}` : ''}` : 'Pendiente'}
                 </T>
               </View>
               {/* El check va aparte (48 px): tocar el título por error no marca nada para toda la red. */}

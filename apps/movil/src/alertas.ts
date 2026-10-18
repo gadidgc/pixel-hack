@@ -1,6 +1,6 @@
 import type { EventoDetector, LecturaGps } from '@pixel-hack/detector';
 import { Platform } from 'react-native';
-import type { Contacto, PerfilBloqueo } from './preferencias';
+import { idDispositivo, type Contacto, type PerfilBloqueo } from './preferencias';
 
 /**
  * Envío de alertas al backend (apps/api: Cloudflare Workers + D1, ver docs/PLAN.md §6).
@@ -63,8 +63,8 @@ interface RespuestaBackend {
   total?: number;
 }
 
-/** Identificador anónimo de esta instalación (no es un dato personal). */
-export const idDispositivo = `${Platform.OS}-${Math.random().toString(36).slice(2, 10)}`;
+/** Identificador anónimo de esta instalación (no es un dato personal). Vive en preferencias, para que no cambie al reabrir. */
+export { idDispositivo };
 
 export function hayBackend(): boolean {
   return URL_ALERTAS.startsWith('https://') || URL_ALERTAS.startsWith('http://');
@@ -78,7 +78,7 @@ export async function enviar(mensaje: MensajeAlerta): Promise<ResultadoEnvio> {
     const r = await fetch(URL_ALERTAS, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dispositivo: idDispositivo, enviadoEn: Date.now(), ...mensaje }),
+      body: JSON.stringify({ dispositivo: idDispositivo(), enviadoEn: Date.now(), ...mensaje }),
       signal: control.signal,
     });
     const datos = (await r.json().catch(() => ({}))) as RespuestaBackend;

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Linking, Pressable, ScrollView, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { EJEMPLO_KIT, KitBloqueo, type Kit } from '../componentes/KitBloqueo';
+import { EJEMPLO_KIT, KitBloqueo, type Kit, type ResultadoMarca } from '../componentes/KitBloqueo';
 import { Boton, Hoja, Insignia, LineaDeTiempo, Onda, T, type Paso } from '../ui/componentes';
 import { Icono } from '../ui/iconos';
 import { MapaFondo, useEscalaX } from '../ui/mapa';
@@ -70,7 +70,7 @@ interface Props {
   /** "Sí, fue un robo": devuelve `null` si salió bien o el motivo si no. */
   onConfirmarRobo?: () => Promise<string | null>;
   /** Marca un paso del kit de bloqueo para toda la red. */
-  onMarcarPaso?: (paso: string, hecho: boolean) => Promise<boolean>;
+  onMarcarPaso?: (paso: string, hecho: boolean) => Promise<ResultadoMarca>;
 }
 
 export function WebContacto(props: Props) {
@@ -97,9 +97,9 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme, onConfirmarRobo, on
   const [kitEjemplo, setKitEjemplo] = useState(EJEMPLO_KIT);
   const kit = ejemplo ? (ejemploConfirmado ? kitEjemplo : null) : (datos.kit ?? null);
   // En la vista de ejemplo no hay backend: las marcas se guardan aquí.
-  const marcarEjemplo = async (paso: string, hecho: boolean) => {
-    setKitEjemplo((k) => ({ ...k, pasos: k.pasos.map((p) => (p.paso === paso ? { ...p, hecho, quien: null, hechoEn: null } : p)) }));
-    return true;
+  const marcarEjemplo = async (paso: string, hecho: boolean): Promise<ResultadoMarca> => {
+    setKitEjemplo((k) => ({ ...k, pasos: k.pasos.map((p) => (p.paso === paso ? { ...p, hecho, quien: hecho ? 'Tú' : null, hechoEn: null } : p)) }));
+    return { error: null, quien: 'Tú' };
   };
   const robo = Boolean(kit) || datos.estado === 'robo_confirmado';
   const puedeConfirmar = !cancelada && !robo && (ejemplo || datos.estado === 'avisada');

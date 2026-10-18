@@ -51,6 +51,11 @@ export interface Preferencias {
   /** La protección estaba encendida: si el sistema reabre la app (o se reinicia), vuelve a encenderla sola. */
   proteccionActiva: boolean;
   bloqueo: PerfilBloqueo;
+  /**
+   * Id anónimo de esta instalación (no es un dato personal). Se guarda para que no cambie al reabrir la app:
+   * con él la dueña cancela con su PIN una alerta enviada antes de que el sistema cerrara la app.
+   */
+  dispositivo: string;
 }
 
 export const PERFIL_VACIO: PerfilBloqueo = { entidades: [], operador: null, linea: '', imei: '', dni: '' };
@@ -68,7 +73,10 @@ export function perfilParaEnviar(p: PerfilBloqueo): Partial<PerfilBloqueo> | und
 }
 
 const CLAVE = 'alerta-arrebato-preferencias';
-const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false, bloqueo: PERFIL_VACIO };
+const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false, bloqueo: PERFIL_VACIO, dispositivo: '' };
+
+/** Id para esta sesión hasta que carguen las preferencias (o si no se pueden guardar). */
+const DISPOSITIVO_RESPALDO = `${Platform.OS}-${Math.random().toString(36).slice(2, 10)}`;
 
 let actuales: Preferencias = INICIAL;
 let cargadas = false;
@@ -109,8 +117,17 @@ export async function cargarPreferencias(): Promise<Preferencias> {
     actuales = INICIAL;
   }
   cargadas = true;
+  if (!actuales.dispositivo) {
+    // Primera vez (o versión anterior de la app): fijamos el id de esta instalación.
+    actuales = { ...actuales, dispositivo: DISPOSITIVO_RESPALDO };
+    await escribir(JSON.stringify(actuales)).catch(() => undefined);
+  }
   for (const o of oyentes) o(actuales);
   return actuales;
+}
+
+export function idDispositivo(): string {
+  return actuales.dispositivo || DISPOSITIVO_RESPALDO;
 }
 
 export function preferencias(): Preferencias {
