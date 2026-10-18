@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, TextInput, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 import {
   MAX_NOTA,
   TIPOS,
@@ -15,10 +15,12 @@ import {
   type Reporte,
   type TipoReporte,
 } from '../comunidad';
+import { BarrasOnda } from '../ui/BarrasOnda';
 import { BarraPestanas, Boton, Chip, Hoja, Insignia, Onda, T, type Pestana } from '../ui/componentes';
 import { Icono, type NombreIcono } from '../ui/iconos';
 import { MapaFondo, useEscalaX } from '../ui/mapa';
 import { RADIO, TIPO, useTema } from '../ui/tema';
+import { DetalleReporte } from './DetalleReporte';
 
 const RADIO_KM = 1;
 /** En el dibujo (390 × 520) la persona está en (195, 300) y el círculo de 1 km mide 150 px de radio. */
@@ -28,6 +30,10 @@ const RADIO_PX = 150;
 const RECIENTE_MS = 2 * 3600_000;
 
 const ICONO: Record<Categoria, NombreIcono> = { arrebato: 'arrebato', aviso: 'ojo', robo: 'bolso' };
+
+function fuenteDe(r: Reporte): string {
+  return r.origen === 'alerta' ? 'Detectado por la app' : r.tipo === 'grabacion' ? 'Grabado por un vecino' : 'Reportado por un vecino';
+}
 
 type Estado =
   | { fase: 'cargando'; texto: string }
@@ -56,6 +62,7 @@ export function Cerca({ onPestana }: { onPestana: (p: Pestana) => void }) {
   const [elegido, setElegido] = useState<string | null>(null);
   const [estado, setEstado] = useState<Estado>({ fase: 'cargando', texto: 'Buscando tu ubicación…' });
   const [reportando, setReportando] = useState(false);
+  const [abierto, setAbierto] = useState<Reporte | null>(null);
 
   const cargar = useCallback(async () => {
     setEstado({ fase: 'cargando', texto: 'Buscando tu ubicación…' });
@@ -207,26 +214,37 @@ export function Cerca({ onPestana }: { onPestana: (p: Pestana) => void }) {
               const on = elegido === i.id;
               const reciente = ahora - i.creado < RECIENTE_MS;
               const medios = textoMedios(i);
-              const fuente = i.origen === 'alerta' ? 'Detectado por la app' : i.tipo === 'grabacion' ? 'Grabado por un vecino' : 'Reportado por un vecino';
+              const fuente = fuenteDe(i);
               return (
                 <Pressable
                   key={i.id}
-                  onPress={() => setElegido(i.id)}
+                  onPress={() => {
+                    setElegido(i.id);
+                    setAbierto(i);
+                  }}
                   accessibilityRole="button"
+                  accessibilityLabel={`${TIPOS[i.tipo].nombre}, ${textoCuando(i.creado, ahora)}${medios ? `, ${medios}` : ''}. Abrir el detalle`}
                   style={{ width: 236, borderRadius: 20, overflow: 'hidden', backgroundColor: c.superficie2, borderWidth: 2, borderColor: on ? c.texto : 'transparent' }}
                 >
-                  {/* Arriba, como en el diseño: un cuadro de la grabación; sin grabación, el color del tipo. */}
-                  <View style={{ height: 124, backgroundColor: col.halo }}>
+                  {/* Arriba: un cuadro del video; si solo hay audio, su onda real; si no hay nada, un mapa chico de dónde pasó. */}
+                  <View style={{ height: 124, backgroundColor: c.mapaFondo }}>
                     {i.miniatura ? (
                       <Image source={{ uri: i.miniatura }} accessibilityIgnoresInvertColors style={{ width: '100%', height: 124 }} resizeMode="cover" />
-                    ) : (
-                      <View style={{ position: 'absolute', right: 14, bottom: 14 }}>
-                        <Icono nombre={ICONO[cat]} tam={44} color={col.fondo} grosor={1.8} />
+                    ) : i.onda ? (
+                      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 18, backgroundColor: c.superficie2 }}>
+                        <BarrasOnda onda={i.onda} alto={64} color={col.fondo} />
                       </View>
+                    ) : (
+                      <MiniMapa reporte={i} aqui={aqui} color={col.fondo} colorIcono={col.texto} halo={col.halo} icono={ICONO[cat]} reciente={reciente} />
                     )}
                     <View style={{ position: 'absolute', left: 8, top: 8 }}>
                       <Insignia tipo={col.insignia} texto={reciente ? `${col.nombre} · AHORA` : col.nombre} />
                     </View>
+                    {(i.videos ?? 0) > 0 && (
+                      <View style={{ position: 'absolute', left: 8, bottom: 8, width: 32, height: 32, borderRadius: RADIO.total, backgroundColor: 'rgba(8,7,6,0.78)', alignItems: 'center', justifyContent: 'center' }}>
+                        <Icono nombre="reproducir" tam={14} color="#f2ece3" grosor={2.4} />
+                      </View>
+                    )}
                     {!!medios && (
                       <View style={{ position: 'absolute', right: 8, bottom: 8, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6, backgroundColor: 'rgba(8,7,6,0.78)' }}>
                         <T v="hora" style={{ fontSize: 11, color: '#f2ece3' }}>
@@ -240,7 +258,7 @@ export function Cerca({ onPestana }: { onPestana: (p: Pestana) => void }) {
                       {TIPOS[i.tipo].nombre}
                     </T>
                     <T v="apoyo13" suave numberOfLines={1}>
-                      {textoCuando(i.creado, ahora)} · {textoDistancia(distanciaM(aqui, i))}
+                      {textoCuando(i.creado, ahora)} · {textoLugar(aqui, i)}
                     </T>
                     {!!i.nota && (
                       <T v="apoyo13" numberOfLines={1}>
@@ -261,6 +279,18 @@ export function Cerca({ onPestana }: { onPestana: (p: Pestana) => void }) {
       </Hoja>
 
       {aqui && (
+        <DetalleReporte
+          reporte={abierto}
+          insignia={abierto ? { tipo: colores[TIPOS[abierto.tipo].categoria].insignia, texto: ahora - abierto.creado < RECIENTE_MS ? `${colores[TIPOS[abierto.tipo].categoria].nombre} · AHORA` : colores[TIPOS[abierto.tipo].categoria].nombre } : { tipo: 'neutra', texto: '' }}
+          cuando={abierto ? textoCuando(abierto.creado, ahora) : ''}
+          lugar={abierto ? textoLugar(aqui, abierto) : ''}
+          fuente={abierto ? fuenteDe(abierto) : ''}
+          colorFuente={abierto?.origen === 'alerta' ? c.protegido : c.textoSuave}
+          onCerrar={() => setAbierto(null)}
+        />
+      )}
+
+      {aqui && (
         <HojaReportar
           visible={reportando}
           aqui={aqui}
@@ -273,6 +303,78 @@ export function Cerca({ onPestana }: { onPestana: (p: Pestana) => void }) {
           }}
         />
       )}
+    </View>
+  );
+}
+
+const RUMBOS = ['al norte', 'al noreste', 'al este', 'al sureste', 'al sur', 'al suroeste', 'al oeste', 'al noroeste'];
+
+/** Metros al este y al norte de `desde` hasta `hasta`. */
+function desplazamiento(desde: { lat: number; lon: number }, hasta: { lat: number; lon: number }): { este: number; norte: number } {
+  return {
+    este: (hasta.lon - desde.lon) * 111_320 * Math.cos((desde.lat * Math.PI) / 180),
+    norte: (hasta.lat - desde.lat) * 110_574,
+  };
+}
+
+/** "aquí cerca" o "350 m al norte" (desde ti hasta el reporte). */
+function textoLugar(aqui: { lat: number; lon: number }, r: Reporte): string {
+  const m = distanciaM(aqui, r);
+  if (m < 100) return textoDistancia(m);
+  const { este, norte } = desplazamiento(aqui, r);
+  const grados = (Math.atan2(este, norte) * 180) / Math.PI;
+  return `${textoDistancia(m)} ${RUMBOS[Math.round(((grados + 360) % 360) / 45) % 8]}`;
+}
+
+/** Número estable a partir del id, para que cada tarjeta tenga sus propias calles (y no cambien al recargar). */
+function semilla(id: string): number {
+  let h = 2166136261;
+  for (let k = 0; k < id.length; k++) h = Math.imul(h ^ id.charCodeAt(k), 16777619);
+  return h >>> 0;
+}
+
+/**
+ * Miniatura sin video: el reporte al centro de un mapa chico y tú (punto azul) en la dirección real.
+ * Las calles son decorativas; la distancia exacta va en el texto de la tarjeta.
+ */
+function MiniMapa({ reporte, aqui, color, colorIcono, halo, icono, reciente }: { reporte: Reporte; aqui: { lat: number; lon: number }; color: string; colorIcono: string; halo: string; icono: NombreIcono; reciente: boolean }) {
+  const c = useTema();
+  const A = 236;
+  const H = 124;
+  const pin = { x: A / 2 + 30, y: H / 2 + 6 };
+  const s = semilla(reporte.id);
+  const giro = ((s % 21) - 10) / 10; // inclinación de las calles: -1 a 1
+  const dx = 30 + (s % 50);
+  const dy = 20 + ((s >> 8) % 40);
+
+  // Tú, en la dirección real desde el reporte; la escala se comprime para que siempre entres en el cuadro.
+  const m = distanciaM(reporte, aqui);
+  const { este, norte } = desplazamiento(reporte, aqui);
+  const largo = Math.hypot(este, norte);
+  const px = m < 100 ? 0 : Math.min(26 + Math.sqrt(m) * 1.6, 70);
+  const tu = largo > 0 && px > 0 ? { x: pin.x + (este / largo) * px, y: pin.y - (norte / largo) * px } : { x: pin.x + 16, y: pin.y + 14 };
+  tu.x = Math.max(12, Math.min(A - 12, tu.x));
+  tu.y = Math.max(40, Math.min(H - 12, tu.y));
+
+  return (
+    <View style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }} pointerEvents="none">
+      <Svg width="100%" height={H} viewBox={`0 0 ${A} ${H}`} preserveAspectRatio="xMidYMid slice">
+        <Rect width={A} height={H} fill={c.mapaFondo} />
+        <Rect x={pin.x + dx - 10} y={pin.y - dy - 34} width={44} height={30} rx={6} fill={c.mapaParque} />
+        <Path d={`M-10 ${pin.y + 12 + giro * 10} L${A + 10} ${pin.y + 12 - giro * 18}`} stroke={c.mapaCalle} strokeWidth={12} />
+        <Path d={`M${pin.x - 16 + giro * 8} -10 L${pin.x - 16 - giro * 14} ${H + 10}`} stroke={c.mapaCalle} strokeWidth={14} />
+        <Path d={`M-10 ${pin.y - dy} L${A + 10} ${pin.y - dy - giro * 10}`} stroke={c.mapaCalleChica} strokeWidth={6} />
+        <Path d={`M${pin.x + dx} -10 L${pin.x + dx + giro * 10} ${H + 10}`} stroke={c.mapaCalleChica} strokeWidth={6} />
+        <Path d={`M${pin.x - dx - 40} -10 L${pin.x - dx - 34 - giro * 6} ${H + 10}`} stroke={c.mapaCalleChica} strokeWidth={5} />
+        {m >= 100 && <Line x1={pin.x} y1={pin.y} x2={tu.x} y2={tu.y} stroke={c.info} strokeWidth={1.5} strokeDasharray="3 4" opacity={0.8} />}
+        {reciente && <Circle cx={pin.x} cy={pin.y} r={30} fill={halo} opacity={0.5} />}
+        <Circle cx={pin.x} cy={pin.y} r={20} fill={halo} />
+        <Circle cx={tu.x} cy={tu.y} r={9} fill="rgba(111,168,255,0.25)" />
+        <Circle cx={tu.x} cy={tu.y} r={5.5} fill={c.info} stroke={c.fondo} strokeWidth={2} />
+      </Svg>
+      <View style={{ position: 'absolute', left: pin.x - 14, top: pin.y - 14, width: 28, height: 28, borderRadius: 99, backgroundColor: color, borderWidth: 2.5, borderColor: c.fondo, alignItems: 'center', justifyContent: 'center' }}>
+        <Icono nombre={icono} tam={14} color={colorIcono} grosor={2.4} />
+      </View>
     </View>
   );
 }

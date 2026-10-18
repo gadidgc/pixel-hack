@@ -40,6 +40,9 @@ export const ICONOS = {
   enviar: [{ d: 'M22 2L11 13' }, { d: 'M22 2l-7 20-4-9-9-4z' }],
   ajustes: [{ circulo: [12, 12, 3] }, { d: 'M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1' }],
   microfono: [{ rect: [9, 3, 6, 11, 3] }, { d: 'M5 11a7 7 0 0 0 14 0' }, { d: 'M12 18v3' }],
+  reproducir: [{ d: 'M8 5l11 7-11 7z' }],
+  pausa: [{ d: 'M9 5v14' }, { d: 'M15 5v14' }],
+  video: [{ rect: [3, 6, 13, 12, 2] }, { d: 'M16 10l5-3v10l-5-3' }],
 } satisfies Record<string, Forma[]>;
 
 export type NombreIcono = keyof typeof ICONOS;

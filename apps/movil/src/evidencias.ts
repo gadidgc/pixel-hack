@@ -1,6 +1,6 @@
 import { File, UploadTask } from 'expo-file-system';
 import { hayBackend, idDispositivo, urlBackend } from './alertas';
-import { MAX_BYTES, cabecerasEvidencia, leerRespuesta, type ResultadoSubida } from './evidencias.comun';
+import { MAX_BYTES, cabecerasEvidencia, leerRespuesta, type DatosGrabacion, type ResultadoSubida } from './evidencias.comun';
 
 /**
  * Sube una evidencia (video o audio) al backend (`POST /api/evidencias`, guardada en R2). Si va con
@@ -9,13 +9,14 @@ import { MAX_BYTES, cabecerasEvidencia, leerRespuesta, type ResultadoSubida } fr
  * La copia del celular NO se borra: si la subida falla, sigue ahí para compartirla a mano.
  * La web usa evidencias.web.ts.
  */
-export type { ResultadoSubida };
+export type { DatosGrabacion, ResultadoSubida };
 
 export async function subirEvidencia(
   uri: string,
   mime: string,
   pos: { lat: number; lon: number } | null,
   alAvanzar?: (fraccion: number) => void,
+  datos: DatosGrabacion = {},
 ): Promise<ResultadoSubida> {
   if (!hayBackend()) return { ok: false, motivo: 'la app no está conectada al servidor' };
   try {
@@ -24,7 +25,7 @@ export async function subirEvidencia(
     if (archivo.size > MAX_BYTES) return { ok: false, motivo: 'pasa de 50 MB (graba algo más corto)' };
     const tarea = new UploadTask(archivo, `${urlBackend()}/api/evidencias`, {
       httpMethod: 'POST',
-      headers: cabecerasEvidencia(mime, pos),
+      headers: cabecerasEvidencia(mime, pos, datos),
       mimeType: mime,
       // iOS: que siga subiendo aunque la app pase a segundo plano.
       sessionType: 'background',

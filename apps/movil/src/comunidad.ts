@@ -40,6 +40,21 @@ export interface Reporte {
   audios?: number;
   /** URL de un cuadro del video más nuevo, para la tarjeta. */
   miniatura?: string | null;
+  /** La onda del audio más nuevo (niveles del 0 al 9, ver onda.ts), para la tarjeta. */
+  onda?: string | null;
+}
+
+/** Una grabación de un reporte (`GET /api/reportes/:id/evidencias`). */
+export interface Grabacion {
+  id: string;
+  tipo: 'video' | 'audio';
+  mime: string;
+  /** URL del archivo (acepta Range: se puede reproducir sin bajarlo entero). */
+  enlace: string;
+  miniatura: string | null;
+  onda: string | null;
+  duracionMs: number | null;
+  creado: number;
 }
 
 /** "2 videos", "1 audio", "1 video · 1 audio"; vacío si no tiene grabaciones. */
@@ -73,6 +88,14 @@ export async function buscarReportes(lat: number, lon: number, radioKm: number):
   // Solo los tipos que conocemos (si el servidor suma uno nuevo, esta versión lo ignora).
   const lista = Array.isArray(r.datos.reportes) ? (r.datos.reportes as Reporte[]) : [];
   return { ok: true, datos: lista.filter((x) => x.tipo in TIPOS) };
+}
+
+/** Las grabaciones de un reporte, para la hoja que se abre al tocar su tarjeta. */
+export async function grabacionesDe(reporteId: string): Promise<Resultado<Grabacion[]>> {
+  const r = await pedir(`/api/reportes/${encodeURIComponent(reporteId)}/evidencias`);
+  if (!r.ok) return r;
+  const lista = Array.isArray(r.datos.evidencias) ? (r.datos.evidencias as Grabacion[]) : [];
+  return { ok: true, datos: lista.filter((g) => g.tipo === 'video' || g.tipo === 'audio') };
 }
 
 export async function reportar(tipo: TipoReporte, nota: string, pos: { lat: number; lon: number }): Promise<Resultado<Reporte>> {

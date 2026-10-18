@@ -6,8 +6,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { posicionActual } from '../comunidad';
-import { subirEvidencia } from '../evidencias';
+import { subirEvidencia, type DatosGrabacion } from '../evidencias';
 import { marcarGrabacion } from '../grabacionEvidencia';
+import { ondaDesdeDecibeles } from '../onda';
 import { servicio } from '../servicio';
 import { BarraPestanas, Boton, Chip, Parpadeo, T, hora, type Pestana } from '../ui/componentes';
 import { Icono } from '../ui/iconos';
@@ -27,6 +28,8 @@ interface Evidencia {
   modo: Modo;
   t: number;
   duracionS: number;
+  /** Solo audio: la onda medida mientras grababa (ver onda.ts). */
+  onda: string | null;
   subida: Subida;
 }
 
@@ -39,6 +42,9 @@ const ESPERA_CAMARA_MS = 4000;
 
 /** Si al detener el video la cámara no responde en este tiempo, liberamos el botón y lo decimos. */
 const ESPERA_GUARDAR_MS = 5000;
+
+/** Cada cuánto leemos el volumen del micrófono para la onda del audio. */
+const CADA_LECTURA_MS = 100;
 
 /** iOS graba video en .mov (QuickTime); Android en .mp4. El audio es .m4a (AAC en MP4). */
 function tipoDe(uri: string, m: Modo): { extension: string; mime: string } {
@@ -78,7 +84,9 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
   const camara = useRef<CameraView>(null);
   const camaraLista = useRef(false);
   const alEstarLista = useRef<(() => void) | null>(null);
-  const grabadora = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const grabadora = useAudioRecorder({ ...RecordingPresets.HIGH_QUALITY, isMeteringEnabled: true });
+  /** El volumen (dB) mientras graba audio, para dibujar su onda en "Cerca de ti". */
+  const lecturas = useRef<number[]>([]);
   const inicio = useRef(0);
   /** En falso mientras recordAsync no termina: para saber si la cámara respondió al detener. */
   const videoTerminado = useRef(true);
@@ -91,6 +99,16 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
     const t = setInterval(() => setSegundos(Math.round((Date.now() - inicio.current) / 1000)), 500);
     return () => clearInterval(t);
   }, [fase, visible]);
+
+  // Grabando audio: leemos el volumen aunque la pantalla esté oculta (sigue grabando en el bolsillo).
+  useEffect(() => {
+    if (fase !== 'grabando' || modo !== 'audio') return;
+    const t = setInterval(() => {
+      const db = grabadora.getStatus().metering;
+      if (typeof db === 'number') lecturas.current.push(db);
+    }, CADA_LECTURA_MS);
+    return () => clearInterval(t);
+  }, [fase, modo, grabadora]);
 
   // Si la pantalla se desmonta, la pestaña no puede quedarse diciendo "Grabando".
   useEffect(() => () => marcarGrabacion(null), []);
@@ -108,11 +126,11 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
   const cambiarSubida = (uri: string, subida: Subida) => setEvidencias((lista) => lista.map((e) => (e.uri === uri ? { ...e, subida } : e)));
 
   /** Sube una evidencia y va mostrando el avance. La copia local no se toca. */
-  const subir = useCallback(async (uri: string, mime: string) => {
+  const subir = useCallback(async (uri: string, mime: string, datos: DatosGrabacion) => {
     cambiarSubida(uri, { estado: 'subiendo', avance: 0 });
     // Con la protección apagada no hay GPS encendido: pedimos una lectura puntual para ubicarla en el mapa.
     const p = await posicionActual();
-    const r = await subirEvidencia(uri, mime, p.ok ? { lat: p.datos.lat, lon: p.datos.lon } : null, (avance) => cambiarSubida(uri, { estado: 'subiendo', avance }));
+    const r = await subirEvidencia(uri, mime, p.ok ? { lat: p.datos.lat, lon: p.datos.lon } : null, (avance) => cambiarSubida(uri, { estado: 'subiendo', avance }), datos);
     cambiarSubida(uri, r.ok ? { estado: 'subida', enlace: r.enlace, enMapa: r.reporte !== null } : { estado: 'local', motivo: r.motivo });
   }, []);
 
@@ -121,7 +139,7 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
    * Ojo: desde expo-file-system 58, `move()` es asíncrono. Sin el `await`, la subida empezaba
    * antes de que el archivo llegara a su sitio y fallaba con "no se encontró el archivo".
    */
-  const guardar = async (uri: string, m: Modo, duracionS: number) => {
+  const guardar = async (uri: string, m: Modo, duracionMs: number, onda: string | null = null) => {
     const { extension, mime } = tipoDe(uri, m);
     let final = uri;
     try {
@@ -132,8 +150,8 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
     } catch {
       // Si no se pudo mover, queda en la caché: igual se puede compartir.
     }
-    setEvidencias((e) => [{ uri: final, mime, modo: m, t: Date.now(), duracionS, subida: { estado: 'subiendo', avance: 0 } }, ...e]);
-    void subir(final, mime);
+    setEvidencias((e) => [{ uri: final, mime, modo: m, t: Date.now(), duracionS: Math.round(duracionMs / 1000), onda, subida: { estado: 'subiendo', avance: 0 } }, ...e]);
+    void subir(final, mime, { duracionMs, onda });
   };
 
   /** Espera el aviso de la cámara (onCameraReady). Grabar antes de eso falla en iPhone. */
@@ -176,7 +194,7 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
         videoTerminado.current = true;
         marcarGrabacion(null);
         setFase('lista');
-        if (r?.uri) await guardar(r.uri, 'video', Math.round((Date.now() - inicio.current) / 1000));
+        if (r?.uri) await guardar(r.uri, 'video', Date.now() - inicio.current);
         else setError('El video no se guardó (quizá fue muy corto). Graba otra vez.');
       } else {
         const p = await AudioModule.requestRecordingPermissionsAsync();
@@ -186,6 +204,7 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
         }
         await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
         await grabadora.prepareToRecordAsync();
+        lecturas.current = [];
         grabadora.record();
         inicio.current = Date.now();
         setSegundos(0);
@@ -219,7 +238,7 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
         await grabadora.stop();
         marcarGrabacion(null);
         setFase('lista');
-        if (grabadora.uri) await guardar(grabadora.uri, 'audio', Math.round((Date.now() - inicio.current) / 1000));
+        if (grabadora.uri) await guardar(grabadora.uri, 'audio', Date.now() - inicio.current, ondaDesdeDecibeles(lecturas.current));
       }
     } catch (e) {
       marcarGrabacion(null);
@@ -365,7 +384,7 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
                   </T>
                 )}
                 {e.subida.estado === 'local' && (
-                  <Pressable onPress={() => void subir(e.uri, e.mime)} accessibilityRole="button" accessibilityLabel="Reintentar la subida">
+                  <Pressable onPress={() => void subir(e.uri, e.mime, { duracionMs: e.duracionS * 1000, onda: e.onda })} accessibilityRole="button" accessibilityLabel="Reintentar la subida">
                     <T v="apoyo13" color={c.aviso} numberOfLines={1}>
                       Solo en tu celular ({e.subida.motivo}). Tocar para reintentar.
                     </T>
