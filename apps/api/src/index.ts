@@ -320,7 +320,15 @@ async function borrarNumeroPropio(env: Env, donde: string, valor: string | numbe
  */
 async function smsBloqueoAlVencer(env: Env, alertaId: string, numero: string, intento = ''): Promise<void> {
   try {
-    const r = await mandarSmsBloqueo(env, numero, `${alertaId}-bloqueo-vencido${intento}`);
+    // Primero desde el otro número (si está configurado): así no choca con el límite de 1 SMS por minuto
+    // al mismo número y llega al instante. Si falla, por el sender por defecto (y si no, reintenta el cron).
+    const otro = env.ZAVU_SENDER_BLOQUEO?.trim();
+    const conOtro = otro ? await mandarSmsBloqueo(env, numero, `${alertaId}-bloqueo-vencido-otro${intento}`, otro) : null;
+    let r = conOtro;
+    if (!r?.ok) {
+      const conDefault = await mandarSmsBloqueo(env, numero, `${alertaId}-bloqueo-vencido${intento}`);
+      r = conOtro && !conDefault.ok ? { ...conDefault, detalle: `${conDefault.detalle}; otro número: ${conOtro.detalle}` } : conDefault;
+    }
     await env.DB.prepare('INSERT INTO envios (alerta_id, tipo, destino, canal, ok, detalle, creado) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .bind(alertaId, 'bloqueo_iphone', enmascarar(numero), r.canal, r.ok ? 1 : 0, r.detalle, Date.now())
       .run();
