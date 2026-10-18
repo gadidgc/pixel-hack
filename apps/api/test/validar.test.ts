@@ -31,6 +31,18 @@ describe('validarMensaje', () => {
     const m = validarMensaje({ dispositivo: 'x', tipo: 'prueba', nombre: 'A', contactos });
     expect(m.tipo === 'prueba' && m.contactos.length).toBe(5);
   });
+  it('iPhone: el número propio es opcional en la alerta y obligatorio para probar el bloqueo', () => {
+    const base = { dispositivo: 'ios-x', tipo: 'alerta', evento, ruta: [], nombre: 'A', contactos: [] };
+    const con = validarMensaje({ ...base, numeroPropio: '987 654 321' });
+    expect(con.tipo === 'alerta' && con.numeroPropio).toBe('+51987654321');
+    const sin = validarMensaje(base);
+    expect(sin.tipo === 'alerta' && sin.numeroPropio).toBeNull();
+    // Un número malo no frena la alerta.
+    const malo = validarMensaje({ ...base, numeroPropio: 'abc' });
+    expect(malo.tipo === 'alerta' && malo.numeroPropio).toBeNull();
+    expect(validarMensaje({ dispositivo: 'ios-x', tipo: 'probar_bloqueo', numeroPropio: '987654321' })).toMatchObject({ numeroPropio: '+51987654321' });
+    expect(() => validarMensaje({ dispositivo: 'ios-x', tipo: 'probar_bloqueo', numeroPropio: '123' })).toThrow(ErrorDeDatos);
+  });
 });
 
 describe('teléfonos y textos', () => {

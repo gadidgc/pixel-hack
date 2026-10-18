@@ -14,6 +14,9 @@
           "location"
         ],
         "NSMotionUsageDescription": "Usamos el movimiento del celular para detectar si te lo arranchan, también con la pantalla apagada."
+      },
+      "entitlements": {
+        "com.apple.developer.family-controls": true
       }
     },
     "android": {

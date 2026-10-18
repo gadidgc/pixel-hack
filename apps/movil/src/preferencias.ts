@@ -56,6 +56,11 @@ export interface Preferencias {
    * con él la dueña cancela con su PIN una alerta enviada antes de que el sistema cerrara la app.
    */
   dispositivo: string;
+  /**
+   * iPhone: el número de la propia dueña. Al confirmar un arrebato le mandamos un SMS con la palabra de
+   * bloqueo y su automatización de Atajos bloquea la pantalla. Vacío = no lo configuró.
+   */
+  numeroPropio: string;
 }
 
 export const PERFIL_VACIO: PerfilBloqueo = { entidades: [], operador: null, linea: '', imei: '', dni: '' };
@@ -73,7 +78,16 @@ export function perfilParaEnviar(p: PerfilBloqueo): Partial<PerfilBloqueo> | und
 }
 
 const CLAVE = 'alerta-arrebato-preferencias';
-const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false, bloqueo: PERFIL_VACIO, dispositivo: '' };
+const INICIAL: Preferencias = {
+  bienvenidaHecha: false,
+  nombre: '',
+  contactos: [],
+  esperaFamiliaS: 10,
+  proteccionActiva: false,
+  bloqueo: PERFIL_VACIO,
+  dispositivo: '',
+  numeroPropio: '',
+};
 
 /** Id para esta sesión hasta que carguen las preferencias (o si no se pueden guardar). */
 const DISPOSITIVO_RESPALDO = `${Platform.OS}-${Math.random().toString(36).slice(2, 10)}`;
