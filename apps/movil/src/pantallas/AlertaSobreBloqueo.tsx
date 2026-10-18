@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { BackHandler, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pinValido } from '../pin';
 import { useProteccion } from '../useProteccion';
@@ -24,6 +24,12 @@ export function AlertaSobreBloqueo() {
   const [error, setError] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const alerta = estado.alerta;
+  // "Atrás" no cierra la pregunta: sin ella, la dueña tendría que desbloquear Android para cancelar
+  // (el botón de inicio ya no hace nada sobre la pantalla de bloqueo). Lo comprobamos en el emulador.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => sub.remove();
+  }, []);
   if (!alerta) return null;
 
   const esperando = alerta.familia === 'esperando';
@@ -46,7 +52,7 @@ export function AlertaSobreBloqueo() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.fondo, paddingTop: ins.top + 24, paddingBottom: ins.bottom + 16, paddingHorizontal: 24, gap: 18 }}>
+    <View style={{ flex: 1, backgroundColor: c.fondo, paddingTop: ins.top + 24, paddingBottom: Math.max(ins.bottom, 32) + 16, paddingHorizontal: 24, gap: 18 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: c.protegidoFondo, alignItems: 'center', justifyContent: 'center' }}>
           <Icono nombre="escudo" tam={14} color={c.protegido} grosor={2.4} />
