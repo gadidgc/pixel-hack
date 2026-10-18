@@ -1,4 +1,4 @@
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 /**
  * Íconos de trazo de 2 px con puntas redondeadas en una cuadrícula de 24 px (estilo Lucide),
@@ -63,6 +63,32 @@ export function Icono({
           <Rect key={i} x={f.rect[0]} y={f.rect[1]} width={f.rect[2]} height={f.rect[3]} rx={f.rect[4]} />
         ),
       )}
+    </Svg>
+  );
+}
+
+/**
+ * Glifo de la marca: un celular inclinado que "sale volando" con dos ondas de aviso, en una cuadrícula
+ * de 24. Es el mismo dibujo de assets/marca/*.svg (íconos de la app) y de la landing; si cambia, cambia en los tres.
+ */
+export const MARCA_GLIFO = {
+  celular: { x: 5.5, y: 7.5, ancho: 8, alto: 14, radio: 2.2, giro: 'rotate(14 9.5 14.5)' },
+  ondas: ['M15.8 5.98A2.8 2.8 0 0 1 17.86 8.44', 'M16.52 3.27A5.6 5.6 0 0 1 20.65 8.19'],
+  centrado: 'translate(-0.3 -0.3)',
+} as const;
+
+/** Logo de Alerta Arrebato: ficha redondeada con el glifo. En noche es crema con glifo negro; en día, al revés. */
+export function Marca({ tam = 32, ficha, glifo }: { tam?: number; ficha: string; glifo: string }) {
+  const g = MARCA_GLIFO;
+  return (
+    <Svg width={tam} height={tam} viewBox="0 0 24 24" accessibilityLabel="Alerta Arrebato">
+      <Rect width={24} height={24} rx={6.75} fill={ficha} />
+      <G transform={`translate(12 12) scale(0.7) translate(-12 -12) ${g.centrado}`}>
+        <Rect x={g.celular.x} y={g.celular.y} width={g.celular.ancho} height={g.celular.alto} rx={g.celular.radio} transform={g.celular.giro} fill={glifo} />
+        {g.ondas.map((d) => (
+          <Path key={d} d={d} fill="none" stroke={glifo} strokeWidth={2} strokeLinecap="round" />
+        ))}
+      </G>
     </Svg>
   );
 }

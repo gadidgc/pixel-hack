@@ -50,7 +50,7 @@
   }
   .marca { display: flex; align-items: center; gap: 10px; font-family: var(--titular); font-weight: 600; font-size: 18px; }
   .circulo { width: 40px; height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-  .circulo-protegido { background: var(--protegido-fondo); }
+  .logo { display: block; flex: 0 0 auto; }
 
   .foto-movil { display: none; position: relative; }
   .principal { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; gap: 44px; max-width: 580px; }
@@ -134,9 +134,7 @@
 
   <div class="contenido">
     <header class="marca">
-      <span class="circulo circulo-protegido">
-        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8ee3c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-      </span>
+      <svg class="logo" aria-hidden="true" width="32" height="32" viewBox="0 0 24 24"><rect width="24" height="24" rx="6.75" fill="#f2ece3"/><g transform="translate(12 12) scale(0.7) translate(-12 -12)"><g transform="translate(-0.3 -0.3)"><rect x="5.5" y="7.5" width="8" height="14" rx="2.2" transform="rotate(14 9.5 14.5)" fill="#0d0c0b"/><path d="M15.8 5.98A2.8 2.8 0 0 1 17.86 8.44M16.52 3.27A5.6 5.6 0 0 1 20.65 8.19" fill="none" stroke="#0d0c0b" stroke-width="2" stroke-linecap="round"/></g></g></svg>
       Alerta Arrebato
     </header>
 
