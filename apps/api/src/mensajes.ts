@@ -49,24 +49,34 @@ export function horaLima(t: number): string {
  */
 export interface Mensaje {
   texto: string;
+  /**
+   * Texto para SMS. El filtro antifraude de Zavu bloquea los SMS que "parecen phishing" (una "PRUEBA" con un
+   * enlace, por ejemplo): por SMS decimos quién lo manda y para qué, y solo ponemos enlace cuando hace falta.
+   */
+  sms: string;
   plantilla: { nombre: string; variables: string[] };
 }
 
 export const MENSAJES = {
   alerta: (nombre: string, t: number, enlace: string): Mensaje => ({
     texto: `ALERTA: posible robo del celular de ${nombre} a las ${horaLima(t)}. Probablemente ${nombre} esta bien. Ruta en vivo: ${enlace}`,
+    // Sin enlace y sin "robo": el filtro antifraude de Zavu bloquea esos SMS como phishing. El detalle va por WhatsApp.
+    sms: `Alerta Arrebato: ${nombre} te tiene como contacto de emergencia y su app envio una alerta a las ${horaLima(t)}. Revisa tu WhatsApp para ver los detalles o llamale.`,
     plantilla: { nombre: 'alerta_arrebato', variables: [nombre, horaLima(t), enlace] },
   }),
   estaBien: (nombre: string): Mensaje => ({
     texto: `${nombre} confirmo con su PIN que esta bien: fue falsa alarma. Gracias por estar atento.`,
+    sms: `Alerta Arrebato: ${nombre} confirmo que esta bien, fue una falsa alarma. No tienes que hacer nada.`,
     plantilla: { nombre: 'alerta_arrebato_bien', variables: [nombre] },
   }),
   encargado: (quien: string, nombre: string, enlace: string): Mensaje => ({
     texto: `${quien} dijo que se encarga del robo del celular de ${nombre}. Ruta: ${enlace}`,
+    sms: `Alerta Arrebato: ${quien} se esta encargando de lo que le paso a ${nombre}. Los detalles te llegan por WhatsApp.`,
     plantilla: { nombre: 'alerta_arrebato_encargado', variables: [quien, nombre, enlace] },
   }),
   prueba: (nombre: string, enlace: string): Mensaje => ({
     texto: `PRUEBA de Alerta Arrebato: ${nombre} te eligio como contacto de confianza. Si le arranchan el celular te llegara un mensaje asi, con su ruta: ${enlace}`,
+    sms: `Alerta Arrebato: ${nombre} te agrego como contacto de confianza en la app. Si algun dia le roban el celular, te avisaremos por aqui. No tienes que hacer nada.`,
     plantilla: { nombre: 'alerta_arrebato_prueba', variables: [nombre, enlace] },
   }),
 };
@@ -116,7 +126,7 @@ export async function mandarMensaje(
   const zavuLive = Boolean(env.ZAVU_API_KEY) && !env.ZAVU_API_KEY!.trim().startsWith('zv_test_');
   const intentos: Array<Promise<ResultadoMensaje>> = [];
   if (hayMeta(env)) intentos.push(porMeta(env, a.telefono, a.mensaje));
-  if (zavuLive) intentos.push(porZavu(env, a.telefono, a.mensaje.texto, `${a.idempotencia}-sms`, 'sms'));
+  if (zavuLive) intentos.push(porZavu(env, a.telefono, a.mensaje.sms, `${a.idempotencia}-sms`, 'sms'));
   let resultados = await Promise.all(intentos);
   if (!resultados.some((r) => r.ok) && env.ZAVU_API_KEY && !zavuLive) {
     resultados = [...resultados, await porZavu(env, a.telefono, a.mensaje.texto, a.idempotencia, 'whatsapp')];
@@ -133,6 +143,18 @@ async function porZavu(env: EnvMensajes, telefono: string, texto: string, idempo
   if (!env.ZAVU_API_KEY) return { ok: false, canal: null, detalle: 'falta configurar Zavu' };
   // Al pegar la clave a veces se cuela un espacio o un salto de línea.
   const clave = env.ZAVU_API_KEY.trim();
+  // Zavu exige verificar cada enlace antes de mandarlo por SMS (lo revisa con Google Web Risk al instante).
+  // Si no, bloquea el mensaje con `sms_compliance_blocked`. Un fallo aquí no detiene el envío.
+  if (canal === 'sms') {
+    for (const url of texto.match(/https?:\/\/\S+/g) ?? []) {
+      await fetch('https://api.zavu.dev/v1/urls', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${clave}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+        signal: AbortSignal.timeout(5000),
+      }).catch(() => undefined);
+    }
+  }
   const cuerpo = { to: telefono, channel: canal, text: texto };
   try {
     const r = await fetch('https://api.zavu.dev/v1/messages', {
@@ -144,7 +166,7 @@ async function porZavu(env: EnvMensajes, telefono: string, texto: string, idempo
     const datos = (await r.json().catch(() => ({}))) as { message?: { channel?: string }; error?: { code?: string; message?: string } };
     // 409 = ya se mandó con esta misma clave (un reintento de la app): cuenta como enviado.
     if (r.status === 202 || r.status === 200 || r.status === 409) return { ok: true, canal: datos.message?.channel ?? canal, detalle: 'enviado' };
-    return { ok: false, canal: null, detalle: `Zavu ${r.status} ${datos.error?.code ?? ''}`.trim() };
+    return { ok: false, canal: null, detalle: `Zavu ${r.status} ${datos.error?.code ?? ''} ${datos.error?.message?.slice(0, 160) ?? ''}`.trim() };
   } catch (e) {
     return { ok: false, canal: null, detalle: e instanceof Error ? `Zavu: ${e.message}` : 'Zavu: error de red' };
   }

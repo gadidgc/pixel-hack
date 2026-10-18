@@ -40,7 +40,10 @@ describe('mandarMensaje', () => {
     const llamadas = simularFetch({ meta: 400, zavu: 202 });
     const r = await mandarMensaje({ META_WA_TOKEN: 't', META_WA_NUMERO_ID: '1', ZAVU_API_KEY: 'zv_live_x' }, { telefono: '+51987654321', mensaje, idempotencia: 'a' });
     expect(r.ok).toBe(true);
-    expect(llamadas.map((l) => l.cuerpo.channel ?? 'meta')).toEqual(['meta', 'sms', 'meta']);
+    expect(llamadas.filter((l) => !l.url.endsWith('/v1/urls')).map((l) => l.cuerpo.channel ?? 'meta')).toEqual(['meta', 'sms', 'meta']);
+    // Por SMS va el texto propio (sin enlace: el filtro antifraude de Zavu bloquea "celular robado + enlace").
+    expect(llamadas.find((l) => l.cuerpo.channel === 'sms')?.cuerpo.text).toBe(mensaje.sms);
+    expect(mensaje.sms).not.toContain('http');
   });
 
   it('con la clave de prueba de Zavu solo la usa de respaldo si Meta falla', async () => {
