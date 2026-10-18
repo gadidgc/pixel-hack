@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, AppState, View } from 'react-native';
 import {
   abrirBloqueoSeguro,
+  abrirPermisoPantallaCompleta,
   bloquearAlDetectar,
   consultarBloqueo,
   solicitarAutorizacionBloqueo,
@@ -85,6 +86,14 @@ export function ConfiguracionBloqueo() {
               onPress={() => void abrir(solicitarAutorizacionBloqueo)}
             />
           )}
+        {listo && !estado.pantallaCompleta && (
+          <Boton
+            texto="Permitir el aviso sobre el bloqueo"
+            variante="secundario"
+            deshabilitado={abriendo}
+            onPress={() => void abrir(abrirPermisoPantallaCompleta)}
+          />
+        )}
         {listo && (
           <Boton
             texto="Probar bloqueo"
@@ -98,8 +107,8 @@ export function ConfiguracionBloqueo() {
           </T>
         )}
         <T v="apoyo13" suave>
-          El bloqueo se solicita inmediatamente al confirmar la huida. La espera
-          para avisar a tu red sigue siendo independiente.
+          El bloqueo se solicita inmediatamente al confirmar la huida. Si fuiste
+          tú, cancelas con el PIN de la app desde la misma pantalla de bloqueo.
         </T>
       </Tarjeta>
     </View>

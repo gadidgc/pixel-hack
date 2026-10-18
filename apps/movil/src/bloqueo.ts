@@ -1,11 +1,14 @@
 import { requireOptionalNativeModule } from 'expo';
-import { Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import { AppState, Platform } from 'react-native';
 
 export interface EstadoBloqueo {
   disponible: boolean;
   administradorActivo: boolean;
   bloqueoSeguro: boolean;
   bloqueado: boolean;
+  /** Android deja abrir el "¿Todo bien?" sobre la pantalla de bloqueo (permiso de pantalla completa). */
+  pantallaCompleta: boolean;
   detalle: string;
 }
 export interface ResultadoBloqueo {
@@ -18,6 +21,9 @@ interface ModuloBloqueo {
   solicitarAutorizacion(): Promise<boolean>;
   abrirBloqueoSeguro(): Promise<boolean>;
   bloquearAhora(): ResultadoBloqueo;
+  abrirPermisoPantallaCompleta(): Promise<boolean>;
+  mostrarSobreBloqueo(titulo: string, texto: string): boolean;
+  ocultarSobreBloqueo(): void;
 }
 const modulo =
   Platform.OS === 'android'
@@ -37,6 +43,7 @@ export function consultarBloqueo(): EstadoBloqueo {
     administradorActivo: false,
     bloqueoSeguro: false,
     bloqueado: false,
+    pantallaCompleta: false,
   };
   if (!modulo) return { ...vacio, detalle: motivoNoDisponible() };
   try {
@@ -47,7 +54,9 @@ export function consultarBloqueo(): EstadoBloqueo {
         ? 'Primero configura un PIN, patrón o contraseña de Android.'
         : !estado.administradorActivo
           ? 'Autoriza el bloqueo automático al confirmar un arrebato.'
-          : 'Autorizado: al confirmar un arrebato pediremos el bloqueo inmediato de Android.';
+          : !estado.pantallaCompleta
+            ? 'Autorizado, pero Android no deja mostrar el "¿Todo bien?" sobre la pantalla de bloqueo: tendrías que desbloquear para cancelar.'
+            : 'Autorizado: al confirmar un arrebato bloquearemos Android y te preguntaremos "¿Todo bien?" sobre la pantalla de bloqueo.';
     return { ...estado, detalle };
   } catch {
     return {
@@ -83,4 +92,61 @@ export function bloquearAlDetectar(): ResultadoBloqueo {
       detalle: 'Falló la orden de bloqueo. El envío de la alerta continúa.',
     };
   }
+}
+export async function abrirPermisoPantallaCompleta(): Promise<boolean> {
+  try {
+    return (await modulo?.abrirPermisoPantallaCompleta()) ?? false;
+  } catch {
+    return false;
+  }
+}
+/**
+ * Pone el "¿Todo bien?" encima de la pantalla de bloqueo (como un despertador). Devuelve `true` si
+ * Android puede abrirlo solo; `false` si el dueño tendría que desbloquear antes de cancelar.
+ */
+export function mostrarSobreBloqueo(segundos: number): boolean {
+  if (!modulo) return false;
+  try {
+    return modulo.mostrarSobreBloqueo(
+      '¿Todo bien?',
+      `Notamos un movimiento brusco y luego velocidad. Si fue tuyo, confírmalo con tu PIN. Avisaremos en 0:${String(segundos).padStart(2, '0')}.`,
+    );
+  } catch {
+    return false;
+  }
+}
+export function ocultarSobreBloqueo(): void {
+  try {
+    modulo?.ocultarSobreBloqueo();
+  } catch {
+    // Si falla, Android igual quita la ventana al cerrar la app; la alerta ya terminó.
+  }
+}
+/** `true` si Android está en la pantalla de bloqueo. Fuera de Android, siempre `false`. */
+export function pantallaBloqueada(): boolean {
+  if (!modulo) return false;
+  try {
+    return modulo.consultarEstado().bloqueado;
+  } catch {
+    return false;
+  }
+}
+/**
+ * Sigue si Android está bloqueado mientras `activo` (una alerta sobre la pantalla de bloqueo). Empieza en
+ * `true`: ante la duda mostramos solo el "¿Todo bien?", nunca el resto de la app sobre el bloqueo.
+ */
+export function usePantallaBloqueada(activo: boolean): boolean {
+  const [bloqueada, setBloqueada] = useState(true);
+  useEffect(() => {
+    if (!activo) return;
+    const revisar = () => setBloqueada(pantallaBloqueada());
+    revisar();
+    const reloj = setInterval(revisar, 500);
+    const sub = AppState.addEventListener('change', revisar);
+    return () => {
+      clearInterval(reloj);
+      sub.remove();
+    };
+  }, [activo]);
+  return activo && bloqueada;
 }

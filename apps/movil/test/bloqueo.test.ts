@@ -9,6 +9,9 @@ const entorno = vi.hoisted(() => ({
     solicitarAutorizacion: vi.fn(),
     abrirBloqueoSeguro: vi.fn(),
     bloquearAhora: vi.fn(),
+    abrirPermisoPantallaCompleta: vi.fn(),
+    mostrarSobreBloqueo: vi.fn(),
+    ocultarSobreBloqueo: vi.fn(),
   },
 }));
 vi.mock('react-native', () => ({
@@ -36,7 +39,10 @@ beforeEach(() => {
       administradorActivo: true,
       bloqueoSeguro: true,
       bloqueado: false,
+      pantallaCompleta: true,
     });
+  entorno.modulo.mostrarSobreBloqueo.mockReset().mockReturnValue(true);
+  entorno.modulo.ocultarSobreBloqueo.mockReset();
   entorno.modulo.bloquearAhora
     .mockReset()
     .mockReturnValue({
@@ -105,5 +111,55 @@ describe('bloqueo por plataforma', () => {
     );
     const b = await import('../src/bloqueo');
     expect(await b.abrirBloqueoSeguro()).toBe(false);
+  });
+});
+
+describe('"¿Todo bien?" sobre la pantalla de bloqueo', () => {
+  it('muestra la pregunta con los segundos que faltan', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.mostrarSobreBloqueo(15)).toBe(true);
+    expect(entorno.modulo.mostrarSobreBloqueo).toHaveBeenCalledWith(
+      '¿Todo bien?',
+      expect.stringContaining('0:15'),
+    );
+  });
+  it.each(['ios', 'web'])('%s no intenta mostrarse sobre el bloqueo', async (plataforma) => {
+    entorno.plataforma = plataforma;
+    const b = await import('../src/bloqueo');
+    expect(b.mostrarSobreBloqueo(10)).toBe(false);
+    expect(b.pantallaBloqueada()).toBe(false);
+  });
+  it('un fallo nativo no rompe la alerta', async () => {
+    entorno.modulo.mostrarSobreBloqueo.mockImplementation(() => {
+      throw new Error('Sin actividad');
+    });
+    entorno.modulo.ocultarSobreBloqueo.mockImplementation(() => {
+      throw new Error('Sin actividad');
+    });
+    const b = await import('../src/bloqueo');
+    expect(b.mostrarSobreBloqueo(10)).toBe(false);
+    expect(() => b.ocultarSobreBloqueo()).not.toThrow();
+  });
+  it('sin permiso de pantalla completa lo explica en Tú', async () => {
+    entorno.modulo.consultarEstado.mockReturnValue({
+      disponible: true,
+      administradorActivo: true,
+      bloqueoSeguro: true,
+      bloqueado: false,
+      pantallaCompleta: false,
+    });
+    const b = await import('../src/bloqueo');
+    expect(b.consultarBloqueo().detalle).toContain('desbloquear para cancelar');
+  });
+  it('lee si Android está bloqueado', async () => {
+    entorno.modulo.consultarEstado.mockReturnValue({
+      disponible: true,
+      administradorActivo: true,
+      bloqueoSeguro: true,
+      bloqueado: true,
+      pantallaCompleta: true,
+    });
+    const b = await import('../src/bloqueo');
+    expect(b.pantallaBloqueada()).toBe(true);
   });
 });

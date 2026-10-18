@@ -9,6 +9,10 @@ const dobles = vi.hoisted(() => ({
   imu: null as null | ((m: MuestraImu) => void),
   gps: null as null | ((l: LecturaGps) => void),
   bloquear: vi.fn(),
+  mostrar: vi.fn(),
+  ocultar: vi.fn(),
+  avisar: vi.fn(),
+  pinOk: true,
   enviar: vi.fn(),
 }));
 vi.mock('react-native', () => ({ Platform: { OS: 'android' } }));
@@ -16,19 +20,23 @@ vi.mock('expo-keep-awake', () => ({
   activateKeepAwakeAsync: vi.fn(),
   deactivateKeepAwake: vi.fn(),
 }));
-vi.mock('../src/bloqueo', () => ({ bloquearAlDetectar: dobles.bloquear }));
+vi.mock('../src/bloqueo', () => ({
+  bloquearAlDetectar: dobles.bloquear,
+  mostrarSobreBloqueo: dobles.mostrar,
+  ocultarSobreBloqueo: dobles.ocultar,
+}));
 vi.mock('../src/alertas', () => ({
   enviar: dobles.enviar,
   hayBackend: () => true,
 }));
 vi.mock('../src/notificaciones', () => ({
-  avisarTodoBien: async () => null,
+  avisarTodoBien: dobles.avisar,
   quitarAviso: async () => undefined,
   pedirPermisoNotificaciones: async () => true,
 }));
 vi.mock('../src/pin', () => ({
   hayPin: async () => true,
-  verificarPin: async () => true,
+  verificarPin: async () => dobles.pinOk,
 }));
 vi.mock('../src/preferencias', () => ({
   preferencias: () => ({ esperaFamiliaS: 10, nombre: 'Prueba', contactos: [] }),
@@ -68,6 +76,10 @@ beforeEach(async () => {
   dobles.bloquear
     .mockReset()
     .mockReturnValue({ estado: 'solicitado', detalle: 'Orden recibida.' });
+  dobles.mostrar.mockReset().mockReturnValue(true);
+  dobles.ocultar.mockReset();
+  dobles.avisar.mockReset().mockResolvedValue(null);
+  dobles.pinOk = true;
   dobles.enviar
     .mockReset()
     .mockResolvedValue({ enviado: true, detalle: 'Enviado.' });
@@ -125,5 +137,58 @@ describe('detector real conectado al bloqueo', () => {
     await servicio.pausar(30, '1234');
     reproducirCaso('arrebato_moto');
     expect(dobles.bloquear).not.toHaveBeenCalled();
+  });
+});
+
+describe('"¿Todo bien?" sobre la pantalla de bloqueo', () => {
+  it('tras bloquear, muestra la pregunta encima del bloqueo y no repite la notificación', () => {
+    reproducirCaso('arrebato_moto');
+    expect(dobles.mostrar).toHaveBeenCalledTimes(1);
+    expect(dobles.mostrar).toHaveBeenCalledWith(10);
+    expect(servicio.obtener().alerta?.sobreBloqueo).toBe(true);
+    expect(dobles.avisar).not.toHaveBeenCalled();
+  });
+  it('bloquea antes de mostrar la pregunta (el orden importa: primero proteger)', () => {
+    reproducirCaso('arrebato_moto');
+    expect(dobles.bloquear.mock.invocationCallOrder[0]).toBeLessThan(
+      dobles.mostrar.mock.invocationCallOrder[0],
+    );
+  });
+  it('sin bloqueo (falta autorización) no se muestra sobre el bloqueo y avisa como antes', () => {
+    dobles.bloquear.mockReturnValue({ estado: 'sin_autorizacion', detalle: 'Falta.' });
+    reproducirCaso('arrebato_moto');
+    expect(dobles.mostrar).not.toHaveBeenCalled();
+    expect(servicio.obtener().alerta?.sobreBloqueo).toBe(false);
+    expect(dobles.avisar).toHaveBeenCalledWith(10);
+  });
+  it('si Android no deja la pantalla completa, lo registra y usa la notificación normal', () => {
+    dobles.mostrar.mockReturnValue(false);
+    reproducirCaso('arrebato_moto');
+    expect(servicio.obtener().alerta?.sobreBloqueo).toBe(false);
+    expect(dobles.avisar).toHaveBeenCalled();
+    expect(
+      servicio.obtener().registros.some((r) => r.texto.includes('no deja mostrar')),
+    ).toBe(true);
+  });
+  it('el PIN correcto cancela y devuelve la pantalla de bloqueo de Android', async () => {
+    reproducirCaso('arrebato_moto');
+    expect(await servicio.cancelarAlerta('1234')).toBe(true);
+    expect(servicio.obtener().alerta).toBeNull();
+    expect(dobles.ocultar).toHaveBeenCalledTimes(1);
+  });
+  it('un PIN incorrecto deja la alerta y la pregunta encima del bloqueo', async () => {
+    dobles.pinOk = false;
+    reproducirCaso('arrebato_moto');
+    expect(await servicio.cancelarAlerta('0000')).toBe(false);
+    expect(servicio.obtener().alerta?.sobreBloqueo).toBe(true);
+    expect(dobles.ocultar).not.toHaveBeenCalled();
+  });
+  it('tras avisar a la red sigue encima del bloqueo para poder decir "estoy bien"', async () => {
+    reproducirCaso('arrebato_moto');
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(servicio.obtener().alerta?.familia).toBe('avisada');
+    expect(dobles.ocultar).not.toHaveBeenCalled();
+    servicio.descartarPantallaAlerta();
+    expect(dobles.ocultar).toHaveBeenCalledTimes(1);
   });
 });

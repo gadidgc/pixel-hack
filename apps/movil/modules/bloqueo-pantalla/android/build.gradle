@@ -5,3 +5,4 @@ plugins {
 group = 'pe.pixelhack.bloqueopantalla'
 version = '0.1.0'
 android { namespace 'pe.pixelhack.bloqueopantalla' }
+dependencies { implementation 'androidx.core:core-ktx:1.13.1' }

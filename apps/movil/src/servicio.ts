@@ -12,7 +12,7 @@ import {
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Platform } from 'react-native';
 import { enviar, hayBackend, type ResultadoEnvio } from './alertas';
-import { bloquearAlDetectar, type ResultadoBloqueo } from './bloqueo';
+import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, type ResultadoBloqueo } from './bloqueo';
 import { Grabadora, type Etiqueta } from './grabadora';
 import { avisarTodoBien, pedirPermisoNotificaciones, quitarAviso } from './notificaciones';
 import { hayPin, verificarPin } from './pin';
@@ -47,6 +47,8 @@ export interface AlertaEnCurso {
   evento: Extract<EventoDetector, { tipo: 'alerta' }>;
   /** Orden del sistema, independiente del envío al panel y del PIN de la app. */
   bloqueo: ResultadoBloqueo | null;
+  /** El "¿Todo bien?" se muestra encima de la pantalla de bloqueo: se cancela sin desbloquear Android. */
+  sobreBloqueo: boolean;
   /** Resultado del envío al panel; `null` mientras se envía. */
   panel: ResultadoEnvio | null;
   familia: EstadoFamilia;
@@ -135,7 +137,10 @@ class ServicioProteccion {
   }
 
   private cambiar(cambios: Partial<EstadoProteccion>): void {
+    const antes = this.estado.alerta;
     this.estado = { ...this.estado, ...cambios };
+    // Terminó la alerta: la app deja de verse sobre la pantalla de bloqueo y vuelve la de Android.
+    if (antes?.sobreBloqueo && !this.estado.alerta) ocultarSobreBloqueo();
     for (const o of this.oyentes) o(this.estado);
   }
 
@@ -313,10 +318,19 @@ class ServicioProteccion {
   private iniciarAlerta(evento: Extract<EventoDetector, { tipo: 'alerta' }>): void {
     const espera = preferencias().esperaFamiliaS;
     const conVelocidad = evento.velocidadMs !== null ? ` y luego ${Math.round(evento.velocidadMs * 3.6)} km/h` : '';
+
+    // 0) Bloqueo de Android, lo primero: si el celular estaba desbloqueado en la mano, cada segundo cuenta.
+    // Es síncrono y no espera al servidor ni a la cuenta para avisar a la familia.
+    const bloqueo = bloquearAlDetectar();
+    // Con el celular bloqueado, el "¿Todo bien?" se abre ENCIMA de la pantalla de bloqueo (como un
+    // despertador): el dueño cancela con el PIN de la app sin tener que desbloquear Android primero.
+    const sobreBloqueo = bloqueo.estado === 'solicitado' && mostrarSobreBloqueo(espera);
+
     this.cambiar({
       alerta: {
         evento,
-        bloqueo: null,
+        bloqueo,
+        sobreBloqueo,
         panel: null,
         familia: 'esperando',
         detalleFamilia: '',
@@ -329,7 +343,12 @@ class ServicioProteccion {
         ],
       },
     });
-    void avisarTodoBien(espera).then((id) => (this.idNotificacion = id));
+    this.registrar(`Bloqueo de pantalla: ${bloqueo.detalle}`, bloqueo.estado === 'solicitado' ? 'info' : 'aviso');
+    if (bloqueo.estado === 'solicitado' && !sobreBloqueo) {
+      this.registrar('Android no deja mostrar el "¿Todo bien?" sobre la pantalla de bloqueo: para cancelar hay que desbloquear.', 'aviso');
+    }
+    // Sobre la pantalla de bloqueo ya va nuestro aviso de pantalla completa; no repetimos la notificación.
+    if (!sobreBloqueo) void avisarTodoBien(espera).then((id) => (this.idNotificacion = id));
 
     // 1) Al panel, al instante y en silencio, con la ruta de los últimos segundos.
     const { nombre, contactos } = preferencias();
@@ -346,11 +365,6 @@ class ServicioProteccion {
     this.detenerCuentaFamilia();
     this.cuentaPendiente = { evento, nombre, contactos, limite: Date.now() + espera * 1000 };
     this.cuentaFamilia = setInterval(() => this.revisarCuentaFamilia(), 1000);
-
-    // Mismo turno de detección: envío y cuenta iniciados, sin esperar su resultado.
-    const bloqueo = bloquearAlDetectar();
-    if (this.estado.alerta?.evento === evento) this.cambiar({ alerta: { ...this.estado.alerta, bloqueo } });
-    this.registrar(`Bloqueo de pantalla: ${bloqueo.detalle}`, bloqueo.estado === 'solicitado' ? 'info' : 'aviso');
   }
 
   private revisarCuentaFamilia(): void {
