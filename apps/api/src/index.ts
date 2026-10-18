@@ -430,6 +430,19 @@ export default {
     if (peticion.method === 'OPTIONS') return new Response(null, { headers: CORS });
     try {
       if (url.pathname === '/api/salud') return await salud(env);
+      // La app de Android para el equipo (el APK pesa ~100 MB: no entra en los archivos estáticos, va en R2).
+      if (url.pathname === '/api/descargar/android' && peticion.method === 'GET') {
+        const apk = await env.EVIDENCIAS.get('app/AlertaArrebato.apk');
+        if (!apk) return json({ ok: false, detalle: 'todavía no subimos la app' }, 404);
+        return new Response(apk.body, {
+          headers: {
+            'Content-Type': 'application/vnd.android.package-archive',
+            'Content-Disposition': 'attachment; filename="AlertaArrebato.apk"',
+            'Content-Length': String(apk.size),
+            'Cache-Control': 'no-store',
+          },
+        });
+      }
       if (url.pathname === '/api/eventos' && peticion.method === 'POST') {
         const largo = Number(peticion.headers.get('Content-Length') ?? 0);
         if (largo > MAX_CUERPO) return json({ ok: false, detalle: 'mensaje demasiado grande' }, 413);
