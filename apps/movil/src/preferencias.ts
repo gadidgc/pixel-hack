@@ -151,7 +151,8 @@ export function preferencias(): Preferencias {
 export async function guardarPreferencias(cambios: Partial<Preferencias>): Promise<Preferencias> {
   actuales = { ...actuales, ...cambios };
   for (const o of oyentes) o(actuales);
-  await escribir(JSON.stringify(actuales));
+  // Si el almacenamiento falla, el cambio sigue en memoria: ninguna pantalla debe quedarse trabada por esto.
+  await escribir(JSON.stringify(actuales)).catch((e) => console.warn('No se pudieron guardar las preferencias', e));
   return actuales;
 }
 

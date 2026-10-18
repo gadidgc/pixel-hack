@@ -71,10 +71,18 @@ export function hayBackend(): boolean {
   return URL_ALERTAS.startsWith('https://') || URL_ALERTAS.startsWith('http://');
 }
 
+/**
+ * Los mensajes que esperan a WhatsApp y SMS (hasta 8 s cada proveedor) necesitan más tiempo: con 5 s la app
+ * decía "no se pudo avisar" mientras el mensaje sí le llegaba a la familia.
+ */
+const ESPERA_CON_MENSAJES_MS = 20_000;
+const ESPERA_MS = 5000;
+
 export async function enviar(mensaje: MensajeAlerta): Promise<ResultadoEnvio> {
   if (!hayBackend()) return { enviado: false, detalle: 'falta conectar el panel; quedó solo en este celular' };
   const control = new AbortController();
-  const limite = setTimeout(() => control.abort(), 5000);
+  const mandaMensajes = mensaje.tipo === 'notificar_familia' || mensaje.tipo === 'prueba' || mensaje.tipo === 'probar_bloqueo';
+  const limite = setTimeout(() => control.abort(), mandaMensajes ? ESPERA_CON_MENSAJES_MS : ESPERA_MS);
   try {
     const r = await fetch(URL_ALERTAS, {
       method: 'POST',
@@ -89,7 +97,9 @@ export async function enviar(mensaje: MensajeAlerta): Promise<ResultadoEnvio> {
     const enviado = avisaRed && datos.total ? (datos.avisados ?? 0) > 0 : true;
     return { enviado, detalle: datos.detalle ?? 'enviado', enlace: datos.enlace, avisados: datos.avisados, total: datos.total };
   } catch (e) {
-    return { enviado: false, detalle: e instanceof Error ? e.message : 'error de red' };
+    // En español y sin el texto técnico del sistema ("Aborted", "Network request failed").
+    const tardo = e instanceof Error && e.name === 'AbortError';
+    return { enviado: false, detalle: tardo ? 'el servidor tardó en responder (puede que sí haya salido)' : 'sin conexión con el servidor' };
   } finally {
     clearTimeout(limite);
   }

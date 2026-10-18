@@ -43,6 +43,15 @@ interface JalonEnCurso {
   movimientoVisto: boolean;
 }
 
+const TELEMETRIA_INICIAL: Telemetria = {
+  t: 0,
+  estado: 'reposo',
+  aceleracionLinealG: 0,
+  giroRadS: null,
+  velocidadMs: null,
+  precisionGpsM: null,
+};
+
 /**
  * Detector de arrebato desde una moto.
  *
@@ -78,14 +87,7 @@ export class DetectorArrebato {
   private tGpsAnterior: number | null = null;
   /** Último posible jalón descartado, para la "segunda oportunidad". */
   private descartado: { jalon: JalonEnCurso; t: number; lecturasRapidas: number } | null = null;
-  private telemetria: Telemetria = {
-    t: 0,
-    estado: 'reposo',
-    aceleracionLinealG: 0,
-    giroRadS: null,
-    velocidadMs: null,
-    precisionGpsM: null,
-  };
+  private telemetria: Telemetria = { ...TELEMETRIA_INICIAL };
 
   constructor(config: Partial<ConfigDetector> = {}) {
     this.config = { ...CONFIG_POR_DEFECTO, ...config };
@@ -105,6 +107,9 @@ export class DetectorArrebato {
   /** Procesa una muestra del acelerómetro (+ giroscopio). Devuelve los eventos que provocó. */
   procesarImu(m: MuestraImu): EventoDetector[] {
     const eventos: EventoDetector[] = [];
+    // Una sola muestra con NaN dejaría el filtro de gravedad en NaN para siempre (el detector quedaría sordo).
+    if (![m.t, m.ax, m.ay, m.az].every(Number.isFinite)) return eventos;
+    if (![m.gx, m.gy, m.gz].every((v) => v === null || Number.isFinite(v))) m = { ...m, gx: null, gy: null, gz: null };
     if (this.tInicio === null) this.tInicio = m.t;
     this.tActual = Math.max(this.tActual, m.t);
 
@@ -132,6 +137,7 @@ export class DetectorArrebato {
   /** Procesa una lectura del GPS. Devuelve los eventos que provocó. */
   procesarGps(l: LecturaGps): EventoDetector[] {
     const eventos: EventoDetector[] = [];
+    if (![l.t, l.lat, l.lon].every(Number.isFinite)) return eventos;
     this.tActual = Math.max(this.tActual, l.t);
 
     const valida = l.precision === null || l.precision <= this.config.precisionGpsMaxM;
@@ -225,6 +231,7 @@ export class DetectorArrebato {
     this.caminandoDesdeVehiculoMs = 0;
     this.tGpsAnterior = null;
     this.descartado = null;
+    this.telemetria = { ...TELEMETRIA_INICIAL };
   }
 
   // ---------------------------------------------------------------------------
@@ -297,6 +304,9 @@ export class DetectorArrebato {
     d.lecturasRapidas = this.esVelocidadDeHuida(l.t, velocidad) ? d.lecturasRapidas + 1 : 0;
     if (d.lecturasRapidas < this.config.lecturasHuidaMin) return;
     this.jalon = d.jalon;
+    // La velocidad del aviso es la de esta huida, no la de los 10 s del primer intento (que solía ser 0).
+    this.jalon.ultimaVelocidad = velocidad;
+    this.jalon.huboGpsValido = true;
     this.descartado = null;
     this.estadoActual = 'posible_jalon';
     this.alertar(l.t, 'velocidad_gps', { t: l.t, lat: l.lat, lon: l.lon, precision: l.precision }, eventos, 'media');
