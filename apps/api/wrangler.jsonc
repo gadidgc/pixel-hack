@@ -20,6 +20,13 @@
       "migrations_dir": "migrations"
     }
   ],
+  // Evidencias (video o audio) que sube la app. Crear una vez: `npx wrangler r2 bucket create alerta-arrebato-evidencias`.
+  "r2_buckets": [
+    {
+      "binding": "EVIDENCIAS",
+      "bucket_name": "alerta-arrebato-evidencias"
+    }
+  ],
   "triggers": { "crons": ["* * * * *"] },
   "observability": { "enabled": true }
 }

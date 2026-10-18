@@ -1,4 +1,15 @@
 import { TEXTOS, hayProveedor, horaLima, mandarMensaje, type EnvMensajes } from './mensajes';
+import {
+  MAX_EVIDENCIA_BYTES,
+  MAX_EVIDENCIAS_POR_HORA,
+  MAX_REPORTES_POR_HORA,
+  VENTANA_REPORTES_MS,
+  cajaDe,
+  redondear,
+  validarBusqueda,
+  validarEvidencia,
+  validarReporte,
+} from './comunidad';
 import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, type Punto } from './validar';
 
 /**
@@ -6,6 +17,8 @@ import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, 
  * - `POST /api/eventos`: lo que manda la app (contrato en docs/PLAN.md §6.1).
  * - `GET  /api/alertas/:id`: lo que ve el contacto en `/a/:id` (sin teléfonos).
  * - `POST /api/alertas/:id/encargado`: "Yo me encargo" (avisa al resto de la red).
+ * - `GET  /api/reportes?lat=&lon=&radioKm=` y `POST /api/reportes`: "Cerca de ti" (reportes de la comunidad).
+ * - `POST /api/evidencias` y `GET /api/evidencias/:id`: video o audio guardado en R2.
  * - `GET  /api/salud`: si la base y Zavu están listos.
  * - Todo lo demás: la web de la app (export de Expo en apps/movil/dist).
  */
@@ -13,6 +26,8 @@ import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, 
 export interface Env extends EnvMensajes {
   DB: D1Database;
   ASSETS: Fetcher;
+  /** Bucket R2 `alerta-arrebato-evidencias`. */
+  EVIDENCIAS: R2Bucket;
 }
 
 const MAX_CUERPO = 128 * 1024;
@@ -27,7 +42,8 @@ const MARGEN_SERVIDOR_MS = 6000;
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Dispositivo, X-Lat, X-Lon, Range',
+  'Access-Control-Expose-Headers': 'Content-Range, Content-Length, Accept-Ranges',
 };
 
 function json(datos: unknown, estado = 200): Response {
@@ -141,6 +157,7 @@ async function avisarFamilia(env: Env, fila: FilaAlerta, origen: string): Promis
     const avisados = previo?.avisados ?? 0;
     return { avisados, total: contactos.length, detalle: avisados === contactos.length ? 'enviado' : `${avisados} de ${contactos.length} avisados: ${previo?.detalle ?? ''}` };
   }
+  await reportarDesdeAlerta(env, fila, ahora);
   const tJalon = fila.t_jalon ?? fila.creada;
   const r = await avisar(
     env,
@@ -153,6 +170,24 @@ async function avisarFamilia(env: Env, fila: FilaAlerta, origen: string): Promis
     })),
   );
   return { avisados: r.avisados, total: contactos.length, detalle: r.detalle };
+}
+
+/**
+ * Una alerta avisada también aparece en "Cerca de ti", anónima: sin nombre, sin dispositivo a la vista y
+ * con la ubicación del jalón redondeada a ~100 m. Si después se cancela (era falsa alarma), se borra.
+ */
+async function reportarDesdeAlerta(env: Env, fila: FilaAlerta, ahora: number): Promise<void> {
+  if (fila.prueba || fila.lat_jalon === null || fila.lon_jalon === null) return;
+  try {
+    await env.DB.prepare(
+      `INSERT INTO reportes (id, tipo, lat, lon, nota, dispositivo, origen, alerta_id, creado) VALUES (?, 'arrebato_moto', ?, ?, NULL, ?, 'alerta', ?, ?)`,
+    )
+      .bind(nuevoId(), redondear(fila.lat_jalon), redondear(fila.lon_jalon), fila.dispositivo, fila.id, ahora)
+      .run();
+  } catch (e) {
+    // El aviso a la red importa más que el mapa: si esto falla, lo registramos y seguimos.
+    console.error('No se pudo crear el reporte de la alerta', e);
+  }
 }
 
 /** Alertas cuya espera venció sin que el celular avisara ni cancelara: avisa el servidor. */
@@ -224,7 +259,11 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
         fila.estado === 'avisada'
           ? await avisar(env, fila.id, 'esta_bien', contactosDe(fila).map((c) => ({ contacto: c, texto: TEXTOS.estaBien(fila.nombre) })))
           : { avisados: 0, detalle: 'la red no había sido avisada' };
-      await env.DB.prepare(`UPDATE alertas SET estado = 'cancelada', cancelada = ?, contactos_json = NULL, actualizada = ? WHERE id = ?`).bind(ahora, ahora, fila.id).run();
+      await env.DB.batch([
+        env.DB.prepare(`UPDATE alertas SET estado = 'cancelada', cancelada = ?, contactos_json = NULL, actualizada = ? WHERE id = ?`).bind(ahora, ahora, fila.id),
+        // Era falsa alarma: sale de "Cerca de ti".
+        env.DB.prepare(`DELETE FROM reportes WHERE alerta_id = ? AND origen = 'alerta'`).bind(fila.id),
+      ]);
       return json({ ok: true, id: fila.id, avisados: r.avisados, detalle: r.detalle });
     }
     case 'prueba': {
@@ -243,12 +282,15 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
 }
 
 /** Lo que ve el contacto. Nunca devuelve teléfonos. */
-async function verAlerta(env: Env, id: string): Promise<Response> {
+async function verAlerta(env: Env, id: string, origen: string): Promise<Response> {
   const fila = await env.DB.prepare('SELECT * FROM alertas WHERE id = ? AND prueba = 0').bind(id).first<FilaAlerta>();
   if (!fila) return json({ ok: false, detalle: 'no existe esa alerta' }, 404);
   const { results } = await env.DB.prepare('SELECT t, lat, lon, velocidad, precision FROM ubicaciones WHERE alerta_id = ? ORDER BY t DESC LIMIT 600')
     .bind(id)
     .all<Punto>();
+  const evidencias = await env.DB.prepare('SELECT id, tipo FROM evidencias WHERE alerta_id = ? ORDER BY creado ASC LIMIT 20')
+    .bind(id)
+    .all<{ id: string; tipo: string }>();
   return json({
     ok: true,
     id: fila.id,
@@ -259,6 +301,7 @@ async function verAlerta(env: Env, id: string): Promise<Response> {
     tJalon: fila.t_jalon,
     jalon: fila.lat_jalon !== null && fila.lon_jalon !== null ? { lat: fila.lat_jalon, lon: fila.lon_jalon } : null,
     ruta: results.reverse(),
+    evidencias: evidencias.results.map((e) => ({ id: e.id, tipo: e.tipo, enlace: `${origen}/api/evidencias/${e.id}` })),
     encargado: fila.encargado,
     avisada: fila.avisada,
     cancelada: fila.cancelada,
@@ -278,6 +321,98 @@ async function marcarEncargado(env: Env, id: string, peticion: Request, origen: 
   const resto = contactos.map((c, i) => ({ c, i })).filter((x) => x.i !== indice);
   const r = await avisar(env, id, 'encargado', resto.map((x) => ({ contacto: x.c, texto: TEXTOS.encargado(quien, fila.nombre, enlace(origen, id, x.i)) })));
   return json({ ok: true, encargado: quien, avisados: r.avisados, detalle: r.detalle });
+}
+
+interface FilaReporte {
+  id: string;
+  tipo: string;
+  lat: number;
+  lon: number;
+  nota: string | null;
+  origen: string;
+  creado: number;
+}
+
+/** "Cerca de ti": lo reportado en los últimos 30 días dentro de la caja, lo más nuevo primero. Sin `dispositivo`. */
+async function buscarReportes(env: Env, params: URLSearchParams): Promise<Response> {
+  const b = validarBusqueda(params);
+  const caja = cajaDe(b);
+  const ahora = Date.now();
+  const { results } = await env.DB.prepare(
+    `SELECT id, tipo, lat, lon, nota, origen, creado FROM reportes
+     WHERE lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? AND creado > ?
+     ORDER BY creado DESC LIMIT 100`,
+  )
+    .bind(caja.latMin, caja.latMax, caja.lonMin, caja.lonMax, ahora - VENTANA_REPORTES_MS)
+    .all<FilaReporte>();
+  return json({ ok: true, radioKm: b.radioKm, reportes: results, ahora });
+}
+
+async function crearReporte(env: Env, peticion: Request): Promise<Response> {
+  const texto = await peticion.text();
+  if (texto.length > 4096) return json({ ok: false, detalle: 'mensaje demasiado grande' }, 413);
+  let cuerpo: unknown;
+  try {
+    cuerpo = JSON.parse(texto);
+  } catch {
+    return json({ ok: false, detalle: 'JSON inválido' }, 400);
+  }
+  const r = validarReporte(cuerpo);
+  const ahora = Date.now();
+  const recientes = await env.DB.prepare(`SELECT COUNT(*) AS n FROM reportes WHERE dispositivo = ? AND origen = 'comunidad' AND creado > ?`)
+    .bind(r.dispositivo, ahora - 3600_000)
+    .first<{ n: number }>();
+  if ((recientes?.n ?? 0) >= MAX_REPORTES_POR_HORA) return json({ ok: false, detalle: `máximo ${MAX_REPORTES_POR_HORA} reportes por hora` }, 429);
+  const id = nuevoId();
+  await env.DB.prepare(`INSERT INTO reportes (id, tipo, lat, lon, nota, dispositivo, origen, creado) VALUES (?, ?, ?, ?, ?, ?, 'comunidad', ?)`)
+    .bind(id, r.tipo, r.lat, r.lon, r.nota, r.dispositivo, ahora)
+    .run();
+  return json({ ok: true, reporte: { id, tipo: r.tipo, lat: r.lat, lon: r.lon, nota: r.nota, origen: 'comunidad', creado: ahora } }, 201);
+}
+
+/** Sube un video o audio a R2. El cuerpo es el archivo tal cual (sin multipart). */
+async function subirEvidencia(env: Env, peticion: Request, origen: string): Promise<Response> {
+  if (Number(peticion.headers.get('Content-Length') ?? 0) > MAX_EVIDENCIA_BYTES) return json({ ok: false, detalle: 'el archivo pasa de 50 MB' }, 413);
+  const e = validarEvidencia(peticion.headers);
+  if (!peticion.body) return json({ ok: false, detalle: 'el archivo llegó vacío' }, 400);
+  const ahora = Date.now();
+  const recientes = await env.DB.prepare('SELECT COUNT(*) AS n FROM evidencias WHERE dispositivo = ? AND creado > ?')
+    .bind(e.dispositivo, ahora - 3600_000)
+    .first<{ n: number }>();
+  if ((recientes?.n ?? 0) >= MAX_EVIDENCIAS_POR_HORA) return json({ ok: false, detalle: `máximo ${MAX_EVIDENCIAS_POR_HORA} archivos por hora` }, 429);
+  const id = nuevoId();
+  // R2 necesita saber el largo de antemano: FixedLengthStream además corta si llega más (o menos) de lo anunciado.
+  const largo = new FixedLengthStream(e.bytes);
+  const copia = peticion.body.pipeTo(largo.writable);
+  const [objeto] = await Promise.all([env.EVIDENCIAS.put(id, largo.readable, { httpMetadata: { contentType: e.mime } }), copia]);
+  const abierta = await alertaAbierta(env, e.dispositivo, ahora);
+  await env.DB.prepare('INSERT INTO evidencias (id, dispositivo, alerta_id, tipo, mime, bytes, lat, lon, creado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(id, e.dispositivo, abierta?.id ?? null, e.tipo, e.mime, objeto.size, e.lat, e.lon, ahora)
+    .run();
+  return json({ ok: true, id, tipo: e.tipo, bytes: objeto.size, enlace: `${origen}/api/evidencias/${id}`, alerta: abierta?.id ?? null }, 201);
+}
+
+/** Devuelve el archivo. Acepta `Range` (los navegadores lo piden para adelantar un video). */
+async function verEvidencia(env: Env, id: string, peticion: Request): Promise<Response> {
+  const pideRango = peticion.headers.has('Range');
+  const objeto = await env.EVIDENCIAS.get(id, pideRango ? { range: peticion.headers } : undefined);
+  if (!objeto) return json({ ok: false, detalle: 'no existe esa evidencia' }, 404);
+  const cabeceras = new Headers(CORS);
+  objeto.writeHttpMetadata(cabeceras);
+  cabeceras.set('ETag', objeto.httpEtag);
+  cabeceras.set('Accept-Ranges', 'bytes');
+  cabeceras.set('Cache-Control', 'private, max-age=3600');
+  // Que el navegador no "adivine" otro tipo: solo se sirve como video o audio.
+  cabeceras.set('X-Content-Type-Options', 'nosniff');
+  const rango = objeto.range as { offset?: number; length?: number } | undefined;
+  const cuerpo = peticion.method === 'HEAD' ? null : objeto.body;
+  if (pideRango && rango?.offset !== undefined && rango.length !== undefined) {
+    cabeceras.set('Content-Range', `bytes ${rango.offset}-${rango.offset + rango.length - 1}/${objeto.size}`);
+    cabeceras.set('Content-Length', String(rango.length));
+    return new Response(cuerpo, { status: 206, headers: cabeceras });
+  }
+  cabeceras.set('Content-Length', String(objeto.size));
+  return new Response(cuerpo, { headers: cabeceras });
 }
 
 async function salud(env: Env): Promise<Response> {
@@ -309,8 +444,13 @@ export default {
         return await procesar(env, ctx, validarMensaje(cuerpo), url.origin);
       }
       const ver = url.pathname.match(/^\/api\/alertas\/([a-z0-9]{16})(\/encargado)?$/);
-      if (ver && !ver[2] && peticion.method === 'GET') return await verAlerta(env, ver[1]);
+      if (ver && !ver[2] && peticion.method === 'GET') return await verAlerta(env, ver[1], url.origin);
       if (ver && ver[2] && peticion.method === 'POST') return await marcarEncargado(env, ver[1], peticion, url.origin);
+      if (url.pathname === '/api/reportes' && peticion.method === 'GET') return await buscarReportes(env, url.searchParams);
+      if (url.pathname === '/api/reportes' && peticion.method === 'POST') return await crearReporte(env, peticion);
+      if (url.pathname === '/api/evidencias' && peticion.method === 'POST') return await subirEvidencia(env, peticion, url.origin);
+      const evidencia = url.pathname.match(/^\/api\/evidencias\/([a-z0-9]{16})$/);
+      if (evidencia && (peticion.method === 'GET' || peticion.method === 'HEAD')) return await verEvidencia(env, evidencia[1], peticion);
       return json({ ok: false, detalle: 'no encontrado' }, 404);
     } catch (e) {
       if (e instanceof ErrorDeDatos) return json({ ok: false, detalle: e.message }, 400);

@@ -63,7 +63,7 @@ interface RespuestaBackend {
 }
 
 /** Identificador anónimo de esta instalación (no es un dato personal). */
-const idDispositivo = `${Platform.OS}-${Math.random().toString(36).slice(2, 10)}`;
+export const idDispositivo = `${Platform.OS}-${Math.random().toString(36).slice(2, 10)}`;
 
 export function hayBackend(): boolean {
   return URL_ALERTAS.startsWith('https://') || URL_ALERTAS.startsWith('http://');

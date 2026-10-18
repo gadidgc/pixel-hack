@@ -65,8 +65,7 @@ En la web, los sensores solo funcionan con **HTTPS** y abriendo la página direc
 - Probar en celulares reales la protección en segundo plano (ya está programada: módulo nativo + GPS en segundo plano; ver PLAN §5). Límites conocidos: si la persona **cierra la app deslizándola**, la protección se apaga (iPhone y Android); en Xiaomi, Redmi, POCO y Huawei hay que activar "Inicio automático" y "Sin restricciones" de batería (la app lleva a esa pantalla desde "Tú"). Para la demo: un Pixel, Samsung o iPhone.
 - Arrebatos simulados en bici **con GPS**, grabados por nosotros (no existen datos públicos de arrebatos desde moto).
 - Veto por Bluetooth del auto o Wi-Fi conocido (para las falsas alarmas en auto que quedan).
-- Datos reales en **Cerca** (hoy muestra datos de ejemplo, marcados como tales).
-- Activarse sola al salir de casa o de lugares conocidos, subir la evidencia a un servidor, reporte en PDF para la denuncia y huella digital (hoy se usa PIN).
+- Activarse sola al salir de casa o de lugares conocidos, reporte en PDF para la denuncia y huella digital (hoy se usa PIN).
 
 ## Pantallas
 Diseño: [sistema de diseño](https://claude.ai/artifact/HW9kceGpSuZaAxxFtccVMj) y [14 pantallas](https://claude.ai/artifact/3kUXLiWYpeJsixzCv4dpZp). Detalle por flujo (F1–F8) en [PLAN §7](docs/PLAN.md#7-interfaz).
@@ -74,7 +73,7 @@ Diseño: [sistema de diseño](https://claude.ai/artifact/HW9kceGpSuZaAxxFtccVMj)
 - **Inicio (F2):** estado de la protección, lecturas en vivo, pausa de 30 min y apagar con PIN.
 - **Alerta (F4):** "¿Todo bien?" en silencio antes de avisar a tu red; falsa alarma con motivo y PIN.
 - **Contacto (F5)** y **Me robaron (F6):** páginas web, `?ver=contacto` y `?ver=yo`.
-- **Grabar (F7)** evidencia en video o audio; **Cerca (F8)** mapa con reportes de ejemplo; **Tú**: ajustes y herramientas del equipo.
+- **Grabar (F7)** evidencia en video o audio; **Cerca (F8)** mapa con reportes reales de la comunidad a 1 km (backend `/api/reportes`) y "Reportar algo"; la evidencia grabada se sube a R2 (`/api/evidencias`) y queda unida a la alerta abierta; **Tú**: ajustes y herramientas del equipo.
 
 ## Reglas del repo
 - Todo cambio entra por **Pull Request** y lo aprueba otro integrante. Nadie hace push directo a `main`.
