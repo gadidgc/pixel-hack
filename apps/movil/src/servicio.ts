@@ -12,6 +12,7 @@ import {
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Platform } from 'react-native';
 import { enviar, hayBackend, type ResultadoEnvio } from './alertas';
+import { bloquearAlDetectar, type ResultadoBloqueo } from './bloqueo';
 import { Grabadora, type Etiqueta } from './grabadora';
 import { avisarTodoBien, pedirPermisoNotificaciones, quitarAviso } from './notificaciones';
 import { hayPin, verificarPin } from './pin';
@@ -44,6 +45,8 @@ export interface PasoAlerta {
 
 export interface AlertaEnCurso {
   evento: Extract<EventoDetector, { tipo: 'alerta' }>;
+  /** Orden del sistema, independiente del envío al panel y del PIN de la app. */
+  bloqueo: ResultadoBloqueo | null;
   /** Resultado del envío al panel; `null` mientras se envía. */
   panel: ResultadoEnvio | null;
   familia: EstadoFamilia;
@@ -313,6 +316,7 @@ class ServicioProteccion {
     this.cambiar({
       alerta: {
         evento,
+        bloqueo: null,
         panel: null,
         familia: 'esperando',
         detalleFamilia: '',
@@ -342,6 +346,11 @@ class ServicioProteccion {
     this.detenerCuentaFamilia();
     this.cuentaPendiente = { evento, nombre, contactos, limite: Date.now() + espera * 1000 };
     this.cuentaFamilia = setInterval(() => this.revisarCuentaFamilia(), 1000);
+
+    // Mismo turno de detección: envío y cuenta iniciados, sin esperar su resultado.
+    const bloqueo = bloquearAlDetectar();
+    if (this.estado.alerta?.evento === evento) this.cambiar({ alerta: { ...this.estado.alerta, bloqueo } });
+    this.registrar(`Bloqueo de pantalla: ${bloqueo.detalle}`, bloqueo.estado === 'solicitado' ? 'info' : 'aviso');
   }
 
   private revisarCuentaFamilia(): void {

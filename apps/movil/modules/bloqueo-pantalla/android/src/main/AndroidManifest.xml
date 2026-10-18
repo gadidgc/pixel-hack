@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <receiver android:name="pe.pixelhack.bloqueopantalla.AdministradorBloqueo" android:label="@string/bloqueo_pantalla_titulo" android:description="@string/bloqueo_pantalla_descripcion" android:permission="android.permission.BIND_DEVICE_ADMIN" android:exported="true">
+      <meta-data android:name="android.app.device_admin" android:resource="@xml/politica_bloqueo" />
+      <intent-filter><action android:name="android.app.action.DEVICE_ADMIN_ENABLED" /></intent-filter>
+    </receiver>
+  </application>
+</manifest>

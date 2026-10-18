@@ -61,6 +61,7 @@ En la web, los sensores solo funcionan con **HTTPS** y abriendo la página direc
 - Reproductor de grabaciones CSV reales en la terminal.
 
 ## Ideas pendientes (todavía no funciona)
+- **Bloqueo al confirmar el arrebato:** implementado para Android con autorización de administrador y clave del sistema, pendiente de validación física. En iPhone no está disponible en esta app: requeriría MDM. Detalle y protocolo en [bloqueo por arrebato](docs/bloqueo-por-arrebato.md).
 - WhatsApp a cualquier persona: hoy usamos el sandbox de Zavu, que solo llega a teléfonos del equipo que antes le escribieron por WhatsApp a +1 202 449 4825. Para cualquier contacto hace falta una clave "live", un número propio en Zavu (o WhatsApp Business conectado) y una plantilla aprobada por Meta (`ZAVU_PLANTILLA_ALERTA`); el SMS necesita saldo.
 - Mapa con calles reales en la página del contacto (hoy la ruta real se dibuja sobre un mapa esquemático; el botón abre Google Maps).
 - Probar en celulares reales la protección en segundo plano (ya está programada: módulo nativo + GPS en segundo plano; ver PLAN §5). Límites conocidos: si la persona **cierra la app deslizándola**, la protección se apaga (iPhone y Android); en Xiaomi, Redmi, POCO y Huawei hay que activar "Inicio automático" y "Sin restricciones" de batería (la app lleva a esa pantalla desde "Tú"). Para la demo: un Pixel, Samsung o iPhone.

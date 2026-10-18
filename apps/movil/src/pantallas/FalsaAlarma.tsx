@@ -43,6 +43,7 @@ export function FalsaAlarma({ onVerAviso, onCerrar }: { onVerAviso: () => void; 
         </T>
       </View>
 
+      {alerta.bloqueo && <T v="apoyo" suave>Bloqueo del sistema: {alerta.bloqueo.detalle}</T>}
       <LineaDeTiempo pasos={alerta.pasos.map((p) => ({ hora: hora(p.t, true), texto: p.texto, clave: p.clave }))} />
 
       <View style={{ gap: 8 }}>

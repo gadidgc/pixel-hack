@@ -1,0 +1,4 @@
+<resources>
+  <string name="bloqueo_pantalla_titulo">Bloqueo antirrobo de Alerta Arrebato</string>
+  <string name="bloqueo_pantalla_descripcion">Permite bloquear el celular al confirmar un arrebato. Para desbloquearlo necesitarás tu PIN, patrón o contraseña de Android. No autoriza borrar datos ni cambiar tu clave.</string>
+</resources>
