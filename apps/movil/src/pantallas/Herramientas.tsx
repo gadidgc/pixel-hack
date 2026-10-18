@@ -283,6 +283,8 @@ function SelectorDistancia({ valor, onCambiar }: { valor: number; onCambiar: (m:
           }}
           onResponderMove={(e) => setArrastre(desdeX(e.nativeEvent.pageX - origenX.current))}
           onResponderRelease={(e) => soltar(desdeX(e.nativeEvent.pageX - origenX.current))}
+          // Si el sistema se lleva el gesto (scroll, notificaciones, llamada), se descarta el arrastre.
+          onResponderTerminate={() => setArrastre(null)}
           accessibilityRole="adjustable"
           accessibilityLabel="Distancia de huida"
           accessibilityValue={{ min, max, now: mostrado, text: `${mostrado} metros` }}

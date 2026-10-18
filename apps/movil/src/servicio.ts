@@ -659,6 +659,7 @@ class ServicioProteccion {
   }
 
   cambiarModoDemo(modoDemo: boolean): void {
+    if (this.alertaEnCurso()) return;
     this.cambiar({ modoDemo, alerta: null });
     this.reiniciarDetector();
     this.registrar(modoDemo ? `Modo demo: la huida corriendo cuenta (${this.describirEspacioDemo()}).` : 'Modo normal: solo huida en vehículo.');
@@ -685,11 +686,11 @@ class ServicioProteccion {
   }
 
   /**
-   * Cambiar el ajuste reinicia el detector y corta la cuenta para avisar a la red: durante una alerta eso
-   * dejaría el "¿Todo bien?" colgado y la red sin aviso. Se cambia cuando la alerta termina.
+   * Cambiar el ajuste reinicia el detector y corta la cuenta para avisar a la red: mientras esa cuenta
+   * corre, eso dejaría el "¿Todo bien?" colgado y la red sin aviso. Con la alerta ya resuelta sí se puede.
    */
   private alertaEnCurso(): boolean {
-    if (!this.estado.alerta) return false;
+    if (!this.cuentaPendiente && this.estado.alerta?.familia !== 'esperando') return false;
     this.registrar('Hay una alerta en curso: cambia el ajuste de la demo cuando termine.', 'aviso');
     return true;
   }

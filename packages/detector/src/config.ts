@@ -51,6 +51,12 @@ export interface ConfigDetector {
    * demo en un espacio chico: con pocos metros de carrera el error del GPS (10–30 m) lo taparía siempre.
    */
   desplazamientoSobreErrorGps: boolean;
+  /**
+   * Si no es `null`, una alerta por GPS también exige que el celular se haya movido como al correr después
+   * del jalón (desviación de la magnitud, en g). Solo demo: bajo techo el GPS salta 5–10 m estando quieto
+   * y, con pocos metros de umbral, ese salto bastaba para alertar.
+   */
+  energiaHuidaGpsMinG: number | null;
   /** `false`: el detector ignora el GPS y decide solo con los sensores (demo bajo techo). */
   usarGps: boolean;
   /** Lecturas GPS con peor precisión que esta se ignoran (m). */
@@ -119,6 +125,7 @@ export const CONFIG_POR_DEFECTO: ConfigDetector = {
   velocidadHuidaSinPasosMs: 2.8,
   desplazamientoHuidaM: 40,
   desplazamientoSobreErrorGps: true,
+  energiaHuidaGpsMinG: null,
   usarGps: true,
   precisionGpsMaxM: 35,
   ventanaConfirmacionMs: 10_000,
@@ -192,6 +199,8 @@ export const ESPACIOS_DEMO: Record<EspacioDemo, { titulo: string; detalle: strin
     cambios: {
       desplazamientoHuidaM: 4,
       desplazamientoSobreErrorGps: false,
+      // Sin el error del GPS como filtro, pedimos que de verdad haya corrido (no un salto del GPS).
+      energiaHuidaGpsMinG: 0.3,
       velocidadHuidaMs: 1.5,
       // Con el ruido del GPS bajo techo, "1,6 m/s antes del jalón" salía aunque estuviéramos parados.
       velocidadPeatonMaxMs: 3,

@@ -190,6 +190,8 @@ export class DetectorArrebato {
       if (jalon.huidaVista || (velocidad ?? 0) >= this.config.velocidadPeatonMaxMs) jalon.movimientoVisto = true;
       if (limite !== null && !jalon.huidaVista && l.t - jalon.t > limite) {
         this.descartar(l.t, 'arranque_gradual', eventos);
+      } else if (!this.corrioDesdeJalon(jalon.t, l.t)) {
+        // Demo bajo techo: la velocidad o el desplazamiento pueden ser un salto del GPS; esperamos otra lectura.
       } else if (jalon.lecturasRapidas >= this.config.lecturasHuidaMin) {
         this.alertar(l.t, 'velocidad_gps', posicion, eventos);
       } else if (seMovio) {
@@ -267,6 +269,14 @@ export class DetectorArrebato {
     if (muestras.length < 50) return null;
     if (desviacion(muestras.map((e) => e.dato)) < 0.08) return false;
     return this.ritmo(muestras) >= this.config.umbralRitmoPasos;
+  }
+
+  /** Con `energiaHuidaGpsMinG`: ¿el celular se movió como al correr desde 1 s después del jalón? */
+  private corrioDesdeJalon(tJalon: number, t: number): boolean {
+    const minimo = this.config.energiaHuidaGpsMinG;
+    if (minimo === null) return true;
+    const valores = this.magnitudes.entre(tJalon + 1000, t).map((e) => e.dato);
+    return valores.length >= 50 && desviacion(valores) >= minimo;
   }
 
   /** Velocidad de huida: rápida, o "lenta" pero sin pasos (el celular va en un vehículo, no corriendo). */
