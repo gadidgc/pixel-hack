@@ -2,9 +2,10 @@ import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } fr
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Platform, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { subirEvidencia } from '../evidencias';
 import { servicio } from '../servicio';
 import { BarraPestanas, Boton, Chip, Parpadeo, T, hora, type Pestana } from '../ui/componentes';
 import { Icono } from '../ui/iconos';
@@ -12,16 +13,27 @@ import { RADIO, useTema } from '../ui/tema';
 
 type Modo = 'video' | 'audio';
 
+type Subida = { estado: 'subiendo'; avance: number } | { estado: 'subida'; enlace: string; conAlerta: boolean } | { estado: 'local'; motivo: string };
+
 interface Evidencia {
   uri: string;
+  mime: string;
   modo: Modo;
   t: number;
   duracionS: number;
+  subida: Subida;
+}
+
+/** iOS graba video en .mov (QuickTime); Android en .mp4. El audio es .m4a (AAC en MP4). */
+function tipoDe(uri: string, m: Modo): { extension: string; mime: string } {
+  if (m === 'audio') return { extension: 'm4a', mime: 'audio/mp4' };
+  return /\.mov$/i.test(uri) ? { extension: 'mov', mime: 'video/quicktime' } : { extension: 'mp4', mime: 'video/mp4' };
 }
 
 /**
- * F7 · Grabar evidencia (video o solo audio). Se guarda en el celular y es privada hasta que la compartas.
- * "Graba solo si es seguro para ti." Todavía no hay backend: no se sube a ningún lado (la pantalla lo dice).
+ * F7 · Grabar evidencia (video o solo audio). Se guarda en el celular y además se sube al servidor
+ * (R2): si tienes una alerta abierta, tu red la ve en la página de la alerta. Si la subida falla, la
+ * copia del celular queda y la pantalla dice por qué. "Graba solo si es seguro para ti."
  */
 export function Grabar({ onPestana }: { onPestana: (p: Pestana) => void }) {
   const c = useTema();
@@ -46,18 +58,30 @@ export function Grabar({ onPestana }: { onPestana: (p: Pestana) => void }) {
   const web = Platform.OS === 'web';
   const pos = servicio.ultimaPosicion();
 
-  /** Mueve el archivo a la carpeta de documentos de la app (la caché se borra sola). */
+  const cambiarSubida = (uri: string, subida: Subida) => setEvidencias((lista) => lista.map((e) => (e.uri === uri ? { ...e, subida } : e)));
+
+  /** Sube una evidencia y va mostrando el avance. La copia local no se toca. */
+  const subir = useCallback(async (uri: string, mime: string) => {
+    cambiarSubida(uri, { estado: 'subiendo', avance: 0 });
+    const p = servicio.ultimaPosicion();
+    const r = await subirEvidencia(uri, mime, p ? { lat: p.lat, lon: p.lon } : null, (avance) => cambiarSubida(uri, { estado: 'subiendo', avance }));
+    cambiarSubida(uri, r.ok ? { estado: 'subida', enlace: r.enlace, conAlerta: r.conAlerta } : { estado: 'local', motivo: r.motivo });
+  }, []);
+
+  /** Mueve el archivo a la carpeta de documentos de la app (la caché se borra sola) y lo sube. */
   const guardar = (uri: string, m: Modo, duracionS: number) => {
+    const { extension, mime } = tipoDe(uri, m);
     let final = uri;
     try {
       const origen = new File(uri);
-      const destino = new File(Paths.document, `evidencia-${Date.now()}.${m === 'video' ? 'mp4' : 'm4a'}`);
+      const destino = new File(Paths.document, `evidencia-${Date.now()}.${extension}`);
       origen.move(destino);
       final = destino.uri;
     } catch {
       // Si no se pudo mover, queda en la caché: igual se puede compartir.
     }
-    setEvidencias((e) => [{ uri: final, modo: m, t: Date.now(), duracionS }, ...e]);
+    setEvidencias((e) => [{ uri: final, mime, modo: m, t: Date.now(), duracionS, subida: { estado: 'subiendo', avance: 0 } }, ...e]);
+    void subir(final, mime);
   };
 
   const empezar = async () => {
@@ -171,15 +195,34 @@ export function Grabar({ onPestana }: { onPestana: (p: Pestana) => void }) {
           </T>
         )}
         <T v="apoyo13" suave style={{ textAlign: 'center' }}>
-          Se guarda en tu celular. Es privado: solo tú lo ves hasta que lo compartas.
+          Se guarda en tu celular y se sube a un enlace privado. Si tienes una alerta abierta, tu red lo ve.
         </T>
         {evidencias.slice(0, 2).map((e) => (
           <View key={e.uri} style={{ alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Icono nombre={e.modo === 'video' ? 'grabar' : 'microfono'} tam={18} color={c.textoSuave} />
-            <T v="apoyo" style={{ flex: 1 }}>
-              {e.modo === 'video' ? 'Video' : 'Audio'} de las {hora(e.t)} · {e.duracionS} s
-            </T>
-            <Boton texto="Compartir" variante="secundario" principal={false} icono="compartir" onPress={() => void Sharing.shareAsync(e.uri)} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <T v="apoyo">
+                {e.modo === 'video' ? 'Video' : 'Audio'} de las {hora(e.t)} · {e.duracionS} s
+              </T>
+              {e.subida.estado === 'subiendo' && (
+                <T v="apoyo13" suave>
+                  Subiendo… {Math.round(e.subida.avance * 100)}%
+                </T>
+              )}
+              {e.subida.estado === 'subida' && (
+                <T v="apoyo13" color={c.protegido}>
+                  {e.subida.conAlerta ? 'Subida: tu red la ve en la alerta' : 'Subida'}
+                </T>
+              )}
+              {e.subida.estado === 'local' && (
+                <Pressable onPress={() => void subir(e.uri, e.mime)} accessibilityRole="button" accessibilityLabel="Reintentar la subida">
+                  <T v="apoyo13" color={c.aviso}>
+                    Guardada solo en tu celular: {e.subida.motivo}. Tocar para reintentar.
+                  </T>
+                </Pressable>
+              )}
+            </View>
+            <Boton texto="Compartir" variante="secundario" principal={false} icono="compartir" onPress={() => void Sharing.shareAsync(e.uri, { mimeType: e.mime })} />
           </View>
         ))}
         <View style={{ alignSelf: 'stretch', marginHorizontal: -16 }}>

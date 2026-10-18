@@ -305,8 +305,8 @@ Solo los nombramos si de verdad los usamos.
 | F4 Falsa alarma | FalsaAlarma | Línea de tiempo, motivo con chips y cancelar con PIN |
 | F5 Contacto | WebContacto | Lo que ve el contacto (tema día). En la web: `?ver=contacto`. **Datos de ejemplo, marcados como tales**, hasta que exista el backend |
 | F6 Me robaron | MeRobaron | Lista de la primera hora (bloquear línea, cuentas, IMEI…). En la web: `?ver=yo` |
-| F7 Evidencia | Grabar | Video (expo-camera) o audio (expo-audio), guardado en el celular, para compartir. No está en la web |
-| F8 Cerca | Cerca | Mapa primero con puntos y carrusel de fotos. **Datos de ejemplo, marcados como tales**; fotos generadas con Nano Banana (`assets/fotos`) |
+| F7 Evidencia | Grabar | Video (expo-camera) o audio (expo-audio), guardado en el celular y subido a R2 (`POST /api/evidencias`); si hay una alerta abierta, queda unido a ella. Si la subida falla, lo dice y queda la copia local. No graba en la web |
+| F8 Cerca | Cerca | Mapa primero con puntos y carrusel. **Reportes reales** a 1 km de tu ubicación (`GET/POST /api/reportes`, últimos 30 días, ubicación redondeada a ~100 m) y "Reportar algo". Una alerta avisada a la red aparece sola, anónima; si se cancela, se borra |
 | Ajustes | Tú | Red, tiempo de espera (10/15/20 s), cambiar PIN, permisos y batería, estado del backend, guía de la primera hora, herramientas del equipo |
 | Equipo | Herramientas | Modo demo, grabar sensores en CSV, simulaciones y registro |
 
@@ -318,8 +318,6 @@ Las preferencias (nombre, red, tiempo de espera) se guardan **solo en el celular
 
 **Pendiente a propósito (no lo hicimos):**
 - Activarse sola al salir de casa o de lugares conocidos.
-- Backend de reportes de la comunidad (Cerca usa datos de ejemplo).
-- Subir la evidencia a un servidor (hoy queda en el celular).
 - Reporte en PDF para la denuncia policial.
 - Huella digital: usamos PIN.
 
@@ -379,7 +377,7 @@ Cada uno trabaja en su rama `<nombre>/<tema>` y abre PR. `npm test` debe pasar.
 | Flujo en vivo probado en el navegador con un "celular falso" | URL pública con HTTPS |
 | Segundo plano programado (módulo nativo Kotlin + Swift, GPS en segundo plano, permisos obligatorios), PIN, estado real de la alerta; app de iPhone con el módulo compila y abre | **Probar el segundo plano en celulares reales** (pantalla apagada, otra app abierta) |
 | Reproductor de grabaciones en la terminal | Datos reales en Cerca y en la página del contacto (hoy son de ejemplo) |
-| **Interfaz implementada** (§7): sistema de diseño "Negro cálido", onboarding con prueba guiada, Inicio, "¿Todo bien?", falsa alarma, página del contacto, "Me robaron", grabar evidencia, Cerca, Tú | Activarse sola al salir de casa, subir evidencia, reporte PDF, huella |
+| **Interfaz implementada** (§7): sistema de diseño "Negro cálido", onboarding con prueba guiada, Inicio, "¿Todo bien?", falsa alarma, página del contacto, "Me robaron", grabar evidencia, Cerca, Tú | Activarse sola al salir de casa, reporte PDF, huella |
 
 ---
 
