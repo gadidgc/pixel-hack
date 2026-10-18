@@ -377,7 +377,8 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
       // iPhone: lo PRIMERO es el SMS a la propia dueña, que dispara "Bloquear pantalla" en Atajos. No espera
       // a la base de datos ni a la cuenta: si el ladrón lo tiene desbloqueado en la mano, cada segundo cuenta.
       const id = nuevoId();
-      const smsBloqueo = m.numeroPropio ? mandarSmsBloqueo(env, m.numeroPropio, `${id}-bloqueo`) : null;
+      // Con `bloqueoAl: 'vencer'` la dueña eligió bloquear solo al llegar a 0: aquí no sale.
+      const smsBloqueo = m.numeroPropio && m.bloqueoAl !== 'vencer' ? mandarSmsBloqueo(env, m.numeroPropio, `${id}-bloqueo`) : null;
       // Que el Worker no lo corte aunque falle lo de abajo.
       if (smsBloqueo) ctx.waitUntil(smsBloqueo);
       // Al panel, en silencio: la red todavía NO se avisa (el dueño tiene unos segundos para cancelar).
@@ -405,7 +406,9 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
         ),
         ...guardarPuntos(env, id, m.ruta),
       ]);
-      if (m.numeroPropio) await guardarNumeroPropio(env, id, m.numeroPropio);
+      // El número queda guardado solo si toca el SMS al vencer (cuenta del servidor o `notificar_familia`).
+      // Con `bloqueoAl: 'detectar'` ya salió el de arriba: un segundo chocaría con el límite de Zavu.
+      if (m.numeroPropio && m.bloqueoAl !== 'detectar') await guardarNumeroPropio(env, id, m.numeroPropio);
       if (smsBloqueo && m.numeroPropio) {
         const numero = m.numeroPropio;
         ctx.waitUntil(

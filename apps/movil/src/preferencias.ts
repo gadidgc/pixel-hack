@@ -61,6 +61,11 @@ export interface Preferencias {
    * bloqueo y su automatización de Atajos bloquea la pantalla. Vacío = no lo configuró.
    */
   numeroPropio: string;
+  /**
+   * iPhone: cuándo mandamos ese SMS. `detectar` = apenas detectamos el arrebato (el "¿Todo bien?" sigue
+   * contando); `vencer` = solo si llega a 0 sin el PIN. Va uno solo: Zavu deja 1 SMS por minuto al mismo número.
+   */
+  bloqueoIphoneAl: 'detectar' | 'vencer';
 }
 
 export const PERFIL_VACIO: PerfilBloqueo = { entidades: [], operador: null, linea: '', imei: '', dni: '' };
@@ -87,6 +92,7 @@ const INICIAL: Preferencias = {
   bloqueo: PERFIL_VACIO,
   dispositivo: '',
   numeroPropio: '',
+  bloqueoIphoneAl: 'detectar',
 };
 
 /** Id para esta sesión hasta que carguen las preferencias (o si no se pueden guardar). */
