@@ -15,7 +15,7 @@ Lima, 17 y 18 de octubre de 2026 · Equipo: Gabriel, Cesar, Mauricio, Piero.
 - ¿Y Google? Límites de su bloqueo y apps parecidas: [docs/limites-google-y-apps-parecidas.md](docs/limites-google-y-apps-parecidas.md)
 - Resultados del banco de pruebas: [packages/detector/reportes/evaluacion.md](packages/detector/reportes/evaluacion.md)
 - Rúbrica y contexto del evento: [CONTEXT.md](CONTEXT.md)
-- **Presentación de la demo** (láminas + vista de presentador con guion y cronómetro): [docs/presentacion/](docs/presentacion/index.html). Ábrela con `python3 -m http.server` en la raíz y entra a `/docs/presentacion/`; tecla **P** = vista de presentador.
+- **Presentación de la demo** (láminas + vista de presentador con guion y cronómetro): publicada en **https://vigia.gadidgc.com** (se abre desde cualquier computadora del evento, sin conectar una laptop nuestra). Código en [docs/presentacion/](docs/presentacion/index.html); para verla en local, `python3 -m http.server` en la raíz y entra a `/docs/presentacion/`. Tecla **P** = vista de presentador. Para volver a publicarla: `npm run publicar:presentacion`.
 
 ## Cómo funciona (en 20 segundos)
 1. **Jalón:** pico de aceleración (≥ 1,5 g sin gravedad) y giro brusco (≥ 4 rad/s) en menos de medio segundo.
