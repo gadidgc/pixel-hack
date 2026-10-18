@@ -32,7 +32,7 @@ const modulo =
 
 function motivoNoDisponible(): string {
   if (Platform.OS === 'ios')
-    return 'iPhone no permite a esta app bloquear el sistema. El bloqueo remoto de Apple requiere gestión de dispositivos (MDM). Las alertas siguen disponibles.';
+    return 'iPhone no deja que una app lo bloquee (Apple solo lo permite con gestión de empresa, MDM). Las alertas funcionan igual. Para que el ladrón no pueda usar tu iPhone, activa la protección de Apple:';
   if (Platform.OS === 'web')
     return 'La web no puede bloquear tu teléfono. Instala la app compilada de Android.';
   return 'Requiere recompilar la app Android con el módulo de bloqueo. No funciona en Expo Go.';
