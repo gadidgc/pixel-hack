@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alerta Arrebato · Descarga la app</title>
+<meta name="description" content="Si te arranchan el celular, tu familia lo sabe al toque. App para iPhone y Android que avisa a tu familia por WhatsApp y SMS.">
+<meta name="theme-color" content="#0d0c0b">
+<meta property="og:title" content="Alerta Arrebato">
+<meta property="og:description" content="Te arranchan el celular. Tu familia lo sabe al toque.">
+<meta property="og:url" content="https://alerta-arrebato.gabrieldgc1999.workers.dev/descargar/">
+<meta property="og:image" content="https://alerta-arrebato.gabrieldgc1999.workers.dev/descargar/img/hero.jpg">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Lexend:wght@500;600&display=swap">
+<style>
+  /* Tokens del sistema de diseño "Alerta Arrebato" (tema noche) */
+  :root {
+    --fondo: #0d0c0b;
+    --superficie: #171513;
+    --superficie-2: #221f1b;
+    --brillo: rgba(255, 236, 214, 0.16);
+    --linea: #302b26;
+    --texto: #f2ece3;
+    --texto-suave: #a59d92;
+    --texto-medio: #c9c1b6;
+    --protegido: #8ee3c0;
+    --protegido-fondo: #14271f;
+    --titular: "Lexend", "Figtree", system-ui, sans-serif;
+    --cuerpo: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --datos: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font-family: var(--cuerpo); }
+  a { color: var(--protegido); }
+
+  .hero { position: relative; min-height: 100vh; overflow: hidden; }
+  .fondo { position: absolute; inset: 0; }
+  .fondo img { width: 100%; height: 100%; object-fit: cover; object-position: 70% 50%; display: block; }
+  .fondo::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(13,12,11,0.85) 0%, rgba(13,12,11,0.4) 42%, rgba(13,12,11,0) 58%);
+  }
+
+  .contenido {
+    position: relative; min-height: 100vh; max-width: 1440px; margin: 0 auto;
+    padding: 40px clamp(24px, 8.5vw, 136px) 64px;
+    display: flex; flex-direction: column; gap: 40px;
+  }
+  .marca { display: flex; align-items: center; gap: 10px; font-family: var(--titular); font-weight: 600; font-size: 18px; }
+  .circulo { width: 40px; height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .circulo-protegido { background: var(--protegido-fondo); }
+
+  .foto-movil { display: none; position: relative; }
+  .principal { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; gap: 44px; max-width: 580px; }
+  .titulos { display: flex; flex-direction: column; gap: 24px; }
+  h1 { margin: 0; font-family: var(--titular); font-weight: 600; font-size: clamp(40px, 5vw, 70px); line-height: 1.08; letter-spacing: -0.025em; }
+  h1 span { display: block; }
+  h1 .suave { color: var(--texto-suave); }
+  .bajada { margin: 0; font-size: 18px; line-height: 28px; color: var(--texto-medio); max-width: 28em; }
+
+  .botones { display: flex; flex-wrap: wrap; gap: 16px; }
+  .boton {
+    display: inline-flex; align-items: center; gap: 12px; height: 60px; padding: 0 26px 0 10px;
+    border-radius: 999px; background: var(--texto); color: var(--fondo); text-decoration: none;
+  }
+  .boton:hover { background: #fffaf2; }
+  .boton:focus-visible { outline: 3px solid #6fa8ff; outline-offset: 3px; }
+  .boton .circulo { background: var(--fondo); }
+  .boton-textos { display: flex; flex-direction: column; line-height: 1.1; }
+  .boton-textos small { font-size: 13px; font-weight: 500; }
+  .boton-textos strong { font-family: var(--titular); font-size: 20px; font-weight: 600; }
+
+  .qrs { display: flex; align-items: center; gap: 20px; padding-top: 32px; border-top: 1px solid var(--linea); }
+  .qr { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+  .qr img { width: 96px; height: 96px; border-radius: 14px; display: block; }
+  .qrs p { margin: 0; font-size: 16px; line-height: 24px; color: var(--texto-suave); max-width: 15em; }
+
+  .mama {
+    position: absolute; left: 56%; bottom: 56px; width: 252px; padding: 10px;
+    border-radius: 28px; background: rgba(23,21,19,0.94);
+    box-shadow: inset 0 1px 0 var(--brillo), 0 24px 60px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .mama img { width: 100%; aspect-ratio: 1 / 1; border-radius: 20px; object-fit: cover; display: block; }
+  .mama-textos { display: flex; flex-direction: column; gap: 6px; padding: 0 8px 8px; }
+  .mama-nombre { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: var(--titular); font-size: 18px; font-weight: 600; }
+  .mama p { margin: 0; font-size: 15px; line-height: 22px; color: var(--texto-suave); }
+  .insignia {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+    background: var(--protegido-fondo); color: var(--protegido); font-family: var(--cuerpo); font-size: 12px; font-weight: 600;
+  }
+  .insignia::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: var(--protegido); }
+
+  /* Pantallas medianas: la tarjeta se vuelve una franja baja para no tapar a la persona */
+  @media (max-width: 1180px) and (min-width: 861px) {
+    .mama { left: auto; right: 24px; bottom: 24px; width: 300px; flex-direction: row; align-items: center; gap: 12px; padding: 8px 16px 8px 8px; border-radius: 22px; }
+    .mama img { width: 60px; height: 60px; aspect-ratio: auto; border-radius: 14px; flex: 0 0 auto; object-position: 45% 30%; }
+    .mama-textos { padding: 0; gap: 2px; }
+    .mama-nombre { justify-content: flex-start; font-size: 16px; }
+    .mama p { font-size: 14px; line-height: 20px; }
+  }
+
+  /* Celular: la foto pasa arriba, los botones quedan a la vista y se ocultan los QR */
+  @media (max-width: 860px) {
+    .hero, .contenido { min-height: 0; }
+    .fondo, .qrs, .mama { display: none; }
+    .contenido { gap: 20px; padding-top: 20px; padding-bottom: 48px; }
+    .foto-movil { display: block; }
+    .foto-movil > img { width: 100%; height: 250px; object-fit: cover; object-position: 77% 45%; border-radius: 28px; display: block; }
+    .principal { gap: 24px; }
+    .titulos { gap: 14px; }
+    h1 { font-size: 33px; }
+    .bajada { font-size: 16px; line-height: 24px; }
+    .boton { height: 56px; }
+    .mama-movil {
+      position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 12px;
+      padding: 8px 16px 8px 8px; border-radius: 22px; background: rgba(23,21,19,0.94); box-shadow: inset 0 1px 0 var(--brillo);
+    }
+    .mama-movil img { width: 60px; height: 60px; border-radius: 14px; object-fit: cover; object-position: 45% 30%; flex: 0 0 auto; }
+    .mama-movil div { display: flex; flex-direction: column; gap: 2px; }
+    .mama-movil strong { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+    .mama-movil span.apoyo { font-size: 14px; line-height: 20px; color: var(--texto-suave); }
+    .insignia { padding: 2px 8px; }
+  }
+</style>
+</head>
+<body>
+<main class="hero">
+  <div class="fondo">
+    <img src="img/hero.jpg" alt="Una mujer camina tranquila de noche por una vereda de Miraflores mirando su celular">
+  </div>
+
+  <div class="contenido">
+    <header class="marca">
+      <span class="circulo circulo-protegido">
+        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8ee3c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      </span>
+      Alerta Arrebato
+    </header>
+
+    <div class="foto-movil">
+      <img src="img/hero.jpg" alt="Una mujer camina tranquila de noche por una vereda de Miraflores mirando su celular">
+      <div class="mama-movil">
+        <img src="img/mama.jpg" alt="Su mamá sonríe tranquila mirando el celular en casa">
+        <div>
+          <strong>Mamá <span class="insignia">Tranquila</span></strong>
+          <span class="apoyo">Sabe que estás protegida.</span>
+        </div>
+      </div>
+    </div>
+
+    <section class="principal">
+      <div class="titulos">
+        <h1><span class="suave">Te arranchan el celular.</span><span>Tu familia lo sabe al toque.</span></h1>
+        <p class="bajada">La app reconoce el jalón de un robo en moto y envía tu ubicación a tu familia por WhatsApp y SMS.</p>
+      </div>
+
+      <div class="botones" id="botones">
+        <!-- iPhone: mientras no esté en TestFlight, abre la versión web de la app -->
+        <a class="boton" id="boton-iphone" href="/">
+          <span class="circulo"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f2ece3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10.5 5h3"/></svg></span>
+          <span class="boton-textos"><small>Versión web para</small><strong>iPhone</strong></span>
+        </a>
+        <a class="boton" id="boton-android" href="/api/descargar/android">
+          <span class="circulo"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f2ece3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><circle cx="12" cy="5.5" r="0.6"/></svg></span>
+          <span class="boton-textos"><small>Descargar para</small><strong>Android</strong></span>
+        </a>
+      </div>
+
+      <div class="qrs">
+        <div class="qr"><img src="img/qr-iphone.svg" alt="Código QR para abrir la versión web de Alerta Arrebato en iPhone">iPhone · web</div>
+        <div class="qr"><img src="img/qr-android.svg" alt="Código QR para descargar Alerta Arrebato en Android">Android</div>
+        <p>¿Estás en la compu? Escanea con la cámara de tu celular.</p>
+      </div>
+    </section>
+  </div>
+
+  <aside class="mama" aria-label="Tu red de confianza">
+    <img src="img/mama.jpg" alt="Su mamá sonríe tranquila mirando el celular en casa">
+    <div class="mama-textos">
+      <span class="mama-nombre">Mamá <span class="insignia">Tranquila</span></span>
+      <p>Sabe que estás protegida. Si pasa algo, ella se entera primero.</p>
+    </div>
+  </aside>
+</main>
+
+<script>
+  // El botón del celular de quien visita va primero.
+  // iPadOS 13+ se presenta como "Macintosh", por eso también se mira si tiene pantalla táctil.
+  var ua = navigator.userAgent;
+  var esApple = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+  var primero = esApple ? 'boton-iphone' : /Android/i.test(ua) ? 'boton-android' : null;
+  if (primero) {
+    var botones = document.getElementById('botones');
+    botones.insertBefore(document.getElementById(primero), botones.firstChild);
+  }
+</script>
+</body>
+</html>

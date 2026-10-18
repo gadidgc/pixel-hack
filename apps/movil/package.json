@@ -30,9 +30,10 @@
     "react-native-web": "^0.21.4"
   },
   "devDependencies": {
-    "vitest": "^3.2.4",
     "@types/react": "~19.3.0",
-    "typescript": "~6.0.3"
+    "toqr": "^0.1.1",
+    "typescript": "~6.0.3",
+    "vitest": "^3.2.4"
   },
   "scripts": {
     "test": "vitest run",
@@ -41,7 +42,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "exportar:web": "expo export --platform web"
+    "exportar:web": "expo export --platform web",
+    "qr:descarga": "node scripts/qr-descarga.mjs"
   },
   "private": true
 }
