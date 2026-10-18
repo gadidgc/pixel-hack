@@ -163,3 +163,27 @@ describe('"¿Todo bien?" sobre la pantalla de bloqueo', () => {
     expect(b.pantallaBloqueada()).toBe(true);
   });
 });
+
+describe('qué falta para bloquear (aviso en Inicio y en el ensayo)', () => {
+  const listo = { disponible: true, administradorActivo: true, bloqueoSeguro: true, bloqueado: false, pantallaCompleta: true, detalle: '' };
+  it('listo: no avisa nada', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.faltaParaBloqueo(listo)).toBeNull();
+  });
+  it('sin autorizar (lo que pasó en el Samsung): lo dice claro', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.faltaParaBloqueo({ ...listo, administradorActivo: false })).toContain('autorizar');
+  });
+  it('primero pide la clave de Android, que es lo que se necesita antes', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.faltaParaBloqueo({ ...listo, bloqueoSeguro: false, administradorActivo: false })).toContain('PIN, patrón');
+  });
+  it('sin permiso de pantalla completa también avisa', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.faltaParaBloqueo({ ...listo, pantallaCompleta: false })).toContain('sobre la pantalla de bloqueo');
+  });
+  it('iPhone o web: nada que arreglar aquí', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.faltaParaBloqueo({ ...listo, disponible: false })).toBeNull();
+  });
+});

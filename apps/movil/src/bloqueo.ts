@@ -150,3 +150,25 @@ export function usePantallaBloqueada(activo: boolean): boolean {
   }, [activo]);
   return activo && bloqueada;
 }
+/**
+ * Qué falta para que el bloqueo funcione, en una frase para mostrar en Inicio y antes de un ensayo.
+ * `null` si está listo o si no se puede arreglar desde aquí (iPhone, web, Expo Go).
+ */
+export function faltaParaBloqueo(estado: EstadoBloqueo): string | null {
+  if (!estado.disponible) return null;
+  if (!estado.bloqueoSeguro) return 'Falta poner un PIN, patrón o contraseña en Android.';
+  if (!estado.administradorActivo) return 'Falta autorizar a la app para bloquear el celular.';
+  if (!estado.pantallaCompleta) return 'Falta permitir el "¿Todo bien?" sobre la pantalla de bloqueo.';
+  return null;
+}
+/** Estado del bloqueo, al día cada vez que vuelves a la app (por ejemplo, después de dar un permiso). */
+export function useEstadoBloqueo(): EstadoBloqueo {
+  const [estado, setEstado] = useState(consultarBloqueo);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (fase) => {
+      if (fase === 'active') setEstado(consultarBloqueo());
+    });
+    return () => sub.remove();
+  }, []);
+  return estado;
+}

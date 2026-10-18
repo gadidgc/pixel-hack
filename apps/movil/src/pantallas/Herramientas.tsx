@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alert, Pressable, Switch, View } from 'react-native';
 import { hayBackend } from '../alertas';
+import { consultarBloqueo, faltaParaBloqueo } from '../bloqueo';
 import { ETIQUETAS, type Etiqueta } from '../grabadora';
 import { correrSimulacion, ESCENARIOS_APP, type ResultadoSimulacion } from '../simulacion';
 import { describirEvento, useProteccion } from '../useProteccion';
@@ -79,12 +80,20 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
         variante="secundario"
         principal={false}
         deshabilitado={!estado.activa || Boolean(estado.alerta)}
-        onPress={() =>
-          Alert.alert('Ensayar la alerta completa', 'Es una alerta real: bloquea el celular y, si no cancelas con tu PIN a tiempo, avisa a tu red.', [
-            { text: 'Cancelar', style: 'cancel' },
-            { text: 'Ensayar', onPress: () => servicio.ensayarAlertaCompleta(5) },
-          ])
-        }
+        onPress={() => {
+          // Se revisa en el momento: si falta algo, se dice ANTES de ensayar (en el Samsung no se bloqueó por esto).
+          const falta = faltaParaBloqueo(consultarBloqueo());
+          Alert.alert(
+            'Ensayar la alerta completa',
+            falta
+              ? `Ojo: ${falta} Así el celular NO se bloqueará: solo verás la notificación y se avisará a tu red si no cancelas. Arréglalo en Tú › Bloqueo antirrobo.`
+              : 'Es una alerta real: bloquea el celular y, si no cancelas con tu PIN a tiempo, avisa a tu red.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              falta ? { text: 'Ir a arreglarlo', onPress: onVolver } : { text: 'Ensayar', onPress: () => servicio.ensayarAlertaCompleta(5) },
+            ],
+          );
+        }}
       />
 
       <Rotulo>SIMULAR (SIN MOVERSE)</Rotulo>
