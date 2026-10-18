@@ -661,22 +661,37 @@ class ServicioProteccion {
   cambiarModoDemo(modoDemo: boolean): void {
     this.cambiar({ modoDemo, alerta: null });
     this.reiniciarDetector();
-    this.registrar(
-      modoDemo ? `Modo demo: la huida corriendo cuenta (${ESPACIOS_DEMO[this.estado.espacioDemo].titulo}, ${this.estado.distanciaDemoM} m).` : 'Modo normal: solo huida en vehículo.',
-    );
+    this.registrar(modoDemo ? `Modo demo: la huida corriendo cuenta (${this.describirEspacioDemo()}).` : 'Modo normal: solo huida en vehículo.');
+  }
+
+  /** "Sala chica, 4 m" o "Solo sensores" (sin GPS la distancia no cuenta). */
+  describirEspacioDemo(): string {
+    const { espacioDemo, distanciaDemoM } = this.estado;
+    return `${ESPACIOS_DEMO[espacioDemo].titulo}${configDemo(espacioDemo).usarGps ? `, ${distanciaDemoM} m` : ''}`;
   }
 
   cambiarEspacioDemo(espacioDemo: EspacioDemo): void {
+    if (this.alertaEnCurso()) return;
     this.cambiar({ espacioDemo, distanciaDemoM: distanciaDemoPorDefecto(espacioDemo) });
     this.reiniciarDetector();
-    this.registrar(`Espacio de la demo: ${ESPACIOS_DEMO[espacioDemo].titulo}${espacioDemo === 'sin_gps' ? '' : ` (${this.estado.distanciaDemoM} m)`}.`);
+    this.registrar(`Espacio de la demo: ${this.describirEspacioDemo()}.`);
   }
 
   cambiarDistanciaDemo(distanciaDemoM: number): void {
-    if (distanciaDemoM === this.estado.distanciaDemoM) return;
+    if (distanciaDemoM === this.estado.distanciaDemoM || this.alertaEnCurso()) return;
     this.cambiar({ distanciaDemoM });
     this.reiniciarDetector();
     this.registrar(`Distancia de huida en la demo: ${distanciaDemoM} m.`);
+  }
+
+  /**
+   * Cambiar el ajuste reinicia el detector y corta la cuenta para avisar a la red: durante una alerta eso
+   * dejaría el "¿Todo bien?" colgado y la red sin aviso. Se cambia cuando la alerta termina.
+   */
+  private alertaEnCurso(): boolean {
+    if (!this.estado.alerta) return false;
+    this.registrar('Hay una alerta en curso: cambia el ajuste de la demo cuando termine.', 'aviso');
+    return true;
   }
 
   private reiniciarDetector(): void {

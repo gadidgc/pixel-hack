@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Alert, Platform, Pressable, Share, Switch, View } from 'react-native';
-import { DISTANCIA_DEMO_M, ESPACIOS_DEMO, type EspacioDemo } from '@pixel-hack/detector';
+import { DISTANCIA_CORTA_M, DISTANCIA_DEMO_M, ESPACIOS_DEMO, type EspacioDemo } from '@pixel-hack/detector';
 import { hayBackend } from '../alertas';
 import { PedirPin } from '../componentes/PedirPin';
 import { consultarBloqueo, faltaParaBloqueo } from '../bloqueo';
@@ -246,6 +246,9 @@ function SelectorDistancia({ valor, onCambiar }: { valor: number; onCambiar: (m:
   const c = useTema();
   const [ancho, setAncho] = useState(0);
   const [arrastre, setArrastre] = useState<number | null>(null);
+  // Borde izquierdo de la barra en la página. Se toma al tocar (ahí locationX sí es de la barra) y después se
+  // usa pageX: si el dedo se sale de la barra, locationX pasa a ser de otra vista y daba un valor cualquiera.
+  const origenX = useRef(0);
   const { min, max } = DISTANCIA_DEMO_M;
   const mostrado = arrastre ?? valor;
   const fraccion = (mostrado - min) / (max - min);
@@ -274,9 +277,12 @@ function SelectorDistancia({ valor, onCambiar }: { valor: number; onCambiar: (m:
           onStartShouldSetResponder={() => true}
           onMoveShouldSetResponder={() => true}
           onResponderTerminationRequest={() => false}
-          onResponderGrant={(e) => setArrastre(desdeX(e.nativeEvent.locationX))}
-          onResponderMove={(e) => setArrastre(desdeX(e.nativeEvent.locationX))}
-          onResponderRelease={(e) => soltar(desdeX(e.nativeEvent.locationX))}
+          onResponderGrant={(e) => {
+            origenX.current = e.nativeEvent.pageX - e.nativeEvent.locationX;
+            setArrastre(desdeX(e.nativeEvent.locationX));
+          }}
+          onResponderMove={(e) => setArrastre(desdeX(e.nativeEvent.pageX - origenX.current))}
+          onResponderRelease={(e) => soltar(desdeX(e.nativeEvent.pageX - origenX.current))}
           accessibilityRole="adjustable"
           accessibilityLabel="Distancia de huida"
           accessibilityValue={{ min, max, now: mostrado, text: `${mostrado} metros` }}
@@ -288,7 +294,7 @@ function SelectorDistancia({ valor, onCambiar }: { valor: number; onCambiar: (m:
           </View>
           <View
             pointerEvents="none"
-            style={{ position: 'absolute', left: Math.max(0, fraccion * ancho - 12), width: 24, height: 24, borderRadius: 12, backgroundColor: c.texto }}
+            style={{ position: 'absolute', left: Math.min(Math.max(0, ancho - 24), Math.max(0, fraccion * ancho - 12)), width: 24, height: 24, borderRadius: 12, backgroundColor: c.texto }}
           />
         </View>
         <Pressable onPress={() => soltar(limitar(valor + 1))} accessibilityRole="button" accessibilityLabel="Un metro más" style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: c.superficie2 }}>
@@ -304,7 +310,7 @@ function SelectorDistancia({ valor, onCambiar }: { valor: number; onCambiar: (m:
         </T>
       </View>
       <T v="apoyo13" suave>
-        Hay que recorrerla a 1,5–2 m/s (trote). Menos de 25 m: no se exige que supere el error del GPS, así que salen más falsas alarmas.
+        Hay que recorrerla trotando. Con menos de {DISTANCIA_CORTA_M} m se usa el ajuste de sala chica (no exige superar el error del GPS): salen más falsas alarmas.
       </T>
     </View>
   );

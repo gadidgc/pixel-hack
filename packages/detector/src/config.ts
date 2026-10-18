@@ -48,7 +48,7 @@ export interface ConfigDetector {
   desplazamientoHuidaM: number;
   /**
    * El desplazamiento solo cuenta si supera el error sumado de las dos lecturas GPS. `false` solo para la
-   * demo en un espacio chico: con 8 m de carrera el error del GPS (10–30 m) lo taparía siempre.
+   * demo en un espacio chico: con pocos metros de carrera el error del GPS (10–30 m) lo taparía siempre.
    */
   desplazamientoSobreErrorGps: boolean;
   /** `false`: el detector ignora el GPS y decide solo con los sensores (demo bajo techo). */
@@ -215,8 +215,11 @@ export const ESPACIOS_DEMO: Record<EspacioDemo, { titulo: string; detalle: strin
 
 /** Rango de la distancia de huida que el equipo puede elegir en la demo (m). */
 export const DISTANCIA_DEMO_M = { min: 2, max: 40 } as const;
-/** Por debajo de esta distancia ya no se exige que supere el error del GPS (10–30 m): lo taparía siempre. */
-const DISTANCIA_SIN_ERROR_GPS_M = 25;
+/**
+ * Por debajo de esta distancia se usa el ajuste de "Sala chica" aunque se haya elegido "Calle": no se exige
+ * superar el error del GPS (10–30 m, lo taparía siempre) y el ruido del GPS no cuenta como vehículo.
+ */
+export const DISTANCIA_CORTA_M = 25;
 
 /** Distancia de huida (m) que usa un espacio si el equipo no la cambió. */
 export function distanciaDemoPorDefecto(espacio: EspacioDemo): number {
@@ -226,9 +229,10 @@ export function distanciaDemoPorDefecto(espacio: EspacioDemo): number {
 /** Config de la demo para un espacio; `distanciaM` (opcional) cambia cuánto hay que correr. */
 export function configDemo(espacio: EspacioDemo, distanciaM?: number): ConfigDetector {
   const config = crearConfig(ESPACIOS_DEMO[espacio].cambios, CONFIG_DEMO);
-  if (distanciaM === undefined || !Number.isFinite(distanciaM)) return config;
+  if (!config.usarGps || distanciaM === undefined || !Number.isFinite(distanciaM)) return config;
   const d = Math.min(DISTANCIA_DEMO_M.max, Math.max(DISTANCIA_DEMO_M.min, distanciaM));
-  return { ...config, desplazamientoHuidaM: d, desplazamientoSobreErrorGps: config.desplazamientoSobreErrorGps && d >= DISTANCIA_SIN_ERROR_GPS_M };
+  const corta = d < DISTANCIA_CORTA_M ? ESPACIOS_DEMO.sala.cambios : {};
+  return { ...config, ...corta, desplazamientoHuidaM: d };
 }
 
 export function crearConfig(cambios: Partial<ConfigDetector> = {}, base = CONFIG_POR_DEFECTO): ConfigDetector {
