@@ -233,3 +233,30 @@ describe('respaldos del bloqueo', () => {
     expect(servicio.mensajePin()).toBeNull();
   });
 });
+
+describe('ensayo de la alerta completa (Herramientas)', () => {
+  it('en 5 s dispara una alerta real que bloquea y pregunta sobre el bloqueo', async () => {
+    expect(servicio.ensayarAlertaCompleta(5)).toBe(true);
+    await vi.advanceTimersByTimeAsync(4_900);
+    expect(dobles.bloquear).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(200);
+    expect(dobles.bloquear).toHaveBeenCalledTimes(1);
+    expect(dobles.mostrar).toHaveBeenCalledTimes(1);
+    const alerta = servicio.obtener().alerta!;
+    expect(Math.abs(alerta.evento.t - Date.now())).toBeLessThan(1_000);
+    expect(alerta.evento.t).toBeGreaterThan(alerta.evento.tJalon);
+    expect(dobles.enviar).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'alerta' }));
+  });
+  it('con los temporizadores congelados (segundo plano) dispara con el siguiente lote de sensores', async () => {
+    vi.spyOn(globalThis, 'setTimeout').mockImplementation((() => 0) as never);
+    expect(servicio.ensayarAlertaCompleta(5)).toBe(true);
+    vi.setSystemTime(Date.now() + 5_100);
+    dobles.imu!({ t: Date.now(), ax: 0, ay: 0, az: 9.81, gx: 0, gy: 0, gz: 0 });
+    expect(dobles.bloquear).toHaveBeenCalledTimes(1);
+    vi.mocked(globalThis.setTimeout).mockRestore();
+  });
+  it('no ensaya con una alerta en curso', () => {
+    reproducirCaso('arrebato_moto');
+    expect(servicio.ensayarAlertaCompleta(5)).toBe(false);
+  });
+});

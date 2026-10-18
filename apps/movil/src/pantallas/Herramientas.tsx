@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, Switch, View } from 'react-native';
+import { Alert, Pressable, Switch, View } from 'react-native';
 import { hayBackend } from '../alertas';
 import { ETIQUETAS, type Etiqueta } from '../grabadora';
 import { correrSimulacion, ESCENARIOS_APP, type ResultadoSimulacion } from '../simulacion';
@@ -68,6 +68,23 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
         icono="grabar"
         deshabilitado={!estado.activa}
         onPress={estado.grabando ? () => void servicio.detenerGrabacion() : () => servicio.empezarGrabacion(etiqueta)}
+      />
+
+      <Rotulo>ENSAYAR LA ALERTA COMPLETA</Rotulo>
+      <T v="apoyo" suave>
+        En 5 s dispara una alerta de verdad con un arrebato simulado: bloquea el celular, pregunta "¿Todo bien?" sobre la pantalla de bloqueo y avisa a tu red si no cancelas con tu PIN. Sal a otra app o apaga la pantalla para probarlo.
+      </T>
+      <Boton
+        texto={!estado.activa ? 'Activa la protección para ensayar' : 'Ensayar en 5 s'}
+        variante="secundario"
+        principal={false}
+        deshabilitado={!estado.activa || Boolean(estado.alerta)}
+        onPress={() =>
+          Alert.alert('Ensayar la alerta completa', 'Es una alerta real: bloquea el celular y, si no cancelas con tu PIN a tiempo, avisa a tu red.', [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Ensayar', onPress: () => servicio.ensayarAlertaCompleta(5) },
+          ])
+        }
       />
 
       <Rotulo>SIMULAR (SIN MOVERSE)</Rotulo>

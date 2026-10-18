@@ -132,6 +132,7 @@ class ServicioProteccion {
   private cuentaPendiente: { evento: Extract<EventoDetector, { tipo: 'alerta' }>; nombre: string; contactos: Contacto[]; limite: number } | null = null;
   private ultimaRevisionCuenta = 0;
   private idNotificacion: string | null = null;
+  private ensayo: { hora: number; plantilla: Extract<EventoDetector, { tipo: 'alerta' }> } | null = null;
   private pinFallidos = 0;
   private pinEsperarHasta = 0;
 
@@ -458,6 +459,34 @@ class ServicioProteccion {
     };
   }
 
+  /**
+   * Ensayo de la alerta COMPLETA para el equipo y la demo (sin moto): en `retrasoS` segundos dispara una
+   * alerta real con un arrebato simulado: bloquea Android, muestra el "¿Todo bien?" sobre el bloqueo,
+   * avisa al panel y, si nadie cancela con el PIN, a la red. El retraso deja tiempo para ir a otra app o
+   * apagar la pantalla y probar que la pregunta aparece igual.
+   */
+  ensayarAlertaCompleta(retrasoS: number): boolean {
+    if (!this.estado.activa || this.estado.alerta) return false;
+    const r = reproducir(simular('arrebato_moto', 1).entradas, CONFIG_POR_DEFECTO);
+    if (!r.alerta) return false;
+    const plantilla = r.alerta;
+    this.registrar(`Ensayo: alerta completa en ${retrasoS} s (bloquea de verdad y avisa si no cancelas).`, 'aviso');
+    this.ensayo = { hora: Date.now() + retrasoS * 1000, plantilla };
+    // Con la app en segundo plano los temporizadores de JS se congelan: también se revisa con cada lote
+    // de sensores (alImu), igual que la cuenta para avisar a la familia.
+    setTimeout(() => this.revisarEnsayo(), retrasoS * 1000);
+    return true;
+  }
+
+  private revisarEnsayo(): void {
+    const e = this.ensayo;
+    if (!e || Date.now() < e.hora) return;
+    this.ensayo = null;
+    if (!this.estado.activa || this.estado.alerta) return;
+    const t = Date.now();
+    this.atender([{ ...e.plantilla, t, tJalon: t - (e.plantilla.t - e.plantilla.tJalon) }]);
+  }
+
   // --- Datos -------------------------------------------------------------------------------------------
 
   private atender(eventos: EventoDetector[]): void {
@@ -479,6 +508,7 @@ class ServicioProteccion {
       this.revisarCuentaFamilia();
     }
     this.grabadora.agregar({ tipo: 'imu', muestra: m });
+    if (this.ensayo) this.revisarEnsayo();
     if (this.enPausa()) return;
     this.atender(this.detector.procesarImu(m));
   }
