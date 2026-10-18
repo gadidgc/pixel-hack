@@ -58,7 +58,8 @@ function objeto(v: unknown, campo: string): Record<string, unknown> {
 
 function texto(v: unknown, campo: string, max: number, vacioPermitido = false): string {
   if (typeof v !== 'string') throw new ErrorDeDatos(`"${campo}" debe ser texto`);
-  const limpio = v.trim().slice(0, max);
+  // Saltos de línea, tabs y espacios seguidos se vuelven un espacio: Meta rechaza esas variables en las plantillas.
+  const limpio = v.replace(/\s+/g, ' ').trim().slice(0, max);
   if (!vacioPermitido && limpio.length === 0) throw new ErrorDeDatos(`"${campo}" está vacío`);
   return limpio;
 }
@@ -95,10 +96,12 @@ export function normalizarTelefono(v: string): string | null {
 function contactos(v: unknown): Contacto[] {
   if (!Array.isArray(v)) throw new ErrorDeDatos('"contactos" debe ser una lista');
   return v.slice(0, MAX_CONTACTOS).flatMap((c, i) => {
-    const o = objeto(c, `contactos[${i}]`);
-    const telefono = normalizarTelefono(texto(o.telefono, `contactos[${i}].telefono`, 30, true));
     // Un contacto sin teléfono válido no se puede avisar: lo saltamos en vez de rechazar toda la alerta.
-    return telefono ? [{ nombre: texto(o.nombre, `contactos[${i}].nombre`, 40, true) || 'Contacto', telefono }] : [];
+    if (typeof c !== 'object' || c === null || typeof (c as { telefono?: unknown }).telefono !== 'string') return [];
+    const o = c as Record<string, unknown>;
+    const telefono = normalizarTelefono(texto(o.telefono, `contactos[${i}].telefono`, 30, true));
+    const nombre = typeof o.nombre === 'string' ? texto(o.nombre, `contactos[${i}].nombre`, 40, true) : '';
+    return telefono ? [{ nombre: nombre || 'Contacto', telefono }] : [];
   });
 }
 

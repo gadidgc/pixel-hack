@@ -58,7 +58,7 @@ function json(datos: unknown, estado = 200): Response {
   return new Response(JSON.stringify(datos), { status: estado, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...CORS } });
 }
 
-/** Token del enlace público: 16 caracteres aleatorios (≈ 95 bits), imposible de adivinar. */
+/** Token del enlace público: 16 caracteres aleatorios (80 bits), imposible de adivinar. */
 function nuevoId(): string {
   const letras = 'abcdefghijkmnpqrstuvwxyz23456789';
   const bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -87,6 +87,18 @@ interface FilaAlerta {
   creada: number;
   avisada: number | null;
   cancelada: number | null;
+}
+
+/** Cuerpo JSON chico (los botones de la página del contacto). `null` si es inválido o pasa de 4 KB. */
+async function leerJson(peticion: Request): Promise<unknown> {
+  if (Number(peticion.headers.get('Content-Length') ?? 0) > 4096) return null;
+  const texto = await peticion.text().catch(() => '');
+  if (texto.length > 4096) return null;
+  try {
+    return JSON.parse(texto);
+  } catch {
+    return null;
+  }
 }
 
 function contactosDe(fila: FilaAlerta): Contacto[] {
@@ -221,7 +233,14 @@ async function avisarVencidas(env: Env): Promise<void> {
   )
     .bind(MARGEN_SERVIDOR_MS, ahora, ahora - ALERTA_ABIERTA_MS)
     .all<FilaAlerta>();
-  for (const fila of results) await avisarFamilia(env, fila, fila.origen ?? '');
+  for (const fila of results) {
+    // Una alerta que falla no frena a las demás.
+    try {
+      await avisarFamilia(env, fila, fila.origen ?? '');
+    } catch (e) {
+      console.error('No se pudo avisar la alerta vencida', fila.id, e);
+    }
+  }
 }
 
 /** El enlace que recibe cada contacto: `?c=<n>` dice quién es, para "Yo me encargo". */
@@ -282,6 +301,8 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
     }
     case 'notificar_familia': {
       let fila = await alertaAbierta(env, m.dispositivo, ahora);
+      // Una alerta anterior (de otro jalón) que ya se avisó no sirve: este jalón es otro incidente.
+      if (fila && fila.estado !== 'en_espera' && fila.t_jalon !== m.evento.tJalon) fila = null;
       if (!fila) {
         // La `alerta` no llegó (sin señal en ese momento): la creamos ahora para no perder el aviso.
         const id = nuevoId();
@@ -326,10 +347,15 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
     case 'cancelada': {
       const fila = await alertaParaCancelar(env, m.dispositivo, ahora);
       if (!fila) return json({ ok: true, detalle: 'no había una alerta abierta' });
+      // Primero la cancelamos SOLO si sigue en espera (con condición en el UPDATE): si el servidor la estaba
+      // avisando en ese mismo instante, la red ya recibió la alerta y también tiene que recibir el "está bien".
+      const seguiaEnEspera = await env.DB.prepare(`UPDATE alertas SET estado = 'cancelada', cancelada = ?, actualizada = ? WHERE id = ? AND estado = 'en_espera'`)
+        .bind(ahora, ahora, fila.id)
+        .run();
       // Si la red ya había sido avisada (o hasta confirmó el robo), le decimos que está bien. Después borramos
       // sus teléfonos y el perfil de bloqueo.
       const r =
-        fila.estado === 'avisada' || fila.estado === 'robo_confirmado'
+        !seguiaEnEspera.meta.changes
           ? await avisar(env, fila.id, 'esta_bien', contactosDe(fila).map((c) => ({ contacto: c, mensaje: MENSAJES.estaBien(fila.nombre) })))
           : { avisados: 0, detalle: 'la red no había sido avisada' };
       await env.DB.batch([
@@ -395,12 +421,14 @@ async function marcarEncargado(env: Env, id: string, peticion: Request, origen: 
   const fila = await env.DB.prepare('SELECT * FROM alertas WHERE id = ? AND prueba = 0').bind(id).first<FilaAlerta>();
   if (!fila) return json({ ok: false, detalle: 'no existe esa alerta' }, 404);
   if (fila.encargado) return json({ ok: true, encargado: fila.encargado, detalle: 'ya había alguien a cargo' });
-  const cuerpo = (await peticion.json().catch(() => ({}))) as { contacto?: unknown };
+  const cuerpo = ((await leerJson(peticion)) ?? {}) as { contacto?: unknown };
   const contactos = contactosDe(fila);
   const indice = typeof cuerpo.contacto === 'number' && Number.isInteger(cuerpo.contacto) ? cuerpo.contacto : -1;
   // "Yo me encargo" no exige enlace personal (solo avisa al resto); confirmar el robo y marcar pasos sí.
   const quien = quienEs(fila, cuerpo.contacto) ?? 'Alguien de tu red';
-  await env.DB.prepare('UPDATE alertas SET encargado = ?, actualizada = ? WHERE id = ?').bind(quien, Date.now(), id).run();
+  // Con condición: si dos personas tocan "Yo me encargo" a la vez, solo una avisa al resto.
+  const tomada = await env.DB.prepare('UPDATE alertas SET encargado = ?, actualizada = ? WHERE id = ? AND encargado IS NULL').bind(quien, Date.now(), id).run();
+  if (!tomada.meta.changes) return json({ ok: true, detalle: 'ya había alguien a cargo' });
   const resto = contactos.map((c, i) => ({ c, i })).filter((x) => x.i !== indice);
   const r = await avisar(env, id, 'encargado', resto.map((x) => ({ contacto: x.c, mensaje: MENSAJES.encargado(quien, fila.nombre, enlace(origen, id, x.i)) })));
   return json({ ok: true, encargado: quien, avisados: r.avisados, detalle: r.detalle });
@@ -448,7 +476,7 @@ async function confirmarRobo(env: Env, id: string, peticion: Request): Promise<R
   if (fila.estado !== 'avisada') {
     return json({ ok: false, detalle: fila.estado === 'cancelada' ? `${fila.nombre} confirmó que fue falsa alarma` : 'la alerta todavía no se avisó a la red' }, 409);
   }
-  const cuerpo = (await peticion.json().catch(() => ({}))) as { contacto?: unknown };
+  const cuerpo = ((await leerJson(peticion)) ?? {}) as { contacto?: unknown };
   const quien = quienEs(fila, cuerpo.contacto);
   if (!quien) return json({ ok: false, detalle: SIN_CONTACTO }, 403);
   const ahora = Date.now();
@@ -465,7 +493,7 @@ async function marcarPasoBloqueo(env: Env, id: string, peticion: Request): Promi
   const fila = await env.DB.prepare('SELECT * FROM alertas WHERE id = ? AND prueba = 0').bind(id).first<FilaAlerta>();
   if (!fila) return json({ ok: false, detalle: 'no existe esa alerta' }, 404);
   if (fila.estado !== 'robo_confirmado') return json({ ok: false, detalle: 'primero hay que confirmar el robo' }, 409);
-  const marca = validarMarca(await peticion.json().catch(() => null));
+  const marca = validarMarca(await leerJson(peticion));
   if (!marca) return json({ ok: false, detalle: 'paso desconocido' }, 400);
   const quien = quienEs(fila, marca.contacto);
   if (!quien) return json({ ok: false, detalle: SIN_CONTACTO }, 403);
@@ -519,6 +547,7 @@ async function buscarReportes(env: Env, params: URLSearchParams, origen: string)
 }
 
 async function crearReporte(env: Env, peticion: Request): Promise<Response> {
+  if (Number(peticion.headers.get('Content-Length') ?? 0) > 4096) return json({ ok: false, detalle: 'mensaje demasiado grande' }, 413);
   const texto = await peticion.text();
   if (texto.length > 4096) return json({ ok: false, detalle: 'mensaje demasiado grande' }, 413);
   let cuerpo: unknown;
@@ -655,10 +684,12 @@ export default {
     try {
       if (url.pathname === '/api/salud') return await salud(env);
       // La app de Android para el equipo (el APK pesa ~100 MB: no entra en los archivos estáticos, va en R2).
-      if (url.pathname === '/api/descargar/android' && peticion.method === 'GET') {
-        const apk = await env.EVIDENCIAS.get('app/AlertaArrebato.apk');
+      // También HEAD: lo usan los verificadores de enlaces y las vistas previas de WhatsApp.
+      if (url.pathname === '/api/descargar/android' && (peticion.method === 'GET' || peticion.method === 'HEAD')) {
+        const clave = 'app/AlertaArrebato.apk';
+        const apk = peticion.method === 'HEAD' ? await env.EVIDENCIAS.head(clave) : await env.EVIDENCIAS.get(clave);
         if (!apk) return json({ ok: false, detalle: 'todavía no subimos la app' }, 404);
-        return new Response(apk.body, {
+        return new Response(peticion.method === 'HEAD' ? null : (apk as R2ObjectBody).body, {
           headers: {
             'Content-Type': 'application/vnd.android.package-archive',
             'Content-Disposition': 'attachment; filename="AlertaArrebato.apk"',

@@ -124,6 +124,8 @@ class ServicioProteccion {
   private detector = new DetectorArrebato(CONFIG_POR_DEFECTO);
   private readonly grabadora = new Grabadora();
   private detenerTodo: Array<() => void | Promise<void>> = [];
+  /** La activación en curso (ver `activar`). */
+  private activando: Promise<boolean> | null = null;
   private contador = 0;
   private pantallaPrendida = false;
   /** Lecturas GPS de los últimos 60 s: la ruta que acompaña a la alerta. */
@@ -178,8 +180,19 @@ class ServicioProteccion {
 
   // --- Activar, pausar y desactivar --------------------------------------------------------------------
 
-  /** Debe llamarse directo desde el toque del botón (requisito de iPhone en la web). */
-  async activar(): Promise<boolean> {
+  /**
+   * Debe llamarse directo desde el toque del botón (requisito de iPhone en la web). Si ya se está activando
+   * (por ejemplo, al reabrir la app y tocar "Activar" a la vez), devuelve la misma promesa: así nunca quedan
+   * dos suscripciones a los sensores.
+   */
+  activar(): Promise<boolean> {
+    this.activando ??= this.activarUnaVez().finally(() => {
+      this.activando = null;
+    });
+    return this.activando;
+  }
+
+  private async activarUnaVez(): Promise<boolean> {
     if (this.estado.activa) return true;
     // Lo que faltó en un intento anterior ya no vale: si este falla por otra razón, no hay que repetirlo.
     this.cambiar({ permisosFaltantes: [] });
@@ -212,7 +225,8 @@ class ServicioProteccion {
           this.cambiar({ pausadaHasta: null });
           this.registrar('Terminó la pausa: estás protegida otra vez.');
         }
-        this.cambiar({ telemetria: this.detector.obtenerTelemetria(), filasGrabadas: this.grabadora.cantidad });
+        // `grabando` también: la grabadora se detiene sola al llegar a su máximo de filas.
+        this.cambiar({ telemetria: this.detector.obtenerTelemetria(), filasGrabadas: this.grabadora.cantidad, grabando: this.grabadora.grabando });
       }, 250);
       this.detenerTodo.push(() => clearInterval(reloj));
 
@@ -302,7 +316,14 @@ class ServicioProteccion {
   private async apagar(): Promise<void> {
     const pendientes = this.detenerTodo;
     this.detenerTodo = [];
-    for (const f of pendientes) await f();
+    for (const f of pendientes) {
+      try {
+        await f();
+      } catch (e) {
+        // Si un sensor no se deja apagar, igual apagamos el resto (y el reloj de 250 ms).
+        console.warn('No se pudo detener una parte de la protección', e);
+      }
+    }
     this.detenerCuentaFamilia();
     this.detector.reiniciar();
     if (this.pantallaPrendida) {

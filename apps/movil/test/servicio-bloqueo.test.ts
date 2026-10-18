@@ -15,6 +15,8 @@ const dobles = vi.hoisted(() => ({
   avisar: vi.fn(),
   pinOk: true,
   enviar: vi.fn(),
+  suscripciones: 0,
+  detenerGps: vi.fn(),
 }));
 vi.mock('react-native', () => ({ Platform: { OS: 'android' } }));
 vi.mock('expo-keep-awake', () => ({
@@ -48,12 +50,14 @@ vi.mock('../src/preferencias', () => ({
 vi.mock('../src/grabadora', () => ({
   Grabadora: class {
     cantidad = 0;
+    grabando = false;
     agregar() {}
   },
 }));
 vi.mock('../src/sensores', () => ({
   pedirPermisoSensores: async () => true,
   escucharSensores: async (f: (m: MuestraImu) => void) => {
+    dobles.suscripciones++;
     dobles.imu = f;
     return {
       detener: () => undefined,
@@ -69,7 +73,7 @@ vi.mock('../src/ubicacion', () => ({
   }),
   escucharUbicacion: async (f: (l: LecturaGps) => void) => {
     dobles.gps = f;
-    return () => undefined;
+    return dobles.detenerGps;
   },
 }));
 let servicio: (typeof import('../src/servicio'))['servicio'];
@@ -309,5 +313,26 @@ describe('cancelar llega siempre al servidor (que cuenta por su lado)', () => {
     await vi.advanceTimersByTimeAsync(1_100);
     await servicio.cancelarAlerta('0000');
     expect(servicio.mensajePin()).toBeNull();
+  });
+});
+
+describe('activar y apagar', () => {
+  it('dos "Activar" a la vez no suscriben los sensores dos veces', async () => {
+    await servicio.desactivar('1234');
+    dobles.suscripciones = 0;
+    const [a, b] = await Promise.all([servicio.activar(), servicio.activar()]);
+    expect([a, b]).toEqual([true, true]);
+    expect(dobles.suscripciones).toBe(1);
+  });
+
+  it('si algo falla al apagar, igual se apaga todo lo demás', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    dobles.detenerGps.mockRejectedValueOnce(new Error('falló el GPS'));
+    expect(await servicio.desactivar('1234')).toBe(true);
+    expect(servicio.obtener().activa).toBe(false);
+    // El reloj de 250 ms también se detuvo: el tiempo pasa y nada cambia.
+    const antes = servicio.obtener();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(servicio.obtener()).toBe(antes);
   });
 });
