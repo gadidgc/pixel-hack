@@ -138,6 +138,7 @@ export class DetectorArrebato {
   procesarGps(l: LecturaGps): EventoDetector[] {
     const eventos: EventoDetector[] = [];
     if (![l.t, l.lat, l.lon].every(Number.isFinite)) return eventos;
+    if (!this.config.usarGps) return eventos;
     this.tActual = Math.max(this.tActual, l.t);
 
     const valida = l.precision === null || l.precision <= this.config.precisionGpsMaxM;
@@ -181,7 +182,7 @@ export class DetectorArrebato {
       const segundos = Math.max(1, (l.t - jalon.posicion.t) / 1000);
       const seMovio =
         desplazamiento >= this.config.desplazamientoHuidaM &&
-        desplazamiento > errorConjunto &&
+        (!this.config.desplazamientoSobreErrorGps || desplazamiento > errorConjunto) &&
         desplazamiento / segundos >= this.config.velocidadHuidaMs;
 
       if (jalon.lecturasRapidas > 0 || seMovio) jalon.huidaVista = true;
@@ -189,6 +190,8 @@ export class DetectorArrebato {
       if (jalon.huidaVista || (velocidad ?? 0) >= this.config.velocidadPeatonMaxMs) jalon.movimientoVisto = true;
       if (limite !== null && !jalon.huidaVista && l.t - jalon.t > limite) {
         this.descartar(l.t, 'arranque_gradual', eventos);
+      } else if (!this.corrioDesdeJalon(jalon.t, l.t)) {
+        // Demo bajo techo: la velocidad o el desplazamiento pueden ser un salto del GPS; esperamos otra lectura.
       } else if (jalon.lecturasRapidas >= this.config.lecturasHuidaMin) {
         this.alertar(l.t, 'velocidad_gps', posicion, eventos);
       } else if (seMovio) {
@@ -266,6 +269,14 @@ export class DetectorArrebato {
     if (muestras.length < 50) return null;
     if (desviacion(muestras.map((e) => e.dato)) < 0.08) return false;
     return this.ritmo(muestras) >= this.config.umbralRitmoPasos;
+  }
+
+  /** Con `energiaHuidaGpsMinG`: ¿el celular se movió como al correr desde 1 s después del jalón? */
+  private corrioDesdeJalon(tJalon: number, t: number): boolean {
+    const minimo = this.config.energiaHuidaGpsMinG;
+    if (minimo === null) return true;
+    const valores = this.magnitudes.entre(tJalon + 1000, t).map((e) => e.dato);
+    return valores.length >= 50 && desviacion(valores) >= minimo;
   }
 
   /** Velocidad de huida: rápida, o "lenta" pero sin pasos (el celular va en un vehículo, no corriendo). */
