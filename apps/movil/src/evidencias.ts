@@ -63,7 +63,7 @@ async function subirMiniatura(id: string, uriVideo: string): Promise<void> {
       if (!imagen.exists || imagen.size > MAX_MINIATURA_BYTES) return;
       const tarea = new UploadTask(imagen, `${urlBackend()}/api/evidencias/${id}/miniatura`, {
         httpMethod: 'POST',
-        headers: { 'Content-Type': 'image/jpeg', 'X-Dispositivo': idDispositivo },
+        headers: { 'Content-Type': 'image/jpeg', 'X-Dispositivo': idDispositivo() },
         mimeType: 'image/jpeg',
       });
       try {

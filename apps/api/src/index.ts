@@ -364,14 +364,14 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
 async function verAlerta(env: Env, id: string, origen: string): Promise<Response> {
   const fila = await env.DB.prepare('SELECT * FROM alertas WHERE id = ? AND prueba = 0').bind(id).first<FilaAlerta>();
   if (!fila) return json({ ok: false, detalle: 'no existe esa alerta' }, 404);
-  const { results } = await env.DB.prepare('SELECT t, lat, lon, velocidad, precision FROM ubicaciones WHERE alerta_id = ? ORDER BY t DESC LIMIT 600')
-    .bind(id)
-    .all<Punto>();
-  const evidencias = await env.DB.prepare('SELECT id, tipo FROM evidencias WHERE alerta_id = ? ORDER BY creado ASC LIMIT 20')
-    .bind(id)
-    .all<{ id: string; tipo: string }>();
+  // La página lo pide cada 2 s: las tres lecturas van a la vez.
+  const [{ results }, evidencias, kit] = await Promise.all([
+    env.DB.prepare('SELECT t, lat, lon, velocidad, precision FROM ubicaciones WHERE alerta_id = ? ORDER BY t DESC LIMIT 600').bind(id).all<Punto>(),
+    env.DB.prepare('SELECT id, tipo FROM evidencias WHERE alerta_id = ? ORDER BY creado ASC LIMIT 20').bind(id).all<{ id: string; tipo: string }>(),
+    kitPublico(env, fila),
+  ]);
   return json({
-    ...(await kitPublico(env, fila)),
+    ...kit,
     ok: true,
     id: fila.id,
     nombre: fila.nombre,
@@ -398,7 +398,8 @@ async function marcarEncargado(env: Env, id: string, peticion: Request, origen: 
   const cuerpo = (await peticion.json().catch(() => ({}))) as { contacto?: unknown };
   const contactos = contactosDe(fila);
   const indice = typeof cuerpo.contacto === 'number' && Number.isInteger(cuerpo.contacto) ? cuerpo.contacto : -1;
-  const quien = contactos[indice]?.nombre ?? 'Alguien de tu red';
+  // "Yo me encargo" no exige enlace personal (solo avisa al resto); confirmar el robo y marcar pasos sí.
+  const quien = quienEs(fila, cuerpo.contacto) ?? 'Alguien de tu red';
   await env.DB.prepare('UPDATE alertas SET encargado = ?, actualizada = ? WHERE id = ?').bind(quien, Date.now(), id).run();
   const resto = contactos.map((c, i) => ({ c, i })).filter((x) => x.i !== indice);
   const r = await avisar(env, id, 'encargado', resto.map((x) => ({ contacto: x.c, mensaje: MENSAJES.encargado(quien, fila.nombre, enlace(origen, id, x.i)) })));

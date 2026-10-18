@@ -137,9 +137,12 @@ export function ContactoEnVivo({ id, contacto }: { id: string; contacto: number 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ paso, hecho, contacto }),
           });
-          return r.ok;
+          const d = (await r.json().catch(() => ({}))) as { quien?: string; detalle?: string };
+          // El motivo real (enlace sin contacto, alerta cancelada…), no un "revisa tu conexión" genérico.
+          if (!r.ok) return { error: d.detalle ? `No se pudo guardar: ${d.detalle}.` : 'No se pudo guardar tu marca. Inténtalo otra vez.' };
+          return { error: null, quien: d.quien ?? '' };
         } catch {
-          return false;
+          return { error: 'Sin conexión. Revisa tu internet e inténtalo otra vez.' };
         }
       }}
       onEncargarme={async () => {

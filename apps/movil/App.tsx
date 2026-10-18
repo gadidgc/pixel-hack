@@ -43,7 +43,9 @@ function paginaWeb(): PaginaWeb {
   const { pathname, search } = window.location;
   const enlace = pathname.match(/^\/a\/([a-z0-9]+)/);
   if (enlace) {
-    const c = Number(new URLSearchParams(search).get('c'));
+    // Sin `?c=` no hay contacto (ojo: Number(null) es 0, que sería el primer contacto de la red).
+    const crudo = new URLSearchParams(search).get('c');
+    const c = crudo === null || crudo === '' ? NaN : Number(crudo);
     return { tipo: 'contacto', id: enlace[1], contacto: Number.isInteger(c) && c >= 0 ? c : null };
   }
   if (search.includes('ver=contacto')) return { tipo: 'contacto', id: 'ejemplo', contacto: null };
