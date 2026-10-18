@@ -71,21 +71,12 @@ export const MENSAJES = {
   }),
 };
 
-async function porMeta(env: EnvMensajes, telefono: string, m: Mensaje): Promise<ResultadoMensaje> {
+async function llamarMeta(env: EnvMensajes, cuerpo: Record<string, unknown>): Promise<ResultadoMensaje> {
   try {
     const r = await fetch(`https://graph.facebook.com/v21.0/${env.META_WA_NUMERO_ID}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${(env.META_WA_TOKEN ?? '').trim()}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: telefono.replace(/^\+/, ''),
-        type: 'template',
-        template: {
-          name: m.plantilla.nombre,
-          language: { code: 'es' },
-          components: [{ type: 'body', parameters: m.plantilla.variables.map((text) => ({ type: 'text', text })) }],
-        },
-      }),
+      body: JSON.stringify({ messaging_product: 'whatsapp', ...cuerpo }),
       signal: AbortSignal.timeout(8000),
     });
     const datos = (await r.json().catch(() => ({}))) as { error?: { code?: number; message?: string } };
@@ -94,6 +85,26 @@ async function porMeta(env: EnvMensajes, telefono: string, m: Mensaje): Promise<
   } catch (e) {
     return { ok: false, canal: null, detalle: e instanceof Error ? `Meta: ${e.message}` : 'Meta: error de red' };
   }
+}
+
+/**
+ * Primero la plantilla aprobada (llega a cualquiera). Si falla (por ejemplo, todavía en revisión), texto libre:
+ * Meta lo acepta si esa persona le escribió al número en las últimas 24 h (así probamos con el equipo).
+ */
+async function porMeta(env: EnvMensajes, telefono: string, m: Mensaje): Promise<ResultadoMensaje> {
+  const to = telefono.replace(/^\+/, '');
+  const conPlantilla = await llamarMeta(env, {
+    to,
+    type: 'template',
+    template: {
+      name: m.plantilla.nombre,
+      language: { code: 'es' },
+      components: [{ type: 'body', parameters: m.plantilla.variables.map((text) => ({ type: 'text', text })) }],
+    },
+  });
+  if (conPlantilla.ok) return conPlantilla;
+  const conTexto = await llamarMeta(env, { to, type: 'text', text: { body: m.texto, preview_url: true } });
+  return conTexto.ok ? { ...conTexto, detalle: `enviado como texto (plantilla: ${conPlantilla.detalle})` } : { ...conTexto, detalle: `${conPlantilla.detalle}; texto: ${conTexto.detalle}` };
 }
 
 export async function mandarMensaje(
