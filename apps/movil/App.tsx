@@ -109,6 +109,11 @@ function Navegacion() {
   const [pestana, setPestana] = useState<Pestana>('inicio');
   const [extra, setExtra] = useState<Extra>(null);
   const web = paginaWeb();
+  // Grabar se monta la primera vez que la abres y ya no se desmonta (ver Grabar.tsx).
+  const [grabarMontado, setGrabarMontado] = useState(false);
+  useEffect(() => {
+    if (pestana === 'grabar') setGrabarMontado(true);
+  }, [pestana]);
   const listas = Boolean(prefs?.bienvenidaHecha);
   useEffect(() => {
     if (listas && !web && Platform.OS !== 'web') void servicio.reanudarSiEstabaActiva();
@@ -136,7 +141,8 @@ function Navegacion() {
   const alerta = estado.alerta;
   const mostrarAlerta = alerta && (alerta.familia !== 'esperando' || extra === 'alerta');
 
-  let contenido;
+  let contenido = null;
+  let enGrabar = false;
   if (extra === 'vistaContacto') {
     contenido = <WebContacto datos={datosDeLaAlerta(estado, prefs.nombre)} ejemplo={!alerta} onCerrar={() => setExtra(alerta ? 'alerta' : null)} />;
   } else if (mostrarAlerta) {
@@ -150,7 +156,7 @@ function Navegacion() {
   } else if (pestana === 'cerca') {
     contenido = <Cerca onPestana={setPestana} />;
   } else if (pestana === 'grabar') {
-    contenido = <Grabar onPestana={setPestana} />;
+    enGrabar = true;
   } else if (pestana === 'tu') {
     contenido = <Tu onPestana={setPestana} onRed={() => setExtra('red')} onHerramientas={() => setExtra('herramientas')} onMeRobaron={() => setExtra('meRobaron')} />;
   } else {
@@ -160,6 +166,11 @@ function Navegacion() {
   return (
     <View style={{ flex: 1, backgroundColor: COLORES.noche.fondo }}>
       {contenido}
+      {(grabarMontado || enGrabar) && (
+        <View style={{ flex: 1, display: enGrabar ? 'flex' : 'none' }}>
+          <Grabar visible={enGrabar} enPestana={pestana === 'grabar'} onPestana={setPestana} />
+        </View>
+      )}
       {/* "¿Todo bien?" va encima de todo mientras se espera la respuesta (aunque estés en otra pestaña). */}
       {extra !== 'alerta' && <TodoBien onVer={() => setExtra('alerta')} />}
     </View>

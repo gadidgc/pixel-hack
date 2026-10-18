@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Platform, Pressable, View } from 'react-native';
 import { PedirPin } from '../componentes/PedirPin';
 import { useProteccion } from '../useProteccion';
@@ -16,6 +16,11 @@ export function Inicio({ onPestana, onCerca }: { onPestana: (p: Pestana) => void
   const { estado, servicio } = useProteccion();
   const [pedido, setPedido] = useState<null | 'pausar' | 'apagar'>(null);
   const [activando, setActivando] = useState(false);
+  const [errorActivar, setErrorActivar] = useState('');
+  // Si la protección se activa por otro camino, el error viejo ya no aplica.
+  useEffect(() => {
+    if (estado.activa) setErrorActivar('');
+  }, [estado.activa]);
   const tel = estado.telemetria;
 
   const limitada = estado.activa && (estado.segundoPlano === false || estado.tieneGps === false || estado.permisosFaltantes.length > 0);
@@ -48,10 +53,14 @@ export function Inicio({ onPestana, onCerca }: { onPestana: (p: Pestana) => void
   const velocidadKmh = tel?.velocidadMs != null ? Math.round(tel.velocidadMs * 3.6) : null;
   const andando = velocidadKmh === null ? '—' : velocidadKmh < 2 ? 'Quieta' : velocidadKmh < 8 ? 'Caminando' : 'En movimiento';
 
+  /** Si no se pudo activar, decimos por qué (antes solo quedaba en el registro de Herramientas). */
   const activar = async () => {
     setActivando(true);
-    await servicio.activar();
+    setErrorActivar('');
+    const ok = await servicio.activar();
     setActivando(false);
+    const ultimo = servicio.obtener().registros[0];
+    if (!ok) setErrorActivar(ultimo?.tipo === 'error' ? ultimo.texto : 'No se pudo activar la protección. Intenta otra vez.');
   };
 
   return (
@@ -120,16 +129,19 @@ export function Inicio({ onPestana, onCerca }: { onPestana: (p: Pestana) => void
         )}
 
         {!estado.activa ? (
-          <Boton texto={activando ? 'Activando…' : 'Activar protección'} icono="escudoCheck" onPress={activar} deshabilitado={activando} />
-        ) : (
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            {estado.pausadaHasta ? (
-              <Boton texto="Reanudar ahora" icono="escudo" variante="secundario" principal={false} onPress={() => servicio.reanudar()} flex />
-            ) : (
-              <Boton texto="Pausar 30 min" icono="escudoPausa" variante="secundario" principal={false} onPress={() => setPedido('pausar')} flex />
+          <>
+            <Boton texto={activando ? 'Activando…' : 'Activar protección'} icono="escudoCheck" onPress={activar} deshabilitado={activando} />
+            {!!errorActivar && (
+              <T v="apoyo" color={c.aviso}>
+                {errorActivar}
+              </T>
             )}
-            <Boton texto="Grabar" icono="grabar" variante="secundario" principal={false} onPress={() => onPestana('grabar')} flex />
-          </View>
+          </>
+        ) : estado.pausadaHasta ? (
+          <Boton texto="Reanudar ahora" icono="escudo" variante="secundario" principal={false} onPress={() => servicio.reanudar()} />
+        ) : (
+          // Grabar evidencia vive solo en su pestaña: un único lugar para grabar.
+          <Boton texto="Pausar 30 min" icono="escudoPausa" variante="secundario" principal={false} onPress={() => setPedido('pausar')} />
         )}
         {estado.activa && <Boton texto="Apagar la protección (PIN)" variante="terciario" onPress={() => setPedido('apagar')} />}
 

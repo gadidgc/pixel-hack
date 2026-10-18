@@ -54,7 +54,7 @@ En la web, los sensores solo funcionan con **HTTPS** y abriendo la página direc
 - Detector con máquina de estados, filtro de gravedad con giroscopio, velocidad GPS calculada cuando el celular no la da, modo sin GPS y modo demo.
 - Simulador físico con 26 escenarios (arrebatos y trampas: caídas, mototaxi, bache, frenazo, correr al bus…), recalibrado con datos reales.
 - Validación con datasets reales de terceros (SHL, SPU) y pruebas automáticas (vitest), algunas con datos reales.
-- App Expo: protección **en segundo plano** en iPhone y Android (módulo nativo propio + GPS en segundo plano; exige ubicación "Permitir siempre"), **PIN** para cancelar o apagar, estado real de la alerta (panel y familia), modo demo, **modo grabar** (exporta CSV) y **simular** casos sin moverse.
+- App Expo: protección **en segundo plano** en iPhone y Android (módulo nativo propio + GPS en segundo plano; exige ubicación "Permitir siempre"), **PIN** para cancelar o apagar, estado real de la alerta (panel y familia), modo demo, **captura de sensores** (exporta CSV) y **simular** casos sin moverse.
 - **Interfaz completa** con el sistema de diseño "Negro cálido": onboarding con prueba guiada, "¿Todo bien?" con cuenta regresiva, falsa alarma con PIN, página del contacto, "Me robaron", grabar evidencia, Cerca y ajustes (ver "Pantallas").
 - **Backend** ([apps/api](apps/api)): recibe la alerta, guarda la ruta en vivo en la base de datos (Cloudflare D1), arma el enlace `/a/<id>` para cada contacto, avisa por **WhatsApp (Meta) y SMS (Zavu) a la vez**, avisa "está bien" si el dueño cancela y "X se encarga" al resto de la red. Borra los teléfonos al cancelar o a las 24 h. Publicado y probado en **https://alerta-arrebato.gabrieldgc1999.workers.dev** (la web de la app también vive ahí). **Probado en un celular real el 17 de octubre:** llegaron la alerta por WhatsApp (con la ruta) y por SMS, y el "está bien" al cancelar. Estado, límites y cómo probarlo: [docs/avisos-whatsapp-sms.md](docs/avisos-whatsapp-sms.md).
 - **Página del contacto en vivo** (`/a/<id>`): dibuja la ruta real, se actualiza cada 2 s, dice hacia dónde va y a qué velocidad, botón a Google Maps y "Yo me encargo".
@@ -74,7 +74,7 @@ Diseño: [sistema de diseño](https://claude.ai/artifact/HW9kceGpSuZaAxxFtccVMj)
 - **Inicio (F2):** estado de la protección, lecturas en vivo, pausa de 30 min y apagar con PIN.
 - **Alerta (F4):** "¿Todo bien?" en silencio antes de avisar a tu red; falsa alarma con motivo y PIN.
 - **Contacto (F5)** y **Me robaron (F6):** páginas web, `?ver=contacto` y `?ver=yo`.
-- **Grabar (F7)** evidencia en video o audio; **Cerca (F8)** mapa con reportes reales de la comunidad a 1 km (backend `/api/reportes`) y "Reportar algo"; la evidencia grabada se sube a R2 (`/api/evidencias`) y queda unida a la alerta abierta; **Tú**: ajustes y herramientas del equipo.
+- **Grabar (F7)** evidencia en video o audio (el audio sigue grabando si cambias de pestaña; el video se detiene y se guarda); **Cerca (F8)** mapa con reportes reales de la comunidad a 1 km (backend `/api/reportes`) y "Reportar algo"; la evidencia grabada se sube a R2 (`/api/evidencias`) y queda unida a la alerta abierta; **Tú**: ajustes y herramientas del equipo.
 
 ## Reglas del repo
 - Todo cambio entra por **Pull Request** y lo aprueba otro integrante. Nadie hace push directo a `main`.

@@ -14,6 +14,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useGrabacionEnCurso } from '../grabacionEvidencia';
 import { Icono, type NombreIcono } from './iconos';
 import { CONTROL, ESPACIO, FUENTES, RADIO, TIPO, useTema, type Colores } from './tema';
 
@@ -412,20 +413,24 @@ const PESTANAS: Array<{ id: Pestana; nombre: string; icono: NombreIcono }> = [
 export function BarraPestanas({ actual, onCambiar, conFondo = false }: { actual: Pestana; onCambiar: (p: Pestana) => void; conFondo?: boolean }) {
   const c = useTema();
   const ins = useSafeAreaInsets();
+  const grabacion = useGrabacionEnCurso();
   return (
     <View accessibilityRole="tablist" style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: c.linea, paddingBottom: Math.max(ins.bottom, 12), backgroundColor: conFondo ? c.superficie : undefined }}>
       {PESTANAS.map((p) => {
         const on = p.id === actual;
+        // Si hay una grabación en curso, la pestaña lo dice desde cualquier pantalla.
+        const grabando = p.id === 'grabar' && grabacion !== null;
         return (
           <Pressable
             key={p.id}
             onPress={() => onCambiar(p.id)}
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
+            accessibilityLabel={grabando ? 'Grabando evidencia' : p.nombre}
             style={{ flex: 1, minHeight: 56, alignItems: 'center', justifyContent: 'center', gap: 4 }}
           >
-            <Icono nombre={p.icono} color={on ? c.texto : c.textoSuave} />
-            <Text style={{ fontFamily: FUENTES.textoMedio, fontSize: 11, color: on ? c.texto : c.textoSuave }}>{p.nombre}</Text>
+            <Icono nombre={p.icono} color={grabando ? c.alerta : on ? c.texto : c.textoSuave} />
+            <Text style={{ fontFamily: FUENTES.textoMedio, fontSize: 11, color: grabando ? c.alerta : on ? c.texto : c.textoSuave }}>{grabando ? 'Grabando' : p.nombre}</Text>
           </Pressable>
         );
       })}
