@@ -52,7 +52,7 @@ export function AlertaSobreBloqueo() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.fondo, paddingTop: ins.top + 24, paddingBottom: Math.max(ins.bottom, 32) + 16, paddingHorizontal: 24, gap: 18 }}>
+    <View style={{ flex: 1, backgroundColor: c.fondo, paddingTop: ins.top + 16, paddingBottom: Math.max(ins.bottom, 32) + 16, paddingHorizontal: 24, gap: 14 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: c.protegidoFondo, alignItems: 'center', justifyContent: 'center' }}>
           <Icono nombre="escudo" tam={14} color={c.protegido} grosor={2.4} />
@@ -90,17 +90,17 @@ export function AlertaSobreBloqueo() {
       </View>
 
       <View style={{ flex: 1 }} />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', rowGap: 12, columnGap: 18, maxWidth: 320, alignSelf: 'center' }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', rowGap: 10, columnGap: 18, maxWidth: 320, alignSelf: 'center' }}>
         {TECLAS.map((tecla, i) =>
           tecla === '' ? (
-            <View key={i} style={{ width: 76, height: 64 }} />
+            <View key={i} style={{ width: 76, height: 56 }} />
           ) : (
             <Pressable
               key={i}
               onPress={() => tocar(tecla)}
               accessibilityRole="button"
               accessibilityLabel={tecla === 'borrar' ? 'Borrar' : tecla}
-              style={({ pressed }) => ({ width: 76, height: 64, borderRadius: RADIO.total, backgroundColor: pressed ? c.superficie2 : c.superficie, alignItems: 'center', justifyContent: 'center' })}
+              style={({ pressed }) => ({ width: 76, height: 56, borderRadius: RADIO.total, backgroundColor: pressed ? c.superficie2 : c.superficie, alignItems: 'center', justifyContent: 'center' })}
             >
               {tecla === 'borrar' ? <T v="cuerpo15Fuerte">Borrar</T> : <T style={{ fontFamily: FUENTES.datosMedio, fontSize: 26, color: c.texto }}>{tecla}</T>}
             </Pressable>
