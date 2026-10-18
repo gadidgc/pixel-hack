@@ -181,6 +181,8 @@ class ServicioProteccion {
   /** Debe llamarse directo desde el toque del botón (requisito de iPhone en la web). */
   async activar(): Promise<boolean> {
     if (this.estado.activa) return true;
+    // Lo que faltó en un intento anterior ya no vale: si este falla por otra razón, no hay que repetirlo.
+    this.cambiar({ permisosFaltantes: [] });
     try {
       if (!(await hayPin())) {
         this.registrar('Primero crea tu PIN: lo necesitarás para cancelar una alerta o apagar la protección.', 'error');
