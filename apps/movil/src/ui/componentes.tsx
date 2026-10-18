@@ -288,16 +288,33 @@ export function Hoja({ children, style }: { children: ReactNode; style?: StylePr
 }
 
 /** Pantalla con fondo del tema, márgenes seguros y scroll opcional. */
-export function Pantalla({ children, scroll = true, style, sinMargen = false }: { children: ReactNode; scroll?: boolean; style?: StyleProp<ViewStyle>; sinMargen?: boolean }) {
+export function Pantalla({
+  children,
+  scroll = true,
+  style,
+  sinMargen = false,
+  conPestanas = false,
+}: {
+  children: ReactNode;
+  scroll?: boolean;
+  style?: StyleProp<ViewStyle>;
+  sinMargen?: boolean;
+  /** Va encima de la barra de pestañas: la barra ya cubre la barra del sistema de abajo. */
+  conPestanas?: boolean;
+}) {
   const c = useTema();
   const ins = useSafeAreaInsets();
+  const abajo = conPestanas ? 0 : ins.bottom;
   const contenido: StyleProp<ViewStyle> = [
-    { paddingTop: ins.top + 16, paddingBottom: ins.bottom + 24, paddingHorizontal: sinMargen ? 0 : ESPACIO[4], gap: ESPACIO[6], flexGrow: 1, maxWidth: 560, width: '100%', alignSelf: 'center' },
+    { paddingTop: ins.top + 16, paddingBottom: abajo + 24, paddingHorizontal: sinMargen ? 0 : ESPACIO[4], gap: ESPACIO[6], flexGrow: 1, maxWidth: 560, width: '100%', alignSelf: 'center' },
     style,
   ];
   return (
     <View style={{ flex: 1, backgroundColor: c.fondo }}>
       {scroll ? <ScrollView contentContainerStyle={contenido} keyboardShouldPersistTaps="handled">{children}</ScrollView> : <View style={[contenido, { flex: 1 }]}>{children}</View>}
+      {/* Android dibuja de borde a borde: sin estas franjas, el texto se ve debajo de la hora y de los botones del sistema al hacer scroll. */}
+      {scroll && ins.top > 0 && <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: ins.top, backgroundColor: c.fondo }} />}
+      {scroll && abajo > 0 && <View pointerEvents="none" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: abajo, backgroundColor: c.fondo }} />}
     </View>
   );
 }
