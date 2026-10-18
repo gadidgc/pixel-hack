@@ -77,6 +77,33 @@ describe('mandarMensaje', () => {
     expect(textos).toEqual([mensaje.smsRespaldo]);
   });
 
+  it('si Zavu también bloquea el respaldo como phishing, manda el mínimo sin código', async () => {
+    const textos: string[] = [];
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
+      if (url.endsWith('/v1/urls')) return new Response(JSON.stringify({ url: { status: 'pending' } }), { status: 200 });
+      textos.push(JSON.parse(String(init.body)).text);
+      const bloqueado = textos.length === 1;
+      const cuerpo = bloqueado ? { error: { code: 'sms_compliance_blocked', message: 'SMS blocked: phishing' } } : {};
+      return new Response(JSON.stringify(cuerpo), { status: bloqueado ? 422 : 202 });
+    });
+    const r = await mandarMensaje({ ZAVU_API_KEY: 'zv_live_x' }, { telefono: '+51987654321', mensaje, idempotencia: 'a' });
+    expect(r.ok).toBe(true);
+    expect(textos).toEqual([mensaje.smsRespaldo, mensaje.smsMinimo]);
+    expect(mensaje.smsMinimo).not.toMatch(/codigo|ubicacion|llam|robo|https?:/i);
+  });
+
+  it('si Zavu falla por otra cosa (no por el texto), no gasta más intentos', async () => {
+    const textos: string[] = [];
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
+      if (url.endsWith('/v1/urls')) return new Response(JSON.stringify({ url: { status: 'pending' } }), { status: 200 });
+      textos.push(JSON.parse(String(init.body)).text);
+      return new Response(JSON.stringify({ error: { code: 'rate_limit_exceeded', message: 'wait' } }), { status: 429 });
+    });
+    const r = await mandarMensaje({ ZAVU_API_KEY: 'zv_live_x' }, { telefono: '+51987654321', mensaje, idempotencia: 'a' });
+    expect(r.ok).toBe(false);
+    expect(textos).toEqual([mensaje.smsRespaldo]);
+  });
+
   it('con la clave de prueba de Zavu solo la usa de respaldo si Meta falla', async () => {
     const llamadas = simularFetch({ meta: 400, zavu: 202 });
     const r = await mandarMensaje({ META_WA_TOKEN: 't', META_WA_NUMERO_ID: '1', ZAVU_API_KEY: 'zv_test_x' }, { telefono: '+51987654321', mensaje, idempotencia: 'a' });

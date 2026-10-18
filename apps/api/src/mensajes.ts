@@ -58,6 +58,11 @@ export interface Mensaje {
   sms: string;
   /** El mismo aviso con el código pero sin la dirección: si Zavu no la aprobó todavía, o si bloquea el SMS. */
   smsRespaldo?: string;
+  /**
+   * Último recurso si Zavu también bloquea el respaldo: sin código, sin "ubicación" y sin pedir que llame (su
+   * revisión automática tomó eso como phishing el 18 de octubre). El código lo lee la llamada.
+   */
+  smsMinimo?: string;
   /** La dirección que va escrita en `sms` (ej. `alerta.gadidgc.com/aviso`): se revisa con Zavu antes de mandarla. */
   web?: string;
   plantilla: { nombre: string; variables: string[] };
@@ -92,6 +97,7 @@ export const MENSAJES = {
     texto: `ALERTA: posible robo del celular de ${nombre} a las ${horaLima(t)}. Probablemente ${nombre} esta bien. Ruta en vivo: ${enlace}`,
     sms: `Vigia: ${nombre} te tiene como contacto de emergencia y su celular envio un aviso a las ${horaLima(t)}. Mira su ubicacion en vivo en ${web} con el codigo ${codigo}. Y llamale.`,
     smsRespaldo: `Vigia: ${nombre} te tiene como contacto de emergencia y su celular envio un aviso a las ${horaLima(t)}. Tu codigo para ver su ubicacion en vivo es ${codigo}; te llamamos para decirte donde usarlo. Y llamale.`,
+    smsMinimo: `Vigia: ${nombre} te tiene como contacto de emergencia y su celular envio un aviso a las ${horaLima(t)}. Revisa tu WhatsApp.`,
     web,
     plantilla: { nombre: 'alerta_arrebato', variables: [nombre, horaLima(t), enlace] },
   }),
@@ -104,6 +110,7 @@ export const MENSAJES = {
     texto: `${quien} dijo que se encarga del robo del celular de ${nombre}. Ruta: ${enlace}`,
     sms: `Vigia: ${quien} se esta encargando de lo que le paso a ${nombre}. Sigue su ubicacion en ${web} con tu codigo ${codigo}.`,
     smsRespaldo: `Vigia: ${quien} se esta encargando de lo que le paso a ${nombre}. Puedes seguir su ubicacion con tu codigo ${codigo}.`,
+    smsMinimo: `Vigia: ${quien} se esta encargando del aviso de ${nombre}.`,
     web,
     plantilla: { nombre: 'alerta_arrebato_encargado', variables: [quien, nombre, enlace] },
   }),
@@ -244,17 +251,28 @@ async function webAprobada(env: EnvMensajes, web: string): Promise<boolean> {
   }
 }
 
-/** SMS con la dirección de la web si Zavu ya la aprobó; si no (o si bloquea el SMS), el respaldo sin dirección. */
+/** Lo que responde Zavu cuando su revisión automática rechaza el texto (no un error de red ni de cuenta). */
+const SMS_BLOQUEADO = /sms_compliance_blocked|url_rejected|url_pending|malicious/;
+
+/**
+ * Prueba los textos de más completo a más simple: con la web (si Zavu ya la aprobó), el respaldo con el código y,
+ * al final, el mínimo. Pasa al siguiente solo si Zavu bloqueó el anterior por su contenido.
+ */
 async function porSms(env: EnvMensajes, telefono: string, m: Mensaje, idempotencia: string): Promise<ResultadoMensaje> {
-  if (m.web && m.smsRespaldo && !(await webAprobada(env, m.web))) {
-    const r = await porZavu(env, telefono, m.smsRespaldo, `${idempotencia}-respaldo`, 'sms');
-    return r.ok ? { ...r, detalle: 'enviado sin la web (Zavu aun no la aprueba)' } : r;
+  const sinWeb = Boolean(m.web && m.smsRespaldo) && !(await webAprobada(env, m.web!));
+  const intentos = [
+    { texto: sinWeb ? undefined : m.sms, clave: idempotencia },
+    { texto: m.smsRespaldo, clave: `${idempotencia}-respaldo` },
+    { texto: m.smsMinimo, clave: `${idempotencia}-minimo` },
+  ].filter((i): i is { texto: string; clave: string } => Boolean(i.texto));
+  const fallos: string[] = sinWeb ? ['Zavu aun no aprueba la web'] : [];
+  for (const { texto, clave } of intentos) {
+    const r = await porZavu(env, telefono, texto, clave, 'sms');
+    if (r.ok) return fallos.length ? { ...r, detalle: `enviado ${texto === m.smsMinimo ? 'sin codigo' : 'sin la web'} (${fallos.join('; ')})` } : r;
+    fallos.push(r.detalle);
+    if (!SMS_BLOQUEADO.test(r.detalle)) break;
   }
-  const primero = await porZavu(env, telefono, m.sms, idempotencia, 'sms');
-  const bloqueado = /sms_compliance_blocked|url_rejected|url_pending|malicious/.test(primero.detalle);
-  if (primero.ok || !m.smsRespaldo || !bloqueado) return primero;
-  const respaldo = await porZavu(env, telefono, m.smsRespaldo, `${idempotencia}-respaldo`, 'sms');
-  return respaldo.ok ? { ...respaldo, detalle: `enviado sin la web (${primero.detalle})` } : { ...respaldo, detalle: `${primero.detalle}; respaldo: ${respaldo.detalle}` };
+  return { ok: false, canal: null, detalle: fallos.join('; ') };
 }
 
 async function porZavu(env: EnvMensajes, telefono: string, texto: string, idempotencia: string, canal: 'sms' | 'whatsapp'): Promise<ResultadoMensaje> {
