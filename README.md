@@ -33,7 +33,7 @@ Todo vive en [`packages/detector`](packages/detector), TypeScript puro sin depen
 ```
 packages/detector/   Algoritmo + simulador + pruebas + banco de pruebas (Node)
 apps/movil/          App Expo / React Native (iOS, Android, web)
-apps/api/            Backend: Cloudflare Workers + base de datos D1 (alertas, ruta en vivo, WhatsApp/SMS con Zavu)
+apps/api/            Backend: Cloudflare Workers + base de datos D1 (alertas, ruta en vivo, WhatsApp con Meta y SMS con Zavu)
 docs/                Plan, investigación y rúbrica (docs/fase-1/ = lluvia de ideas archivada)
 ```
 
@@ -56,12 +56,12 @@ En la web, los sensores solo funcionan con **HTTPS** y abriendo la página direc
 - Validación con datasets reales de terceros (SHL, SPU) y pruebas automáticas (vitest), algunas con datos reales.
 - App Expo: protección **en segundo plano** en iPhone y Android (módulo nativo propio + GPS en segundo plano; exige ubicación "Permitir siempre"), **PIN** para cancelar o apagar, estado real de la alerta (panel y familia), modo demo, **modo grabar** (exporta CSV) y **simular** casos sin moverse.
 - **Interfaz completa** con el sistema de diseño "Negro cálido": onboarding con prueba guiada, "¿Todo bien?" con cuenta regresiva, falsa alarma con PIN, página del contacto, "Me robaron", grabar evidencia, Cerca y ajustes (ver "Pantallas").
-- **Backend** ([apps/api](apps/api)): recibe la alerta, guarda la ruta en vivo en la base de datos (Cloudflare D1), arma el enlace `/a/<id>` para cada contacto, manda el WhatsApp/SMS con Zavu cuando hay clave, avisa "está bien" si el dueño cancela y "X se encarga" al resto de la red. Borra los teléfonos al cancelar o a las 24 h. Publicado y probado en **https://alerta-arrebato.gabrieldgc1999.workers.dev** (la web de la app también vive ahí). **WhatsApp real con Zavu probado el 17 de octubre** (sandbox): llegó la alerta con el enlace a la ruta y, al cancelar, el "está bien".
+- **Backend** ([apps/api](apps/api)): recibe la alerta, guarda la ruta en vivo en la base de datos (Cloudflare D1), arma el enlace `/a/<id>` para cada contacto, avisa por **WhatsApp (Meta) y SMS (Zavu) a la vez**, avisa "está bien" si el dueño cancela y "X se encarga" al resto de la red. Borra los teléfonos al cancelar o a las 24 h. Publicado y probado en **https://alerta-arrebato.gabrieldgc1999.workers.dev** (la web de la app también vive ahí). **Probado en un celular real el 17 de octubre:** llegaron la alerta por WhatsApp (con la ruta) y por SMS, y el "está bien" al cancelar. Estado, límites y cómo probarlo: [docs/avisos-whatsapp-sms.md](docs/avisos-whatsapp-sms.md).
 - **Página del contacto en vivo** (`/a/<id>`): dibuja la ruta real, se actualiza cada 2 s, dice hacia dónde va y a qué velocidad, botón a Google Maps y "Yo me encargo".
 - Reproductor de grabaciones CSV reales en la terminal.
 
 ## Ideas pendientes (todavía no funciona)
-- WhatsApp a cualquier persona: hoy usamos el sandbox de Zavu, que solo llega a teléfonos del equipo que antes le escribieron por WhatsApp a +1 202 449 4825. Para cualquier contacto hace falta una clave "live", un número propio en Zavu (o WhatsApp Business conectado) y una plantilla aprobada por Meta (`ZAVU_PLANTILLA_ALERTA`); el SMS necesita saldo.
+- WhatsApp a cualquier persona sin que escriba antes: falta que Meta apruebe las plantillas (en revisión). El SMS ya llega a cualquiera, pero sin enlace (filtro antifraude de Zavu). Ver [docs/avisos-whatsapp-sms.md](docs/avisos-whatsapp-sms.md).
 - Mapa con calles reales en la página del contacto (hoy la ruta real se dibuja sobre un mapa esquemático; el botón abre Google Maps).
 - Probar en celulares reales la protección en segundo plano (ya está programada: módulo nativo + GPS en segundo plano; ver PLAN §5). Límites conocidos: si la persona **cierra la app deslizándola**, la protección se apaga (iPhone y Android); en Xiaomi, Redmi, POCO y Huawei hay que activar "Inicio automático" y "Sin restricciones" de batería (la app lleva a esa pantalla desde "Tú"). Para la demo: un Pixel, Samsung o iPhone.
 - Arrebatos simulados en bici **con GPS**, grabados por nosotros (no existen datos públicos de arrebatos desde moto).

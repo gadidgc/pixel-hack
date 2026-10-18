@@ -27,7 +27,7 @@ npm test -w @pixel-hack/api
 npm run desplegar -w @pixel-hack/api        # exporta la web, migra la base remota y publica
 npx wrangler r2 bucket create alerta-arrebato-evidencias   # una vez: el bucket de las evidencias (binding EVIDENCIAS)
 npx wrangler secret put META_WA_TOKEN       # token de Meta (usuario del sistema, permiso whatsapp_business_messaging)
-npx wrangler secret put ZAVU_API_KEY        # Zavu: respaldo de WhatsApp (sandbox) o SMS (clave live con número)
+npx wrangler secret put ZAVU_API_KEY        # Zavu: SMS (clave "live"; hoy configurada)
 ```
 
 ## WhatsApp con Meta (camino principal)
@@ -44,6 +44,12 @@ la persona nos escriba antes, con plantillas aprobadas en el Administrador de Wh
 Meta exige un método de pago en la cuenta de WhatsApp Business para mandar plantillas (cobra por conversación).
 ```bash
 ```
+
+## SMS con Zavu
+- Número +1 928 251 8311 (incluido en el plan Pro, con el cupón del evento). Con la clave "live", cada aviso sale también por SMS.
+- El SMS usa su propio texto (`sms` en `MENSAJES`), **sin enlace**: el filtro antifraude de Zavu bloquea (`422 sms_compliance_blocked`) los SMS que mencionan un celular robado o llevan enlace.
+- Zavu permite 1 SMS por minuto al mismo número y cobra US$0,28 por SMS a Perú.
+- Todo el contexto para el equipo: [docs/avisos-whatsapp-sms.md](../../docs/avisos-whatsapp-sms.md).
 
 ## Decisiones
 - **Por qué D1 y no Neon/Supabase:** la web, la API y la base viven en Cloudflare, en una sola URL y sin cadena de conexión que cuidar. Los datos son pocos (alertas y puntos de ruta). El SQL es estándar: si algún día hace falta Postgres (por ejemplo, PostGIS para "Cerca"), se migra a Neon con Hyperdrive.
