@@ -2,7 +2,8 @@ import { idDispositivo } from './alertas';
 
 /** Lo que comparten evidencias.ts (iPhone y Android) y evidencias.web.ts. */
 
-export type ResultadoSubida = { ok: true; id: string; enlace: string; conAlerta: boolean } | { ok: false; motivo: string };
+/** `reporte`: el reporte de "Cerca de ti" donde quedó publicada (null si se subió sin ubicación). */
+export type ResultadoSubida = { ok: true; id: string; enlace: string; conAlerta: boolean; reporte: string | null } | { ok: false; motivo: string };
 
 /** El servidor acepta hasta 50 MB por archivo. */
 export const MAX_BYTES = 50 * 1024 * 1024;
@@ -18,12 +19,12 @@ export function cabecerasEvidencia(mime: string, pos: { lat: number; lon: number
 }
 
 export function leerRespuesta(estado: number, cuerpo: string): ResultadoSubida {
-  let d: { id?: string; enlace?: string; alerta?: string | null; detalle?: string } = {};
+  let d: { id?: string; enlace?: string; alerta?: string | null; reporte?: string | null; detalle?: string } = {};
   try {
     d = JSON.parse(cuerpo) as typeof d;
   } catch {
     // Sin JSON: nos quedamos con el código.
   }
-  if (estado >= 200 && estado < 300 && d.id && d.enlace) return { ok: true, id: d.id, enlace: d.enlace, conAlerta: Boolean(d.alerta) };
+  if (estado >= 200 && estado < 300 && d.id && d.enlace) return { ok: true, id: d.id, enlace: d.enlace, conAlerta: Boolean(d.alerta), reporte: d.reporte ?? null };
   return { ok: false, motivo: d.detalle ?? `el servidor respondió ${estado}` };
 }

@@ -6,7 +6,8 @@ import { ErrorDeDatos } from './validar';
  */
 
 export const TIPOS_REPORTE = ['arrebato_moto', 'arrebato_a_pie', 'intento', 'robo', 'sospechoso', 'zona_oscura'] as const;
-export type TipoReporte = (typeof TIPOS_REPORTE)[number];
+/** 'grabacion' no se elige en "Reportar algo": lo crea el servidor cuando alguien sube una grabación con ubicación. */
+export type TipoReporte = (typeof TIPOS_REPORTE)[number] | 'grabacion';
 
 export const MAX_NOTA = 140;
 /** Un mismo celular puede mandar hasta 5 reportes por hora (evita que alguien llene el mapa). */
@@ -19,6 +20,14 @@ export const RADIO_MAX_KM = 10;
 /** Evidencias: hasta 50 MB por archivo y 20 subidas por hora por celular. */
 export const MAX_EVIDENCIA_BYTES = 50 * 1024 * 1024;
 export const MAX_EVIDENCIAS_POR_HORA = 20;
+/** Miniatura de una grabación (un cuadro del video en JPEG): hasta 512 KB. */
+export const MAX_MINIATURA_BYTES = 512 * 1024;
+/**
+ * Una grabación se suma al reporte que el mismo celular hizo hace menos de 10 min y a menos de ~300 m
+ * (así dos videos del mismo hecho son una tarjeta con "2 videos"). Si no hay, se crea uno nuevo.
+ */
+export const JUNTAR_GRABACIONES_MS = 10 * 60_000;
+export const JUNTAR_GRABACIONES_GRADOS = 0.003;
 
 export interface NuevoReporte {
   dispositivo: string;
@@ -138,4 +147,19 @@ export function validarEvidencia(cabeceras: Headers): NuevaEvidencia {
     lat: conPosicion ? redondear(coordenada(lat, 'X-Lat', 90)) : null,
     lon: conPosicion ? redondear(coordenada(lon, 'X-Lon', 180)) : null,
   };
+}
+
+/**
+ * Cabeceras de `POST /api/evidencias/:id/miniatura` (el cuerpo es el JPEG tal cual): `Content-Type`
+ * image/jpeg, `Content-Length` (hasta 512 KB) y `X-Dispositivo` (debe ser el mismo que subió la evidencia).
+ */
+export function validarMiniatura(cabeceras: Headers): { dispositivo: string; bytes: number } {
+  const dispositivo = validarDispositivo(cabeceras.get('X-Dispositivo') ?? '');
+  const mime = (cabeceras.get('Content-Type') ?? '').split(';')[0].trim().toLowerCase();
+  if (mime !== 'image/jpeg') throw new ErrorDeDatos('la miniatura debe ser image/jpeg');
+  const largo = cabeceras.get('Content-Length');
+  const bytes = largo === null ? NaN : Number(largo);
+  if (!Number.isInteger(bytes) || bytes <= 0) throw new ErrorDeDatos('falta "Content-Length"');
+  if (bytes > MAX_MINIATURA_BYTES) throw new ErrorDeDatos('la miniatura pasa de 512 KB');
+  return { dispositivo, bytes };
 }

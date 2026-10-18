@@ -5,6 +5,7 @@ import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { posicionActual } from '../comunidad';
 import { subirEvidencia } from '../evidencias';
 import { marcarGrabacion } from '../grabacionEvidencia';
 import { servicio } from '../servicio';
@@ -17,7 +18,8 @@ type Modo = 'video' | 'audio';
 /** `preparando` y `deteniendo` bloquean el botón: así un doble toque no arranca dos grabaciones. */
 type Fase = 'lista' | 'preparando' | 'grabando' | 'deteniendo';
 
-type Subida = { estado: 'subiendo'; avance: number } | { estado: 'subida'; enlace: string; conAlerta: boolean } | { estado: 'local'; motivo: string };
+/** `enMapa`: quedó publicada en "Cerca de ti" (se subió con ubicación). */
+type Subida = { estado: 'subiendo'; avance: number } | { estado: 'subida'; enlace: string; enMapa: boolean } | { estado: 'local'; motivo: string };
 
 interface Evidencia {
   uri: string;
@@ -56,7 +58,7 @@ function mensajeDeError(e: unknown, m: Modo): string {
 
 /**
  * F7 · Grabar evidencia (video o solo audio). Se guarda en el celular y además se sube al servidor
- * (R2): si tienes una alerta abierta, tu red la ve en la página de la alerta. Si la subida falla, la
+ * (R2) con tu ubicación aproximada, y queda publicada en "Cerca de ti" para tus vecinos. Si la subida falla, la
  * copia del celular queda y la pantalla dice por qué. "Graba solo si es seguro para ti."
  *
  * La pantalla queda montada aunque cambies de pestaña (`visible` en falso): el audio sigue grabando con
@@ -108,9 +110,10 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
   /** Sube una evidencia y va mostrando el avance. La copia local no se toca. */
   const subir = useCallback(async (uri: string, mime: string) => {
     cambiarSubida(uri, { estado: 'subiendo', avance: 0 });
-    const p = servicio.ultimaPosicion();
-    const r = await subirEvidencia(uri, mime, p ? { lat: p.lat, lon: p.lon } : null, (avance) => cambiarSubida(uri, { estado: 'subiendo', avance }));
-    cambiarSubida(uri, r.ok ? { estado: 'subida', enlace: r.enlace, conAlerta: r.conAlerta } : { estado: 'local', motivo: r.motivo });
+    // Con la protección apagada no hay GPS encendido: pedimos una lectura puntual para ubicarla en el mapa.
+    const p = await posicionActual();
+    const r = await subirEvidencia(uri, mime, p.ok ? { lat: p.datos.lat, lon: p.datos.lon } : null, (avance) => cambiarSubida(uri, { estado: 'subiendo', avance }));
+    cambiarSubida(uri, r.ok ? { estado: 'subida', enlace: r.enlace, enMapa: r.reporte !== null } : { estado: 'local', motivo: r.motivo });
   }, []);
 
   /**
@@ -329,7 +332,7 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
           )}
         </Pressable>
         <T v="apoyo13" suave style={{ textAlign: 'center' }}>
-          {fase === 'preparando' ? 'Preparando…' : fase === 'deteniendo' ? 'Guardando…' : 'Se guarda en tu celular y se sube a un enlace privado. Si tienes una alerta abierta, tu red lo ve.'}
+          {fase === 'preparando' ? 'Preparando…' : fase === 'deteniendo' ? 'Guardando…' : 'Se guarda en tu celular y se publica en "Cerca de ti", sin tu nombre y con tu ubicación aproximada.'}
         </T>
         <ScrollView style={{ alignSelf: 'stretch', height: FILAS_VISIBLES * ALTO_FILA, flexGrow: 0 }} contentContainerStyle={{ flexGrow: 1, justifyContent: evidencias.length ? 'flex-start' : 'center' }}>
           {evidencias.length === 0 && (
@@ -349,9 +352,16 @@ export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; en
                     Subiendo… {Math.round(e.subida.avance * 100)}%
                   </T>
                 )}
-                {e.subida.estado === 'subida' && (
-                  <T v="apoyo13" color={c.protegido}>
-                    {e.subida.conAlerta ? 'Subida: tu red la ve en la alerta' : 'Subida'}
+                {e.subida.estado === 'subida' && e.subida.enMapa && (
+                  <Pressable onPress={() => onPestana('cerca')} accessibilityRole="button" accessibilityLabel="Ver la grabación en Cerca de ti">
+                    <T v="apoyo13" color={c.protegido} numberOfLines={1}>
+                      En Cerca de ti · Ver en el mapa
+                    </T>
+                  </Pressable>
+                )}
+                {e.subida.estado === 'subida' && !e.subida.enMapa && (
+                  <T v="apoyo13" color={c.aviso} numberOfLines={1}>
+                    Subida, pero sin ubicación: no sale en el mapa
                   </T>
                 )}
                 {e.subida.estado === 'local' && (
