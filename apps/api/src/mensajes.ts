@@ -61,22 +61,22 @@ export const MENSAJES = {
   alerta: (nombre: string, t: number, enlace: string): Mensaje => ({
     texto: `ALERTA: posible robo del celular de ${nombre} a las ${horaLima(t)}. Probablemente ${nombre} esta bien. Ruta en vivo: ${enlace}`,
     // Sin enlace y sin "robo": el filtro antifraude de Zavu bloquea esos SMS como phishing. El detalle va por WhatsApp.
-    sms: `Alerta Arrebato: ${nombre} te tiene como contacto de emergencia y su app envio una alerta a las ${horaLima(t)}. Revisa tu WhatsApp para ver los detalles o llamale.`,
+    sms: `Vigia: ${nombre} te tiene como contacto de emergencia y su app envio una alerta a las ${horaLima(t)}. Revisa tu WhatsApp para ver los detalles o llamale.`,
     plantilla: { nombre: 'alerta_arrebato', variables: [nombre, horaLima(t), enlace] },
   }),
   estaBien: (nombre: string): Mensaje => ({
     texto: `${nombre} confirmo con su PIN que esta bien: fue falsa alarma. Gracias por estar atento.`,
-    sms: `Alerta Arrebato: ${nombre} confirmo que esta bien, fue una falsa alarma. No tienes que hacer nada.`,
+    sms: `Vigia: ${nombre} confirmo que esta bien, fue una falsa alarma. No tienes que hacer nada.`,
     plantilla: { nombre: 'alerta_arrebato_bien', variables: [nombre] },
   }),
   encargado: (quien: string, nombre: string, enlace: string): Mensaje => ({
     texto: `${quien} dijo que se encarga del robo del celular de ${nombre}. Ruta: ${enlace}`,
-    sms: `Alerta Arrebato: ${quien} se esta encargando de lo que le paso a ${nombre}. Los detalles te llegan por WhatsApp.`,
+    sms: `Vigia: ${quien} se esta encargando de lo que le paso a ${nombre}. Los detalles te llegan por WhatsApp.`,
     plantilla: { nombre: 'alerta_arrebato_encargado', variables: [quien, nombre, enlace] },
   }),
   prueba: (nombre: string, enlace: string): Mensaje => ({
-    texto: `PRUEBA de Alerta Arrebato: ${nombre} te eligio como contacto de confianza. Si le arranchan el celular te llegara un mensaje asi, con su ruta: ${enlace}`,
-    sms: `Alerta Arrebato: ${nombre} te agrego como contacto de confianza en la app. Si algun dia le roban el celular, te avisaremos por aqui. No tienes que hacer nada.`,
+    texto: `PRUEBA de Vigia: ${nombre} te eligio como contacto de confianza. Si le arranchan el celular te llegara un mensaje asi, con su ruta: ${enlace}`,
+    sms: `Vigia: ${nombre} te agrego como contacto de confianza en la app. Si algun dia le roban el celular, te avisaremos por aqui. No tienes que hacer nada.`,
     plantilla: { nombre: 'alerta_arrebato_prueba', variables: [nombre, enlace] },
   }),
 };
@@ -87,7 +87,7 @@ export const MENSAJES = {
  * Sin enlace y sin "robo" (el filtro de Zavu). Si cambias la palabra, cambia también la guía de la app.
  */
 export const PALABRA_BLOQUEO = 'AA-BLOQUEO';
-export const SMS_BLOQUEO = `Alerta Arrebato ${PALABRA_BLOQUEO}. Si no fuiste tu, ignora este mensaje.`;
+export const SMS_BLOQUEO = `Vigia ${PALABRA_BLOQUEO}. Si no fuiste tu, ignora este mensaje.`;
 
 /**
  * El SMS que bloquea el iPhone de la dueña. Solo SMS: un WhatsApp no dispara la automatización de Mensajes.

@@ -7,7 +7,7 @@ import { Icono } from '../ui/iconos';
 import { FUENTES, RADIO, useTema } from '../ui/tema';
 
 export function textoInvitacion(nombre: string): string {
-  return `${nombre || 'Alguien de tu familia'} te eligió como contacto de confianza en Alerta Arrebato. Si alguna vez le arranchan el celular, te llegará un mensaje con su ubicación. No tienes que instalar nada.`;
+  return `${nombre || 'Alguien de tu familia'} te eligió como contacto de confianza en Vigía. Si alguna vez le arranchan el celular, te llegará un mensaje con su ubicación. No tienes que instalar nada.`;
 }
 
 /** Abre WhatsApp con la invitación ya escrita (no necesita backend). */

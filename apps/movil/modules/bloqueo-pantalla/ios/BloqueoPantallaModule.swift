@@ -64,7 +64,7 @@ public class BloqueoPantallaModule: Module {
       let tienda = Self.tienda()
       tienda.shield.applicationCategories = .all()
       tienda.shield.webDomainCategories = .all()
-      // Que no puedan borrar Alerta Arrebato: sin la app no sigue llegando la ruta.
+      // Que no puedan borrar Vigía: sin la app no sigue llegando la ruta.
       tienda.application.denyAppRemoval = true
       return ["estado": "solicitado", "detalle": "Apps del iPhone bloqueadas con Tiempo de uso (no es un bloqueo de pantalla)."]
     }

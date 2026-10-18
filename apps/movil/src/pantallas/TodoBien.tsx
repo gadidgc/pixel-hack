@@ -44,7 +44,7 @@ export function TodoBien({ onVer }: { onVer: () => void }) {
             <Icono nombre="escudo" tam={14} color={c.protegido} grosor={2.4} />
           </View>
           <T v="apoyo13" suave style={{ flex: 1 }}>
-            Alerta Arrebato · ahora
+            Vigía · ahora
           </T>
           <T v="hora" suave>
             avisaremos en 0:{String(s).padStart(2, '0')}

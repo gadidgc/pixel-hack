@@ -1,4 +1,7 @@
-# Alerta Arrebato · pixel-hack · Hack the Andes 2026 (track Seguridad)
+# Vigía · pixel-hack · Hack the Andes 2026 (track Seguridad)
+
+> **Vigía** se llamaba antes *Alerta Arrebato*. Cambiamos solo el nombre visible: la URL (`alerta-arrebato…workers.dev`),
+> la base de datos, el bundle ID y las plantillas de WhatsApp siguen con el nombre anterior para no romper nada.
 
 App para iPhone, Android y web que, con los sensores del celular (acelerómetro, giroscopio y GPS),
 **detecta cuando un ladrón en moto te arrancha el celular y avisa al instante** con la ubicación

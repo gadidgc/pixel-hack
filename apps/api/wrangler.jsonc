@@ -1,4 +1,4 @@
-// Backend + web de Alerta Arrebato en una sola URL (Cloudflare Workers + D1).
+// Backend + web de Vigía en una sola URL (Cloudflare Workers + D1).
 // Secretos (nunca en el repo): `npx wrangler secret put ZAVU_API_KEY` y, si hay plantilla de WhatsApp
 // aprobada, `npx wrangler secret put ZAVU_PLANTILLA_ALERTA`.
 {

@@ -1,4 +1,4 @@
-# Backend de Alerta Arrebato
+# Backend de Vigía
 
 Cloudflare Workers + D1 (SQLite). Una sola URL pública con HTTPS sirve la web de la app y la API.
 
@@ -43,6 +43,9 @@ la persona nos escriba antes, con plantillas aprobadas en el Administrador de Wh
 | `alerta_arrebato_bien` | Buenas noticias de Alerta Arrebato: {{1}} nos confirmó que está bien y que fue una falsa alarma. Gracias por estar atento. |
 | `alerta_arrebato_prueba` | Prueba de Alerta Arrebato: {{1}} te eligió como contacto de confianza. Si algún día le arranchan el celular, te llegará un aviso con su ruta, como este ejemplo: {{2}} No tienes que hacer nada. |
 | `alerta_arrebato_encargado` | (pendiente de crear; mientras tanto ese aviso va por Zavu) |
+
+Las plantillas ya aprobadas todavía dicen "Alerta Arrebato", el nombre anterior de la app. Para que digan "Vigía" hay que
+mandar plantillas nuevas a revisión de Meta (tarda); mientras tanto se quedan así.
 
 Meta exige un método de pago en la cuenta de WhatsApp Business para mandar plantillas (cobra por conversación).
 ```bash

@@ -222,7 +222,7 @@ function textoRegistro(estado: EstadoProteccion): string {
   const diag = diagnosticoSensores();
   const tel = estado.telemetria;
   const lineas = [
-    'Alerta Arrebato · registro',
+    'Vigía · registro',
     `Celular: ${celular} (${Platform.OS} ${Platform.Version})`,
     `Protección: ${estado.activa ? 'activa' : 'apagada'} · Modo demo: ${estado.modoDemo ? `sí (${ESPACIOS_DEMO[estado.espacioDemo].titulo})` : 'no'} · Segundo plano: ${sino(estado.segundoPlano)}`,
     `Giroscopio: ${sino(estado.tieneGiroscopio)} · GPS: ${sino(estado.tieneGps)} · Permisos que faltan: ${estado.permisosFaltantes.length ? estado.permisosFaltantes.join(', ') : 'ninguno'}`,
