@@ -15,7 +15,7 @@ import { enviar, hayBackend, type ResultadoEnvio } from './alertas';
 import { Grabadora, type Etiqueta } from './grabadora';
 import { avisarTodoBien, pedirPermisoNotificaciones, quitarAviso } from './notificaciones';
 import { hayPin, verificarPin } from './pin';
-import { preferencias } from './preferencias';
+import { guardarPreferencias, preferencias, type Contacto } from './preferencias';
 import { escucharSensores, pedirPermisoSensores } from './sensores';
 import { escucharUbicacion, pedirPermisosUbicacion } from './ubicacion';
 
@@ -52,6 +52,8 @@ export interface AlertaEnCurso {
   /** La secuencia del robo, para la pantalla "Fue falsa alarma" (components/LineaDeTiempo). */
   pasos: PasoAlerta[];
   tFamilia: number | null;
+  /** Enlace público de la alerta (lo que recibe la red); `null` si no llegó al backend. */
+  enlace: string | null;
 }
 
 export interface EstadoProteccion {
@@ -116,6 +118,8 @@ class ServicioProteccion {
   /** Lecturas GPS de los últimos 60 s: la ruta que acompaña a la alerta. */
   private ruta: LecturaGps[] = [];
   private cuentaFamilia: ReturnType<typeof setInterval> | null = null;
+  private cuentaPendiente: { evento: Extract<EventoDetector, { tipo: 'alerta' }>; nombre: string; contactos: Contacto[]; limite: number } | null = null;
+  private ultimaRevisionCuenta = 0;
   private idNotificacion: string | null = null;
 
   obtener(): EstadoProteccion {
@@ -206,6 +210,7 @@ class ServicioProteccion {
         sensores.segundoPlano ? 'info' : 'aviso',
       );
       if (!sensores.tieneGiroscopio) this.registrar('Este celular no tiene giroscopio: pedimos un jalón más fuerte.', 'aviso');
+      void guardarPreferencias({ proteccionActiva: true });
       return true;
     } catch (e) {
       await this.apagar();
@@ -234,6 +239,15 @@ class ServicioProteccion {
     this.registrar('Protección reanudada.');
   }
 
+  /**
+   * Al abrir la app: si la protección estaba encendida (el sistema cerró y reabrió la app, por ejemplo iPhone
+   * después de quedarse sin memoria), la vuelve a encender sin pedir nada (los permisos ya están dados).
+   */
+  async reanudarSiEstabaActiva(): Promise<void> {
+    if (this.estado.activa || !preferencias().proteccionActiva) return;
+    if (await this.activar()) this.registrar('La app se reabrió: volvimos a encender la protección.');
+  }
+
   /** Apagar la protección exige el PIN. */
   async desactivar(pin: string): Promise<boolean> {
     if (!(await verificarPin(pin))) {
@@ -242,6 +256,7 @@ class ServicioProteccion {
     }
     if (this.estado.alerta && this.detector.estado === 'alerta') await this.cancelarAlerta(pin);
     await this.apagar();
+    void guardarPreferencias({ proteccionActiva: false });
     this.registrar('Protección desactivada.');
     return true;
   }
@@ -303,6 +318,7 @@ class ServicioProteccion {
         detalleFamilia: '',
         segundosParaFamilia: espera,
         tFamilia: null,
+        enlace: null,
         pasos: [
           { t: Date.now(), texto: 'Te preguntamos "¿Todo bien?"', clave: false },
           { t: evento.tJalon, texto: `Movimiento brusco${conVelocidad}`, clave: false },
@@ -313,47 +329,58 @@ class ServicioProteccion {
 
     // 1) Al panel, al instante y en silencio, con la ruta de los últimos segundos.
     const { nombre, contactos } = preferencias();
-    void enviar({ tipo: 'alerta', evento, ruta: [...this.ruta], nombre, contactos }).then((panel) => {
+    void enviar({ tipo: 'alerta', evento, ruta: [...this.ruta], nombre, contactos, esperaS: espera }).then((panel) => {
       if (this.estado.alerta?.evento !== evento) return;
-      this.cambiar({ alerta: { ...this.estado.alerta, panel } });
+      this.cambiar({ alerta: { ...this.estado.alerta, panel, enlace: panel.enlace ?? this.estado.alerta.enlace } });
       this.registrar(`Panel: ${panel.detalle}`, panel.enviado ? 'info' : 'aviso');
     });
 
-    // 2) A la red, después de la espera, si el dueño no canceló con su PIN.
+    // 2) A la red, después de la espera, si el dueño no canceló con su PIN. La cuenta va por hora límite
+    // (no restando de a 1) y se revisa desde el reloj Y desde cada lote de sensores: en Android, con la
+    // pantalla apagada, los setInterval de JS se congelan pero los sensores (servicio en primer plano) siguen.
+    // El backend también cuenta por su lado (`esperaS`): si el ladrón apaga el celular, avisa igual.
     this.detenerCuentaFamilia();
-    this.cuentaFamilia = setInterval(() => {
-      const a = this.estado.alerta;
-      if (!a || a.evento !== evento || a.familia !== 'esperando') return this.detenerCuentaFamilia();
-      if (a.segundosParaFamilia > 1) {
-        this.cambiar({ alerta: { ...a, segundosParaFamilia: a.segundosParaFamilia - 1 } });
-        return;
-      }
-      this.detenerCuentaFamilia();
-      this.cambiar({ alerta: { ...a, segundosParaFamilia: 0, familia: 'enviando' } });
-      void enviar({ tipo: 'notificar_familia', evento, nombre, contactos }).then((r) => {
-        const actual = this.estado.alerta;
-        if (actual?.evento !== evento) return;
-        const quienes = contactos.map((c) => c.nombre).join(', ') || 'tu red';
-        this.cambiar({
-          alerta: {
-            ...actual,
-            familia: r.enviado ? 'avisada' : 'no_avisada',
-            detalleFamilia: r.detalle,
-            tFamilia: Date.now(),
-            pasos: [
-              { t: Date.now(), texto: r.enviado ? `Alerta enviada a ${quienes}` : `No se pudo avisar a ${quienes} (${r.detalle})`, clave: true },
-              ...actual.pasos,
-            ],
-          },
-        });
-        this.registrar(`Red: ${r.enviado ? 'avisada' : `NO avisada (${r.detalle})`}`, r.enviado ? 'info' : 'error');
+    this.cuentaPendiente = { evento, nombre, contactos, limite: Date.now() + espera * 1000 };
+    this.cuentaFamilia = setInterval(() => this.revisarCuentaFamilia(), 1000);
+  }
+
+  private revisarCuentaFamilia(): void {
+    const p = this.cuentaPendiente;
+    const a = this.estado.alerta;
+    if (!p || !a || a.evento !== p.evento || a.familia !== 'esperando') return this.detenerCuentaFamilia();
+    const faltan = Math.ceil((p.limite - Date.now()) / 1000);
+    if (faltan > 0) {
+      if (faltan !== a.segundosParaFamilia) this.cambiar({ alerta: { ...a, segundosParaFamilia: faltan } });
+      return;
+    }
+    this.detenerCuentaFamilia();
+    const { evento, nombre, contactos } = p;
+    this.cambiar({ alerta: { ...a, segundosParaFamilia: 0, familia: 'enviando' } });
+    void enviar({ tipo: 'notificar_familia', evento, nombre, contactos }).then((r) => {
+      const actual = this.estado.alerta;
+      if (actual?.evento !== evento) return;
+      const quienes = contactos.map((c) => c.nombre).join(', ') || 'tu red';
+      this.cambiar({
+        alerta: {
+          ...actual,
+          familia: r.enviado ? 'avisada' : 'no_avisada',
+          detalleFamilia: r.detalle,
+          tFamilia: Date.now(),
+          enlace: r.enlace ?? actual.enlace,
+          pasos: [
+            { t: Date.now(), texto: r.enviado ? `Alerta enviada a ${quienes}` : `No se pudo avisar a ${quienes}: ${r.detalle}`, clave: true },
+            ...actual.pasos,
+          ],
+        },
       });
-    }, 1000);
+      this.registrar(`Red: ${r.enviado ? 'avisada' : `NO avisada (${r.detalle})`}`, r.enviado ? 'info' : 'error');
+    });
   }
 
   private detenerCuentaFamilia(): void {
     if (this.cuentaFamilia) clearInterval(this.cuentaFamilia);
     this.cuentaFamilia = null;
+    this.cuentaPendiente = null;
   }
 
   /** Cierra la pantalla de una alerta ya terminada (avisada o no) sin cancelarla. */
@@ -397,6 +424,11 @@ class ServicioProteccion {
   }
 
   private alImu(m: MuestraImu): void {
+    // Con la pantalla apagada en Android, esto es lo único que sigue latiendo (ver revisarCuentaFamilia).
+    if (this.cuentaPendiente && Date.now() - this.ultimaRevisionCuenta >= 250) {
+      this.ultimaRevisionCuenta = Date.now();
+      this.revisarCuentaFamilia();
+    }
     this.grabadora.agregar({ tipo: 'imu', muestra: m });
     if (this.enPausa()) return;
     this.atender(this.detector.procesarImu(m));
@@ -410,6 +442,11 @@ class ServicioProteccion {
     if (!this.estado.tieneGps) this.cambiar({ tieneGps: true });
     if (this.enPausa()) return;
     this.atender(this.detector.procesarGps(l));
+  }
+
+  /** La ruta de los últimos 60 s (para mostrar en la app lo que ve la red). */
+  rutaReciente(): LecturaGps[] {
+    return [...this.ruta];
   }
 
   /** Última posición conocida (para "Grabar evidencia"). */

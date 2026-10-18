@@ -7,7 +7,10 @@ import * as TaskManager from 'expo-task-manager';
  *
  * - Android: expo-location levanta un "servicio en primer plano" con una notificación fija. Eso mantiene
  *   vivo el proceso con la pantalla apagada (y con él, los sensores de modules/sensores-fondo).
- * - iPhone: modo de fondo "location" (UIBackgroundModes) con el indicador azul de ubicación.
+ * - iPhone: modo de fondo "location" (UIBackgroundModes) con el indicador azul de ubicación. Mientras el GPS
+ *   está encendido iOS no suspende la app, así que CoreMotion (modules/sensores-fondo) y JavaScript siguen
+ *   corriendo con la pantalla apagada. Las opciones de abajo evitan que iOS pause el GPS si estás quieta.
+ * - Si la persona cierra la app a mano (deslizándola en el selector de apps), iOS y Android detienen todo.
  *
  * Requiere el permiso de ubicación "Permitir siempre". Sin él no activamos la protección.
  */
@@ -51,15 +54,32 @@ export async function pedirPermisosUbicacion(): Promise<PermisosUbicacion> {
   return { primerPlano: true, segundoPlano: segundo.granted };
 }
 
+/**
+ * `true` si el GPS en segundo plano quedó encendido de una sesión anterior (por ejemplo, el sistema cerró
+ * la app y la volvió a abrir en segundo plano). En ese caso hay que reactivar la protección: si no, el GPS
+ * sigue gastando batería y nadie escucha los sensores.
+ */
+export async function ubicacionSigueEncendida(): Promise<boolean> {
+  try {
+    return await Location.hasStartedLocationUpdatesAsync(TAREA_UBICACION);
+  } catch {
+    return false;
+  }
+}
+
 export async function escucharUbicacion(alRecibir: (l: LecturaGps) => void): Promise<() => Promise<void>> {
   receptor = alRecibir;
   await Location.startLocationUpdatesAsync(TAREA_UBICACION, {
     accuracy: Location.Accuracy.BestForNavigation,
     timeInterval: 1000,
     distanceInterval: 0,
+    // Sin lotes: cada lectura llega al momento también en segundo plano (la alerta no puede esperar).
     deferredUpdatesInterval: 0,
+    deferredUpdatesDistance: 0,
+    // iOS: que el sistema NO apague el GPS cuando cree que estás quieta (te pueden robar en un paradero).
     pausesUpdatesAutomatically: false,
     activityType: Location.ActivityType.Other,
+    // iOS: el indicador azul. Apple lo espera en apps que usan la ubicación en segundo plano.
     showsBackgroundLocationIndicator: true,
     foregroundService: {
       // F2 · Notificación fija (diseño "Notificación"): calma, sin datos técnicos.

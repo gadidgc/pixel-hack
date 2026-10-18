@@ -73,7 +73,7 @@ export function Prueba({ onListo, onVolver }: { onListo: () => void; onVolver: (
           </Tarjeta>
           {!resultado.envio.enviado && (
             <T v="apoyo" color={c.aviso}>
-              El aviso a tu red todavía no sale del celular: {resultado.envio.detalle}.
+              El mensaje a tu red todavía no sale: {resultado.envio.detalle}.
             </T>
           )}
           <Tarjeta style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>

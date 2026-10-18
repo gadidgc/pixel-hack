@@ -3,11 +3,28 @@ import { Platform } from 'react-native';
 import type { Contacto } from './preferencias';
 
 /**
- * Envío de alertas al panel (backend en construcción, ver docs/PLAN.md §6).
- * Si no está configurada `EXPO_PUBLIC_URL_ALERTAS`, la alerta solo se registra en la app:
- * así la demo funciona aunque el backend no esté listo.
+ * Envío de alertas al backend (apps/api: Cloudflare Workers + D1, ver docs/PLAN.md §6).
+ * - `EXPO_PUBLIC_URL_ALERTAS` manda (por ejemplo, para probar con `wrangler dev`).
+ * - En la web publicada usamos el mismo dominio (la web y el backend viven en la misma URL).
+ * - Si no, el backend público del equipo.
+ * Vacío (`EXPO_PUBLIC_URL_ALERTAS=ninguno`): la alerta queda solo en la app.
  */
-const URL_ALERTAS = process.env.EXPO_PUBLIC_URL_ALERTAS ?? '';
+export const URL_PUBLICA = 'https://alerta-arrebato.gabrieldgc1999.workers.dev';
+
+function urlAlertas(): string {
+  const env = process.env.EXPO_PUBLIC_URL_ALERTAS;
+  if (env === 'ninguno') return '';
+  if (env) return env;
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location.protocol === 'https:') return `${window.location.origin}/api/eventos`;
+  return `${URL_PUBLICA}/api/eventos`;
+}
+
+const URL_ALERTAS = urlAlertas();
+
+/** Raíz del backend (para leer una alerta desde la página del contacto). */
+export function urlBackend(): string {
+  return URL_ALERTAS.replace(/\/api\/eventos$/, '');
+}
 
 /**
  * Lo que la app manda (nada más: un "posible jalón" NO se envía, porque caminando hay cientos por hora).
@@ -20,7 +37,7 @@ const URL_ALERTAS = process.env.EXPO_PUBLIC_URL_ALERTAS ?? '';
  * `contactos` viaja solo en una alerta o prueba, para que el backend sepa a quién escribir.
  */
 export type MensajeAlerta =
-  | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[]; nombre: string; contactos: Contacto[] }
+  | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[]; nombre: string; contactos: Contacto[]; esperaS: number }
   | { tipo: 'notificar_familia'; evento: EventoDetector; nombre: string; contactos: Contacto[] }
   | { tipo: 'cancelada'; evento: EventoDetector }
   | { tipo: 'ubicacion'; lectura: LecturaGps }
@@ -30,6 +47,19 @@ export type MensajeAlerta =
 export interface ResultadoEnvio {
   enviado: boolean;
   detalle: string;
+  /** Enlace público de la alerta (`/a/<id>`), el mismo que recibe la red. */
+  enlace?: string;
+  /** Cuántos contactos recibieron el mensaje (WhatsApp/SMS), y de cuántos. */
+  avisados?: number;
+  total?: number;
+}
+
+interface RespuestaBackend {
+  ok?: boolean;
+  detalle?: string;
+  enlace?: string;
+  avisados?: number;
+  total?: number;
 }
 
 /** Identificador anónimo de esta instalación (no es un dato personal). */
@@ -50,10 +80,33 @@ export async function enviar(mensaje: MensajeAlerta): Promise<ResultadoEnvio> {
       body: JSON.stringify({ dispositivo: idDispositivo, enviadoEn: Date.now(), ...mensaje }),
       signal: control.signal,
     });
-    return { enviado: r.ok, detalle: r.ok ? 'enviado' : `el servidor respondió ${r.status}` };
+    const datos = (await r.json().catch(() => ({}))) as RespuestaBackend;
+    if (!r.ok) return { enviado: false, detalle: datos.detalle ?? `el servidor respondió ${r.status}` };
+    // Para avisar a la red no basta con que el backend lo reciba: tiene que haber salido al menos un mensaje.
+    const avisaRed = mensaje.tipo === 'notificar_familia' || mensaje.tipo === 'prueba';
+    const enviado = avisaRed && datos.total ? (datos.avisados ?? 0) > 0 : true;
+    return { enviado, detalle: datos.detalle ?? 'enviado', enlace: datos.enlace, avisados: datos.avisados, total: datos.total };
   } catch (e) {
     return { enviado: false, detalle: e instanceof Error ? e.message : 'error de red' };
   } finally {
     clearTimeout(limite);
+  }
+}
+
+export interface SaludBackend {
+  base: boolean;
+  /** `true` si el backend tiene con qué mandar WhatsApp/SMS (Zavu). */
+  mensajes: boolean;
+}
+
+/** Pregunta al backend si está listo de verdad (no basta con tener la URL). `null`: no responde. */
+export async function revisarBackend(): Promise<SaludBackend | null> {
+  if (!hayBackend()) return null;
+  try {
+    const r = await fetch(`${urlBackend()}/api/salud`, { signal: AbortSignal.timeout(5000) });
+    const d = (await r.json()) as { base?: boolean; mensajes?: string };
+    return { base: Boolean(d.base), mensajes: d.mensajes === 'zavu' };
+  } catch {
+    return null;
   }
 }

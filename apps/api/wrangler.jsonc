@@ -1,0 +1,25 @@
+// Backend + web de Alerta Arrebato en una sola URL (Cloudflare Workers + D1).
+// Secretos (nunca en el repo): `npx wrangler secret put ZAVU_API_KEY` y, si hay plantilla de WhatsApp
+// aprobada, `npx wrangler secret put ZAVU_PLANTILLA_ALERTA`.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "alerta-arrebato",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "../movil/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "alerta-arrebato",
+      "database_id": "f163087c-76d3-4d9b-a628-daadaf9bab75",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": { "crons": ["* * * * *"] },
+  "observability": { "enabled": true }
+}

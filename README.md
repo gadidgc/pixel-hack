@@ -32,6 +32,7 @@ Todo vive en [`packages/detector`](packages/detector), TypeScript puro sin depen
 ```
 packages/detector/   Algoritmo + simulador + pruebas + banco de pruebas (Node)
 apps/movil/          App Expo / React Native (iOS, Android, web)
+apps/api/            Backend: Cloudflare Workers + base de datos D1 (alertas, ruta en vivo, WhatsApp/SMS con Zavu)
 docs/                Plan, investigación y rúbrica (docs/fase-1/ = lluvia de ideas archivada)
 ```
 
@@ -42,6 +43,8 @@ npm install                   # en la raíz del repo
 npm test                      # pruebas del detector
 npm run evaluar               # banco de pruebas → packages/detector/reportes/evaluacion.md
 npm run movil                 # app: w = web, a = Android (emulador o Expo Go), i = iPhone
+npm run dev -w @pixel-hack/api        # backend local en http://localhost:8787 (antes: npm run migrar:local -w @pixel-hack/api)
+npm run desplegar -w @pixel-hack/api  # exporta la web, migra la base y publica todo en una URL con HTTPS
 ```
 Para probar con sensores reales abre la app en tu celular (Expo Go o `npx expo run:android|ios` dentro de `apps/movil`).
 En la web, los sensores solo funcionan con **HTTPS** y abriendo la página directo (no dentro de un iframe).
@@ -52,15 +55,18 @@ En la web, los sensores solo funcionan con **HTTPS** y abriendo la página direc
 - Validación con datasets reales de terceros (SHL, SPU) y pruebas automáticas (vitest), algunas con datos reales.
 - App Expo: protección **en segundo plano** en iPhone y Android (módulo nativo propio + GPS en segundo plano; exige ubicación "Permitir siempre"), **PIN** para cancelar o apagar, estado real de la alerta (panel y familia), modo demo, **modo grabar** (exporta CSV) y **simular** casos sin moverse.
 - **Interfaz completa** con el sistema de diseño "Negro cálido": onboarding con prueba guiada, "¿Todo bien?" con cuenta regresiva, falsa alarma con PIN, página del contacto, "Me robaron", grabar evidencia, Cerca y ajustes (ver "Pantallas").
+- **Backend** ([apps/api](apps/api)): recibe la alerta, guarda la ruta en vivo en la base de datos (Cloudflare D1), arma el enlace `/a/<id>` para cada contacto, manda el WhatsApp/SMS con Zavu cuando hay clave, avisa "está bien" si el dueño cancela y "X se encarga" al resto de la red. Borra los teléfonos al cancelar o a las 24 h. Probado de punta a punta en local.
+- **Página del contacto en vivo** (`/a/<id>`): dibuja la ruta real, se actualiza cada 2 s, dice hacia dónde va y a qué velocidad, botón a Google Maps y "Yo me encargo".
 - Reproductor de grabaciones CSV reales en la terminal.
 
 ## Ideas pendientes (todavía no funciona)
-- Backend en tiempo real y panel con mapa de la ruta de huida (el envío ya está listo en la app: `EXPO_PUBLIC_URL_ALERTAS`).
-- Aviso por WhatsApp o SMS a un contacto (Zavu, disponible el domingo 18).
-- Probar en celulares reales la protección en segundo plano (ya está programada: módulo nativo + GPS en segundo plano; ver PLAN §5).
+- Publicar el backend en la URL pública (`npm run desplegar -w @pixel-hack/api`).
+- Mensajes reales por WhatsApp o SMS: el código ya está; falta la clave de Zavu (cupón del domingo 18) con `npx wrangler secret put ZAVU_API_KEY`. WhatsApp a quien nunca nos escribió necesita una plantilla aprobada por Meta (`ZAVU_PLANTILLA_ALERTA`); sin ella, Zavu manda SMS.
+- Mapa con calles reales en la página del contacto (hoy la ruta real se dibuja sobre un mapa esquemático; el botón abre Google Maps).
+- Probar en celulares reales la protección en segundo plano (ya está programada: módulo nativo + GPS en segundo plano; ver PLAN §5). Límites conocidos: si la persona **cierra la app deslizándola**, la protección se apaga (iPhone y Android); en Xiaomi, Redmi, POCO y Huawei hay que activar "Inicio automático" y "Sin restricciones" de batería (la app lleva a esa pantalla desde "Tú"). Para la demo: un Pixel, Samsung o iPhone.
 - Arrebatos simulados en bici **con GPS**, grabados por nosotros (no existen datos públicos de arrebatos desde moto).
 - Veto por Bluetooth del auto o Wi-Fi conocido (para las falsas alarmas en auto que quedan).
-- Datos reales en **Cerca** y en la **página del contacto** (hoy muestran datos de ejemplo, marcados como tales).
+- Datos reales en **Cerca** (hoy muestra datos de ejemplo, marcados como tales).
 - Activarse sola al salir de casa o de lugares conocidos, subir la evidencia a un servidor, reporte en PDF para la denuncia y huella digital (hoy se usa PIN).
 
 ## Pantallas

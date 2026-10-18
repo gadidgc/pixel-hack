@@ -15,6 +15,9 @@ public class SensoresFondoModule: Module {
   private var tGiro: Double = 0
   private var ultimoEnvio: TimeInterval = 0
   private let G = 9.80665
+  // Diagnóstico (pantalla "Herramientas del equipo"). Solo se escriben dentro de `cola`.
+  private var muestras: Double = 0
+  private var ultimaMuestra: TimeInterval = 0
 
   public func definition() -> ModuleDefinition {
     Name("SensoresFondo")
@@ -32,6 +35,22 @@ public class SensoresFondoModule: Module {
       self.detener()
     }
 
+    Function("diagnostico") { () -> [String: Any] in
+      let ahora = ProcessInfo.processInfo.systemUptime
+      return [
+        "activo": self.motion.isAccelerometerActive,
+        "muestras": self.muestras,
+        "msDesdeUltimaMuestra": self.ultimaMuestra == 0 ? -1 : (ahora - self.ultimaMuestra) * 1000,
+        "reinicios": 0,
+        "wakeLock": false,
+      ]
+    }
+
+    /// En iPhone no existe la "optimización de batería" de Android: siempre `true`.
+    Function("sinOptimizacionBateria") { () -> Bool in
+      true
+    }
+
     OnDestroy {
       self.detener()
     }
@@ -44,7 +63,14 @@ public class SensoresFondoModule: Module {
 
   private func iniciar(intervaloMs: Int) {
     detener()
+    // Cola en serie y de prioridad alta: los manejadores de CoreMotion no dependen del hilo principal
+    // ni de la pantalla, así que siguen corriendo mientras iOS mantenga viva la app (ubicación en fondo).
     cola.maxConcurrentOperationCount = 1
+    cola.qualityOfService = .userInitiated
+    cola.addOperation { [weak self] in
+      self?.muestras = 0
+      self?.ultimaMuestra = 0
+    }
     let intervalo = Double(intervaloMs) / 1000
     if motion.isGyroAvailable {
       motion.gyroUpdateInterval = intervalo
@@ -58,6 +84,8 @@ public class SensoresFondoModule: Module {
     motion.startAccelerometerUpdates(to: cola) { [weak self] datos, _ in
       guard let self, let datos else { return }
       let t = self.aEpocaMs(datos.timestamp)
+      self.muestras += 1
+      self.ultimaMuestra = ProcessInfo.processInfo.systemUptime
       let g = (self.giro != nil && abs(t - self.tGiro) < 100) ? self.giro : nil
       self.lote.append([
         t,
@@ -79,7 +107,10 @@ public class SensoresFondoModule: Module {
     motion.stopAccelerometerUpdates()
     motion.stopGyroUpdates()
     cola.cancelAllOperations()
-    lote.removeAll()
-    giro = nil
+    // `lote` y `giro` solo se tocan dentro de `cola` (evita una carrera con el manejador de CoreMotion).
+    cola.addOperation { [weak self] in
+      self?.lote.removeAll()
+      self?.giro = nil
+    }
   }
 }

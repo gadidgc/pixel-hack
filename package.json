@@ -7,7 +7,7 @@
     "apps/*"
   ],
   "scripts": {
-    "test": "npm run test -w @pixel-hack/detector",
+    "test": "npm run test -w @pixel-hack/detector && npm run test -w @pixel-hack/api",
     "evaluar": "npm run evaluar -w @pixel-hack/detector",
     "reproducir": "npm run reproducir -w @pixel-hack/detector --",
     "typecheck": "npm run typecheck --workspaces --if-present",

@@ -17,10 +17,12 @@ export interface Preferencias {
   contactos: Contacto[];
   /** Segundos de "¿Todo bien?" antes de avisar a la red (el dueño puede cancelar con su PIN). */
   esperaFamiliaS: number;
+  /** La protección estaba encendida: si el sistema reabre la app (o se reinicia), vuelve a encenderla sola. */
+  proteccionActiva: boolean;
 }
 
 const CLAVE = 'alerta-arrebato-preferencias';
-const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10 };
+const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false };
 
 let actuales: Preferencias = INICIAL;
 let cargadas = false;

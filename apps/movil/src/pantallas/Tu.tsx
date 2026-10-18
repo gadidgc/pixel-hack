@@ -1,8 +1,8 @@
-import * as IntentLauncher from 'expo-intent-launcher';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
-import { hayBackend } from '../alertas';
+import { AppState, Platform, Pressable, View } from 'react-native';
+import { revisarBackend, type SaludBackend } from '../alertas';
+import { abrirAjustesDeFondo, pedirSinOptimizacionBateria, sinOptimizacionBateria } from '../bateria';
 import { PedirPin } from '../componentes/PedirPin';
 import { guardarPin, verificarPin } from '../pin';
 import { guardarPreferencias } from '../preferencias';
@@ -21,6 +21,20 @@ export function Tu({ onPestana, onRed, onHerramientas, onMeRobaron }: { onPestan
   const { estado } = useProteccion();
   const [siempre, setSiempre] = useState<boolean | null>(null);
   const [cambiarPin, setCambiarPin] = useState<'actual' | 'nuevo' | null>(null);
+  // undefined = revisando; null = no responde.
+  const [salud, setSalud] = useState<SaludBackend | null | undefined>(undefined);
+  useEffect(() => {
+    void revisarBackend().then(setSalud);
+  }, []);
+  const [sinOptimizacion, setSinOptimizacion] = useState<boolean | null>(() => sinOptimizacionBateria());
+
+  // Al volver de los ajustes del sistema, revisamos otra vez si ya quitó la optimización de batería.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (e) => {
+      if (e === 'active') setSinOptimizacion(sinOptimizacionBateria());
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -78,16 +92,43 @@ export function Tu({ onPestana, onRed, onHerramientas, onMeRobaron }: { onPestan
           {Platform.OS === 'android' && (
             <Fila
               titulo="Funcionar con la pantalla apagada"
-              detalle="Quita la optimización de batería (Xiaomi, Samsung…)"
-              onPress={() => void IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.IGNORE_BATTERY_OPTIMIZATION_SETTINGS)}
-              derecha={<View style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 10, backgroundColor: c.aviso, justifyContent: 'center' }}><T v="apoyo13" color="#1f1300">Arreglar</T></View>}
+              detalle={sinOptimizacion ? 'Sin optimización de batería' : 'Quita la optimización de batería'}
+              onPress={sinOptimizacion ? undefined : () => void pedirSinOptimizacionBateria().catch(() => undefined)}
+              fondo={sinOptimizacion === false ? c.avisoFondo : undefined}
+              derecha={
+                sinOptimizacion ? (
+                  <T v="apoyo13" color={c.protegido}>Listo</T>
+                ) : (
+                  <View style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 10, backgroundColor: c.aviso, justifyContent: 'center' }}><T v="apoyo13" color="#1f1300">Arreglar</T></View>
+                )
+              }
+            />
+          )}
+          {Platform.OS === 'android' && (
+            <Fila
+              titulo="Inicio automático y batería"
+              detalle="Xiaomi, Huawei, Samsung: permite que corra en segundo plano y sin restricciones"
+              onPress={() => void abrirAjustesDeFondo().catch(() => undefined)}
+              derecha={<Icono nombre="flecha" tam={18} color={c.textoSuave} />}
             />
           )}
           <Fila
             titulo="Panel de alertas"
-            detalle={hayBackend() ? 'Conectado' : 'No configurado: las alertas no salen del celular'}
+            detalle={
+              salud === undefined
+                ? 'Revisando…'
+                : !salud?.base
+                  ? 'Sin conexión: las alertas no salen del celular'
+                  : salud.mensajes
+                    ? 'Conectado, con WhatsApp y SMS'
+                    : 'Conectado, pero sin WhatsApp ni SMS todavía (falta Zavu)'
+            }
             ultima
-            derecha={<T v="apoyo13" color={hayBackend() ? c.protegido : c.aviso}>{hayBackend() ? 'OK' : 'Falta'}</T>}
+            derecha={
+              <T v="apoyo13" color={salud?.base && salud.mensajes ? c.protegido : c.aviso}>
+                {salud === undefined ? '…' : salud?.base ? (salud.mensajes ? 'OK' : 'A medias') : 'Falta'}
+              </T>
+            }
           />
         </Grupo>
 

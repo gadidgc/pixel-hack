@@ -1,6 +1,6 @@
 import { G, type MuestraImu } from '@pixel-hack/detector';
 import { Accelerometer, Gyroscope } from 'expo-sensors';
-import SensoresFondo from '../modules/sensores-fondo';
+import SensoresFondo, { type DiagnosticoSensores } from '../modules/sensores-fondo';
 import { INTERVALO_SENSORES_MS } from './sensores.constantes';
 
 export { INTERVALO_SENSORES_MS };
@@ -44,6 +44,20 @@ export async function escucharSensores(alRecibir: (m: MuestraImu) => void): Prom
     };
   }
   return escucharConExpoSensors(alRecibir);
+}
+
+/**
+ * Para la pantalla "Herramientas del equipo": cuántas muestras llegaron y hace cuánto la última.
+ * Sirve para comprobar en un celular real que con la pantalla apagada los sensores no se detienen.
+ * `null` si no está el módulo nativo (Expo Go o la web).
+ */
+export function diagnosticoSensores(): DiagnosticoSensores | null {
+  if (!SensoresFondo) return null;
+  try {
+    return SensoresFondo.diagnostico();
+  } catch {
+    return null;
+  }
 }
 
 /**

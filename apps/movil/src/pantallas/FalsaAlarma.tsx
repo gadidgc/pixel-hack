@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Share, View } from 'react-native';
 import { PedirPin } from '../componentes/PedirPin';
 import { useProteccion, usePreferencias } from '../useProteccion';
 import { Boton, Chip, Insignia, LineaDeTiempo, Pantalla, Rotulo, T, hora } from '../ui/componentes';
@@ -57,6 +57,14 @@ export function FalsaAlarma({ onVerAviso, onCerrar }: { onVerAviso: () => void; 
       <View style={{ flex: 1 }} />
       <Boton texto={avisada ? 'Fue falsa alarma: avisar que estoy bien' : 'Fue falsa alarma'} icono="huella" onPress={() => setPin(true)} />
       <Boton texto={`Ver lo que recibió ${quienes}`} variante="terciario" onPress={onVerAviso} />
+      {alerta.enlace && (
+        <Boton
+          texto="Compartir el enlace en vivo"
+          variante="terciario"
+          icono="compartir"
+          onPress={() => void Share.share({ message: `Ruta en vivo de mi celular: ${alerta.enlace}`, url: alerta.enlace ?? undefined }).catch(() => undefined)}
+        />
+      )}
       <PedirPin
         visible={pin}
         titulo="Fue falsa alarma"

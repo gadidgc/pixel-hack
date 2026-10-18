@@ -244,9 +244,9 @@ Muestra los eventos y si coincide con la etiqueta (`arrebato-…` debe alertar; 
 
 ---
 
-## 6. Backend, panel y aviso (pendiente, Piero)
+## 6. Backend, panel y aviso
 
-La app ya envía todo a `EXPO_PUBLIC_URL_ALERTAS` ([src/alertas.ts](../apps/movil/src/alertas.ts)). Si no está configurada, la alerta queda solo en la app y **la pantalla lo dice** ("Panel: NO enviada").
+**Ya está construido** en [apps/api](../apps/api) (Cloudflare Workers + D1; ver su README). La app manda todo ahí ([src/alertas.ts](../apps/movil/src/alertas.ts)); `EXPO_PUBLIC_URL_ALERTAS` sirve para apuntar a otro backend (por ejemplo, el local). Si el backend no responde, la alerta queda solo en la app y **la pantalla lo dice**. Falta: publicarlo y la clave de Zavu.
 
 ### 6.1 Contrato (lo que manda la app)
 `POST <EXPO_PUBLIC_URL_ALERTAS>` con JSON:
@@ -270,9 +270,9 @@ La app ya envía todo a `EXPO_PUBLIC_URL_ALERTAS` ([src/alertas.ts](../apps/movi
 - La pausa (30 min con PIN) no se envía: mientras dura, el detector no corre.
 - Un "posible jalón" **no** se envía: caminando hay cientos por hora (auditoría).
 
-### 6.2 Propuesta
-- **Cloudflare Worker + Durable Object** (un objeto por dispositivo): recibe el POST, guarda la ruta y la reenvía por WebSocket al panel. El mismo Worker puede servir la web de la app y el panel (**una sola URL pública con HTTPS**). Alternativa si Piero la conoce mejor: Supabase Realtime.
-- **Panel:** mapa con Leaflet + OpenStreetMap (sin clave): punto del jalón, línea de la ruta, velocidad y hora; lista de alertas.
+### 6.2 Lo que se construyó
+- **Cloudflare Worker + D1**: recibe el POST, guarda la alerta y la ruta, y sirve la web de la app en la misma URL (**una sola URL pública con HTTPS**). La página del contacto lee la alerta cada 2 s (sin WebSocket: más simple y suficiente).
+- **Página del contacto** `/a/<id>?c=<n>`: ruta real sobre un mapa esquemático, rumbo y velocidad, Google Maps, 105 y "Yo me encargo". Pendiente: mapa con calles reales (Leaflet + OpenStreetMap).
 - **WhatsApp/SMS al contacto de confianza: Zavu** (cupón disponible el domingo 18; ver CONTEXT §4). Mensaje: "🚨 Posible robo del celular de X a las 19:42. Ruta en vivo: <link al panel>".
 - Opcional: **n8n** (1 mes de Pro gratis) para enrutar alertas sin código.
 - **CORS:** la web de la app y el backend en el mismo dominio evita problemas.
@@ -280,7 +280,8 @@ La app ya envía todo a `EXPO_PUBLIC_URL_ALERTAS` ([src/alertas.ts](../apps/movi
 ### 6.3 Sponsors que usamos (para el pitch y la entrega)
 | Sponsor | Para qué | Estado |
 |---|---|---|
-| Zavu | WhatsApp/SMS al contacto | Pendiente (domingo) |
+| Zavu | WhatsApp/SMS al contacto | Código listo; falta la clave (domingo) |
+| Cloudflare (Workers + D1) | Web, API y base de datos en una URL | Construido; falta publicar |
 | n8n | Enrutar alertas (opcional) | Opcional |
 | IALABS / Maritime | Hosting (si lo confirman) | Por confirmar |
 Solo los nombramos si de verdad los usamos.

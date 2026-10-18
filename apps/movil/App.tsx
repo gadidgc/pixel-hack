@@ -2,13 +2,14 @@ import { Figtree_400Regular, Figtree_500Medium, Figtree_600SemiBold } from '@exp
 import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
 import { Lexend_300Light, Lexend_500Medium, Lexend_600SemiBold, useFonts } from '@expo-google-fonts/lexend';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { guardarPreferencias } from './src/preferencias';
 import { Bienvenida } from './src/pantallas/Bienvenida';
 import { Cerca } from './src/pantallas/Cerca';
 import { Contacto } from './src/pantallas/Contacto';
+import { ContactoEnVivo } from './src/pantallas/ContactoEnVivo';
 import { FalsaAlarma } from './src/pantallas/FalsaAlarma';
 import { Grabar } from './src/pantallas/Grabar';
 import { Herramientas } from './src/pantallas/Herramientas';
@@ -28,15 +29,22 @@ type PasoBienvenida = 'bienvenida' | 'permisos' | 'contacto' | 'prueba';
 type Extra = null | 'red' | 'herramientas' | 'meRobaron' | 'vistaContacto' | 'alerta';
 
 /**
- * En la web (la URL pública) también servimos las dos páginas que se abren desde OTRO celular:
- * - `?ver=contacto` (o `/a/...`): lo que ve el contacto (F5). Sin backend todavía, es una vista de ejemplo.
- * - `?ver=yo` (o `/yo`): "Me robaron" (F6).
+ * En la web (la URL pública) también servimos las páginas que se abren desde OTRO celular:
+ * - `/a/<id>?c=<n>`: lo que ve el contacto (F5), en vivo desde el backend. `/a/ejemplo` o `?ver=contacto`: vista de ejemplo.
+ * - `/yo` o `?ver=yo`: "Me robaron" (F6).
  */
-function paginaWeb(): 'contacto' | 'yo' | null {
+type PaginaWeb = { tipo: 'contacto'; id: string; contacto: number | null } | { tipo: 'yo' } | null;
+
+function paginaWeb(): PaginaWeb {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
   const { pathname, search } = window.location;
-  if (pathname.startsWith('/a/') || search.includes('ver=contacto')) return 'contacto';
-  if (pathname.startsWith('/yo') || search.includes('ver=yo')) return 'yo';
+  const enlace = pathname.match(/^\/a\/([a-z0-9]+)/);
+  if (enlace) {
+    const c = Number(new URLSearchParams(search).get('c'));
+    return { tipo: 'contacto', id: enlace[1], contacto: Number.isInteger(c) && c >= 0 ? c : null };
+  }
+  if (search.includes('ver=contacto')) return { tipo: 'contacto', id: 'ejemplo', contacto: null };
+  if (pathname.startsWith('/yo') || search.includes('ver=yo')) return { tipo: 'yo' };
   return null;
 }
 
@@ -52,6 +60,8 @@ function datosDeLaAlerta(estado: EstadoProteccion, nombre: string): DatosContact
       { hora: hora(a.evento.tJalon, true), texto: 'Jalón: le arrancharon el celular', clave: true },
     ],
     velocidadKmh: v === null ? null : Math.round(v * 3.6),
+    ruta: servicio.rutaReciente(),
+    jalon: a.evento.posicionJalon,
     horaJalon: hora(a.evento.tJalon),
     haceTexto: `hace ${Math.max(0, Math.round((Date.now() - a.evento.tJalon) / 1000))} s`,
   };
@@ -91,9 +101,15 @@ function Navegacion() {
   const [pestana, setPestana] = useState<Pestana>('inicio');
   const [extra, setExtra] = useState<Extra>(null);
   const web = paginaWeb();
+  const listas = Boolean(prefs?.bienvenidaHecha);
+  useEffect(() => {
+    if (listas && !web && Platform.OS !== 'web') void servicio.reanudarSiEstabaActiva();
+    // Solo al abrir la app.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listas]);
 
-  if (web === 'contacto') return <WebContacto datos={EJEMPLO_CONTACTO} ejemplo />;
-  if (web === 'yo') return <MeRobaron />;
+  if (web?.tipo === 'contacto') return <ContactoEnVivo id={web.id} contacto={web.contacto} />;
+  if (web?.tipo === 'yo') return <MeRobaron />;
   if (!prefs) return <View style={{ flex: 1, backgroundColor: COLORES.noche.fondo }} />;
 
   // F1 · Primer uso
