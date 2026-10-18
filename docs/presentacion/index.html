@@ -21,7 +21,7 @@
     --superficie-alta: #211e1b;
     --linea: #302b26;
     --texto: #f2ece3;
-    --texto-suave: #a59d92;
+    --texto-suave: #b8b0a4;
     --texto-medio: #c9c1b6;
     --protegido: #8ee3c0;
     --protegido-fondo: #14271f;
@@ -49,47 +49,52 @@
   /* Encabezado del bloque oficial y barra de progreso de los 4 bloques */
   .bloque {
     position: absolute; top: 40px; left: 112px; right: 112px; display: flex; justify-content: space-between;
-    font-family: var(--datos); font-size: 17px; letter-spacing: .18em; text-transform: uppercase; color: var(--texto-suave);
+    font-family: var(--datos); font-size: 19px; letter-spacing: .18em; text-transform: uppercase; color: var(--texto-suave);
   }
   .bloque b { color: var(--texto); font-weight: 600; }
   .progreso { position: absolute; left: 112px; right: 112px; bottom: 44px; display: grid; grid-template-columns: 30fr 120fr 30fr 120fr; gap: 8px; }
-  .progreso span { font-family: var(--datos); font-size: 13px; letter-spacing: .14em; color: var(--texto-suave); border-top: 3px solid var(--linea); padding-top: 8px; text-transform: uppercase; white-space: nowrap; }
+  .progreso span { font-family: var(--datos); font-size: 16px; letter-spacing: .14em; color: var(--texto-suave); border-top: 3px solid var(--linea); padding-top: 8px; text-transform: uppercase; white-space: nowrap; }
   .progreso span.hecho { border-color: var(--texto-suave); }
   .progreso span.ahora { border-color: var(--protegido); color: var(--protegido); }
 
+  p, li, td, .tarjeta p, .paso p { text-wrap: balance; }
   h1, h2 { font-family: var(--titular); font-weight: 700; letter-spacing: -0.03em; margin: 0; line-height: 1.02; }
   h1 { font-size: 150px; }
   h2 { font-size: 84px; }
   .bajada { font-size: 38px; line-height: 1.3; color: var(--texto-medio); margin: 28px 0 0; max-width: 22em; }
+  .bajada.ancha { max-width: none; font-size: 36px; }
   .mono { font-family: var(--datos); }
   .suave { color: var(--texto-suave); }
   .menta { color: var(--protegido); }
   .naranja { color: var(--alerta); }
-  .fuente { font-family: var(--datos); font-size: 17px; color: var(--texto-suave); letter-spacing: .04em; }
-  .generada { position: absolute; right: 112px; bottom: 88px; font-family: var(--datos); font-size: 13px; color: var(--texto-suave); opacity: .7; }
+  .fuente { font-family: var(--datos); font-size: 20px; color: var(--texto-suave); letter-spacing: .04em; }
+  .generada { position: absolute; right: 112px; bottom: 92px; font-family: var(--datos); font-size: 15px; color: var(--texto-suave); opacity: .7; }
 
   /* Láminas con foto de fondo */
   .con-foto { background-size: cover; background-position: right center; }
   .con-foto::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(13,12,11,.96) 0%, rgba(13,12,11,.75) 38%, rgba(13,12,11,0) 70%); }
+  .con-foto.oscuro::before { background: linear-gradient(90deg, rgba(13,12,11,.97) 0%, rgba(13,12,11,.85) 45%, rgba(13,12,11,.35) 100%); }
   .con-foto > * { position: relative; }
   .con-foto > .bloque, .con-foto > .progreso, .con-foto > .generada { position: absolute; }
-  .centrado-v { height: 100%; display: flex; flex-direction: column; justify-content: center; }
+  .centrado-v { height: 100%; display: flex; flex-direction: column; justify-content: center; padding-bottom: 60px; }
 
-  .chips { display: flex; gap: 16px; margin-top: 40px; }
-  .chip { font-family: var(--titular); font-weight: 600; font-size: 34px; padding: 14px 28px; border-radius: 999px; background: var(--alerta-fondo); color: var(--alerta); border: 1px solid #5a2c1f; }
-  .cifra { margin-top: 56px; display: flex; align-items: baseline; gap: 24px; }
+  .logos { display: flex; gap: 16px; margin-top: 44px; }
+  .logo { width: 124px; height: 80px; border-radius: 18px; background: #fff; display: grid; place-items: center; padding: 14px 18px; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+  .logo img { width: 100%; height: 100%; object-fit: contain; display: block; min-height: 0; }
+  .logo.yape { background: #742284; padding: 0; overflow: hidden; }
+  .logo.yape img { object-fit: cover; }
+  .cifra { margin-top: 56px; display: flex; align-items: flex-end; gap: 24px; }
   .cifra strong { font-family: var(--titular); font-size: 96px; letter-spacing: -0.03em; }
-  .cifra span { font-size: 26px; color: var(--texto-medio); line-height: 1.3; }
+  .cifra span { font-size: 30px; color: var(--texto-medio); line-height: 1.3; }
 
   /* Usuario real */
+  .caso-etq { font-family: var(--datos); font-size: 20px; letter-spacing: .16em; text-transform: uppercase; color: var(--alerta); margin: 0 0 24px; }
   .cita { font-family: var(--titular); font-weight: 500; font-size: 60px; line-height: 1.18; letter-spacing: -0.02em; margin: 0; max-width: 23em; }
   .quien { margin-top: 28px; font-family: var(--datos); font-size: 22px; color: var(--texto-suave); letter-spacing: .06em; }
-  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 64px; }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 80px; }
   .tarjeta { background: var(--superficie); border: 1px solid var(--linea); border-radius: 24px; padding: 32px 36px; }
-  .tarjeta small { display: block; font-family: var(--datos); font-size: 16px; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-suave); margin-bottom: 12px; }
+  .tarjeta small { display: block; font-family: var(--datos); font-size: 18px; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-suave); margin-bottom: 12px; }
   .tarjeta p { margin: 0; font-size: 32px; line-height: 1.3; }
-  .falta { outline: 3px dashed var(--falta); outline-offset: 10px; border-radius: 8px; }
-  .falta-etiqueta { display: inline-block; font-family: var(--datos); font-size: 16px; color: #1a1408; background: var(--falta); padding: 4px 10px; border-radius: 6px; margin-bottom: 20px; letter-spacing: .08em; }
 
   /* Demo */
   .demo { display: grid; grid-template-columns: 1fr auto; gap: 80px; align-items: center; height: 100%; }
@@ -103,35 +108,37 @@
   @keyframes latido { 50% { opacity: .25; } }
 
   /* Arquitectura */
-  .flujo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 56px; align-items: stretch; }
-  .paso { position: relative; background: var(--superficie); border: 1px solid var(--linea); border-radius: 22px; padding: 28px 28px 30px; margin-right: 44px; }
-  .paso:last-child { margin-right: 0; }
-  .paso:not(:last-child)::after { content: "→"; position: absolute; right: -40px; top: 50%; transform: translateY(-50%); font-size: 34px; color: var(--texto-suave); }
-  .paso small { font-family: var(--datos); font-size: 15px; letter-spacing: .16em; color: var(--texto-suave); text-transform: uppercase; }
-  .paso h3 { font-family: var(--titular); font-size: 34px; margin: 10px 0 14px; letter-spacing: -0.02em; line-height: 1.1; }
-  .paso ul { margin: 0; padding: 0; list-style: none; font-size: 22px; line-height: 1.45; color: var(--texto-medio); }
-  .paso ul li::before { content: "· "; color: var(--texto-suave); }
+  .flujo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 64px; margin-top: 88px; }
+  .paso { position: relative; background: var(--superficie); border: 1px solid var(--linea); border-radius: 28px; padding: 40px 32px 36px; text-align: center; }
+  .paso:not(:last-child)::after { content: "→"; position: absolute; right: -50px; top: 50%; transform: translateY(-50%); font-size: 40px; color: var(--texto-suave); }
+  .paso .icono { display: block; width: 60px; height: 60px; margin: 0 auto; color: var(--texto-medio); }
+  .paso.clave .icono { color: var(--protegido); }
+  .paso h3 { font-family: var(--titular); font-size: 44px; margin: 24px 0 12px; letter-spacing: -0.02em; }
+  .paso p { margin: 0; font-size: 26px; line-height: 1.3; color: var(--texto-medio); min-height: 2.6em; }
+  .paso code { display: inline-block; margin-top: 22px; font-family: var(--datos); font-size: 20px; color: var(--texto-suave); border: 1px solid var(--linea); border-radius: 8px; padding: 6px 12px; }
   .paso.clave { border-color: #2b5745; background: var(--protegido-fondo); }
   .paso.clave h3 { color: var(--protegido); }
-  .barra-bloqueo { margin-top: 28px; display: flex; gap: 20px; font-size: 24px; color: var(--texto-medio); }
-  .barra-bloqueo div { flex: 1; border: 1px solid var(--linea); border-radius: 16px; padding: 18px 24px; }
-  .barra-bloqueo b { color: var(--texto); }
+  .pie-flujo { margin-top: 64px; font-size: 30px; color: var(--texto-medio); text-align: center; }
+  .pie-flujo b { color: var(--texto); }
 
   /* Números grandes */
   .numeros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 64px; }
   .numero { border-top: 3px solid var(--protegido); padding-top: 24px; }
-  .numero strong { display: block; white-space: nowrap; font-family: var(--titular); font-size: 112px; letter-spacing: -0.04em; line-height: 1; }
+  .numero strong { display: block; white-space: nowrap; font-family: var(--titular); font-size: 104px; letter-spacing: -0.04em; line-height: 1; }
   .numero span { display: block; font-size: 28px; line-height: 1.3; color: var(--texto-medio); margin-top: 16px; }
-  .auditoria { margin-top: 56px; font-size: 28px; line-height: 1.35; color: var(--texto-medio); max-width: 50em; }
+  .auditoria { margin-top: 56px; font-size: 30px; line-height: 1.35; color: var(--texto-medio); border-left: 4px solid var(--alerta); padding-left: 24px; }
   .auditoria b { color: var(--texto); }
 
   /* Tablas */
-  table { width: 100%; border-collapse: collapse; margin-top: 44px; font-size: 26px; }
-  th { text-align: left; font-family: var(--datos); font-weight: 500; font-size: 15px; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-suave); padding: 0 20px 14px 0; border-bottom: 1px solid var(--linea); }
-  td { padding: 18px 20px 18px 0; border-bottom: 1px solid var(--linea); vertical-align: top; line-height: 1.3; color: var(--texto-medio); }
+  table { width: 100%; border-collapse: collapse; margin-top: 52px; font-size: 32px; }
+  td { white-space: nowrap; }
+  th { text-align: left; font-family: var(--datos); font-weight: 500; font-size: 18px; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-suave); padding: 0 20px 14px 0; border-bottom: 1px solid var(--linea); }
+  td { padding: 24px 20px 24px 0; border-bottom: 1px solid var(--linea); vertical-align: top; line-height: 1.3; color: var(--texto-medio); }
   td:first-child { color: var(--texto); font-family: var(--titular); font-weight: 600; }
   .fuera { margin-top: 30px; font-size: 24px; color: var(--texto-suave); }
   .fuera b { color: var(--texto-medio); }
+  .fuera.grande { font-size: 34px; margin-top: 56px; }
+  .fuera.grande b { color: var(--texto); }
 
   /* Preguntas */
   .cierre .qr { width: 300px; height: 300px; }
@@ -139,14 +146,16 @@
   .cierre h1 { font-size: 140px; }
   .equipo { margin-top: 32px; font-size: 30px; color: var(--texto-medio); }
   .calidad { margin-top: 40px; display: flex; gap: 14px; flex-wrap: wrap; }
-  .calidad span { font-family: var(--datos); font-size: 19px; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--linea); color: var(--texto-medio); }
+  .calidad span { font-family: var(--datos); font-size: 22px; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--linea); color: var(--texto-medio); }
   .marca { display: flex; align-items: center; gap: 16px; font-family: var(--titular); font-weight: 600; font-size: 30px; margin-bottom: 40px; }
   .marca img { width: 56px; height: 56px; }
 
   /* Respaldo */
   .respaldo .bloque b { color: var(--falta); }
+  .lamina.centrada.activa, .vp-mini .lamina.centrada,
+  .lamina.respaldo.activa, .vp-mini .lamina.respaldo { display: flex; flex-direction: column; justify-content: center; padding-top: 110px; }
   .lista { margin: 40px 0 0; padding: 0; list-style: none; font-size: 32px; line-height: 1.35; }
-  .lista li { padding: 18px 0; border-bottom: 1px solid var(--linea); color: var(--texto-medio); }
+  .lista li { white-space: nowrap; padding: 18px 0; border-bottom: 1px solid var(--linea); color: var(--texto-medio); }
   .lista li b { color: var(--texto); }
 
   /* Pantalla negra (tecla B) e índice (tecla I) */
@@ -161,7 +170,8 @@
   .indice button em { display: block; font: 12px var(--datos); color: var(--texto-suave); font-style: normal; letter-spacing: .1em; margin-bottom: 4px; }
 
   .ayuda { position: fixed; left: 16px; bottom: 12px; font: 12px var(--datos); color: #5c554d; z-index: 5; transition: opacity .5s; }
-  body.quieto .ayuda { opacity: 0; }
+  body.quieto .ayuda, body.captura .ayuda { opacity: 0; }
+  body.captura .lamina.activa { animation: none; }
   body.quieto { cursor: none; }
 
   /* ---------- Vista de presentador (?presentador) ---------- */
@@ -216,11 +226,17 @@
   </aside>
 </section>
 
-<section class="lamina con-foto" data-bloque="1" data-titulo="Lo peor viene después" data-meta="0:20"
+<section class="lamina con-foto oscuro" data-bloque="1" data-titulo="Lo peor viene después" data-meta="0:20"
   style="background-image:url(img/despues.jpg)">
   <div class="centrado-v">
     <h2>Lo peor viene<br>después.</h2>
-    <div class="chips"><span class="chip">Yape</span><span class="chip">Banco</span><span class="chip">WhatsApp</span></div>
+    <div class="logos">
+      <span class="logo yape"><img src="img/logos/yape.svg" alt="Yape"></span>
+      <span class="logo"><img src="img/logos/bcp.svg" alt="BCP"></span>
+      <span class="logo"><img src="img/logos/interbank.svg" alt="Interbank"></span>
+      <span class="logo"><img src="img/logos/bbva.svg" alt="BBVA"></span>
+      <span class="logo"><img src="img/logos/whatsapp.svg" alt="WhatsApp"></span>
+    </div>
     <div class="cifra"><strong>728 493</strong><span>celulares reportados como robados<br>en el 1.<sup>er</sup> semestre de 2025</span></div>
     <p class="fuente">Fuente: RENTESEG / OSIPTEL · sin separar por tipo de robo</p>
   </div>
@@ -232,20 +248,18 @@
   </aside>
 </section>
 
-<section class="lamina" data-bloque="1" data-titulo="Usuario real" data-meta="0:30">
-  <div class="falta">
-    <span class="falta-etiqueta">FALTA: CITA DE UN USUARIO REAL DE FUERA DEL EQUIPO</span>
-    <p class="cita">“[Lo que le pasó, en sus palabras: dónde, cómo, qué perdió.]”</p>
-    <p class="quien">[Nombre o iniciales] · [distrito] · [ocupación]</p>
-  </div>
+<section class="lamina centrada" data-bloque="1" data-titulo="Un caso real" data-meta="0:30">
+  <p class="caso-etq">Un caso real · Jesús María, Lima</p>
+  <p class="cita">“De mi Yape habían pasado 4 plines de 500… me robaron 2000 soles.”</p>
+  <p class="quien">Fuente: Trome, abril de 2026</p>
   <div class="dos">
     <div class="tarjeta"><small>Para quién</small><p>Quien camina en Lima con el celular en la mano.</p></div>
     <div class="tarjeta"><small>Qué resolvemos</small><p>El celular <b class="menta">avisa solo</b>, y tu red <b class="menta">bloquea tus cuentas</b> por ti.</p></div>
   </div>
   <aside class="notas">
-    <p><span class="t">0:20</span>Lee la cita del usuario real (vale el 15% de la nota: "un usuario real de tu track").</p>
+    <p><span class="t">0:20</span><q>Esto le pasó a una vecina de Jesús María: le arrancharon el celular desde una moto con Yape abierto y en minutos le sacaron 2000 soles.</q></p>
     <p><q>Para quién: cualquiera que camina en Lima con el celular en la mano. Qué resolvemos: el celular se da cuenta solo del arrebato, avisa a tu familia con la ruta del ladrón, y ellos bloquean tus cuentas por ti.</q></p>
-    <p class="ojo">Antes de presentar: cambiar el texto entre corchetes por la cita real y quitar el recuadro amarillo (clase "falta"). Nunca inventar la cita.</p>
+    <p>Es un caso de prensa (Trome, av. Brasil, abril de 2026), no una entrevista nuestra: si preguntan, dilo así. El monto lo dice la víctima; la nota no lo confirma por su cuenta.</p>
   </aside>
 </section>
 
@@ -280,49 +294,30 @@
 
 <!-- ================= 3 · CÓMO ESTÁ HECHO (2:30 a 3:00) ================= -->
 
-<section class="lamina" data-bloque="3" data-titulo="Arquitectura" data-meta="2:40">
+<section class="lamina centrada" data-bloque="3" data-titulo="Arquitectura" data-meta="2:40">
   <h2>Cómo está hecho</h2>
   <div class="flujo">
-    <div class="paso">
-      <small>Celular</small>
-      <h3>Sensores</h3>
-      <ul><li>Acelerómetro y giroscopio a 50 Hz</li><li>GPS cada segundo</li><li>Módulo nativo propio (Kotlin + Swift): sigue en segundo plano</li></ul>
-    </div>
-    <div class="paso clave">
-      <small>En el celular, sin internet</small>
-      <h3>Detector propio</h3>
-      <ul><li>Máquina de estados en TypeScript</li><li>Jalón → no íbamos en vehículo → huida</li><li>El mismo código en iPhone, Android y web</li></ul>
-    </div>
-    <div class="paso">
-      <small>Cloudflare</small>
-      <h3>Backend</h3>
-      <ul><li>Workers + D1 (ruta en vivo)</li><li>R2 (evidencia en video y audio)</li><li>Borra los datos a las 24 h</li></ul>
-    </div>
-    <div class="paso">
-      <small>Tu red</small>
-      <h3>Aviso</h3>
-      <ul><li>WhatsApp (Meta) + SMS (Zavu)</li><li>Página en vivo con la ruta</li><li>Kit para bloquear cuentas</li></ul>
-    </div>
+    <div class="paso"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M12 18h.01"/></svg><h3>Celular</h3><p>Sensores y GPS</p><code>Kotlin · Swift</code></div>
+    <div class="paso clave"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><h3>Detector</h3><p>Decide ahí mismo, sin internet</p><code>TypeScript propio</code></div>
+    <div class="paso"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg><h3>Nube</h3><p>Guarda la ruta en vivo</p><code>Cloudflare</code></div>
+    <div class="paso"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>Tu red</h3><p>Recibe el aviso con la ruta</p><code>WhatsApp · SMS</code></div>
   </div>
-  <div class="barra-bloqueo">
-    <div><b>Android:</b> se bloquea al instante y pregunta "¿Todo bien?" encima del bloqueo.</div>
-    <div><b>iPhone:</b> Apple no deja a una app bloquear la pantalla → SMS con una palabra clave + Atajos.</div>
-  </div>
+  <p class="pie-flujo">Al confirmar, el celular <b>se bloquea</b>: Android al instante, iPhone con Atajos.</p>
   <aside class="notas">
-    <p><span class="t">2:30</span><q>Detectamos en el celular, sin internet: un detector propio que busca 3 señales físicas, el jalón, que no íbamos en un vehículo y la huida. El mismo código corre en iPhone, Android y web.</q></p>
+    <p><span class="t">2:30</span><q>El celular lee sus sensores; nuestro detector decide ahí mismo, sin internet, buscando 3 señales: el jalón, que no íbamos en un vehículo y la huida. El mismo código corre en iPhone, Android y web.</q></p>
     <p><q>El backend en Cloudflare guarda la ruta en vivo y avisa por WhatsApp y SMS a la vez. En iPhone, como Apple no deja bloquear la pantalla, mandamos un SMS que dispara Atajos.</q></p>
     <p>Complejidad técnica vale 30% y es el desempate: señala la lámina, no la leas.</p>
   </aside>
 </section>
 
-<section class="lamina" data-bloque="3" data-titulo="Datos reales" data-meta="2:50">
+<section class="lamina centrada" data-bloque="3" data-titulo="Datos reales" data-meta="2:50">
   <h2>Probado con datos reales</h2>
   <div class="numeros">
     <div class="numero"><strong>23/24</strong><span>jalones detectados en robos escenificados reales</span></div>
-    <div class="numero"><strong>1 / 10&nbsp;h</strong><span>falsas alarmas: 9 en 93 horas reales de 3 personas</span></div>
+    <div class="numero"><strong>1/10&nbsp;h</strong><span>falsas alarmas: 9 en 93 horas reales de 3 personas</span></div>
     <div class="numero"><strong>~5 s</strong><span>del arrebato al aviso<br>(4,5 a 6 s)</span></div>
   </div>
-  <p class="auditoria"><span class="naranja">●</span> Una auditoría independiente nos mostró que nuestras primeras pruebas eran optimistas. <b>Corregimos el detector.</b></p>
+  <p class="auditoria">Una auditoría independiente dijo que éramos optimistas. <b>Corregimos el detector.</b></p>
   <p class="fuente" style="margin-top:20px">Datasets públicos de terceros: SHL (93 h) y SPU (24 robos). Más 167 pruebas automáticas en el repo.</p>
   <aside class="notas">
     <p><span class="t">2:40</span><q>No nos quedamos con nuestro simulador: lo probamos con datos reales de terceros. 23 de 24 jalones, una falsa alarma cada 10 horas, y el aviso sale en unos 5 segundos.</q></p>
@@ -331,15 +326,15 @@
   </aside>
 </section>
 
-<section class="lamina" data-bloque="3" data-titulo="Decisiones" data-meta="3:00">
+<section class="lamina centrada" data-bloque="3" data-titulo="Decisiones" data-meta="3:00">
   <h2>Decisiones</h2>
   <table>
     <thead><tr><th>Decidimos</th><th>Por qué</th><th>Lo que cuesta</th></tr></thead>
     <tbody>
-      <tr><td>Alerta silenciosa</td><td>Hacer sonar el celular puede provocar violencia</td><td>El dueño no lo oye: se entera su red</td></tr>
-      <tr><td>Solo arrebato en moto</td><td>Deja una firma física clara: jalón + velocidad de vehículo</td><td>No detectamos lanzas ni descuidos</td></tr>
-      <tr><td>iPhone se bloquea con Atajos</td><td>Apple no deja a una app bloquear la pantalla</td><td>Necesita señal y tarda unos segundos</td></tr>
-      <tr><td>La red bloquea el banco</td><td>No hay API: el banco verifica al titular por teléfono</td><td>Alguien tiene que llamar (al 1820)</td></tr>
+      <tr><td>Alerta silenciosa</td><td>Sonar provoca violencia</td><td>Se entera tu red, no tú</td></tr>
+      <tr><td>Solo moto</td><td>Firma física clara</td><td>No detecta lanzas</td></tr>
+      <tr><td>iPhone con Atajos</td><td>Apple no deja bloquear</td><td>Tarda unos segundos</td></tr>
+      <tr><td>Tu red bloquea el banco</td><td>No hay API bancaria</td><td>Alguien llama al 1820</td></tr>
     </tbody>
   </table>
   <aside class="notas">
@@ -371,7 +366,6 @@
       <li>¿La app bloquea el banco? → C</li>
       <li>¿Y en la demo, por qué corriendo? → D</li>
       <li>¿Qué falta? → E</li>
-      <li>¿Alguien lo usó? → F</li>
     </ul>
   </aside>
 </section>
@@ -396,16 +390,16 @@
 <section class="lamina respaldo" data-bloque="4" data-respaldo="B" data-titulo="B · ¿Y Google?">
   <h2>¿Google no hace esto ya?</h2>
   <div class="dos" style="margin-top:56px">
-    <div class="tarjeta"><small>Google · Bloqueo por detección de robo</small><p>Detecta el arrebato y <b>solo bloquea la pantalla</b>. Nadie se entera, no hay ruta, y no funciona con la pantalla bloqueada.</p></div>
-    <div class="tarjeta"><small>Alerta Arrebato</small><p>Detecta y <b class="menta">avisa sola a tu red</b>, con la ruta en vivo y el kit para bloquear tus cuentas.</p></div>
+    <div class="tarjeta"><small>Google · Bloqueo por detección de robo</small><p>Detecta el arrebato y <b>solo bloquea la pantalla</b>. Nadie se entera.</p></div>
+    <div class="tarjeta"><small>Alerta Arrebato</small><p>Detecta y <b class="menta">avisa sola a tu red</b>, con la ruta en vivo.</p></div>
   </div>
-  <p class="fuera"><b>No competimos con Google: lo sumamos.</b> Su bloqueo protege tus datos; nosotros avisamos a tu familia. Las apps de SOS piden apretar un botón, y en un arrebato no hay tiempo.</p>
-  <aside class="notas"><p>Detalle y fuentes: docs/limites-google-y-apps-parecidas.md. Un integrante lo tenía activado en su Galaxy sin saberlo.</p></aside>
+  <p class="fuera grande"><b>No competimos con Google: lo sumamos.</b></p>
+  <aside class="notas"><p>Su bloqueo protege tus datos; nosotros avisamos a tu familia. Además no funciona con la pantalla bloqueada. Las apps de SOS piden apretar un botón, y en un arrebato no hay tiempo.</p><p>Detalle y fuentes: docs/limites-google-y-apps-parecidas.md. Un integrante lo tenía activado en su Galaxy sin saberlo.</p></aside>
 </section>
 
 <section class="lamina respaldo" data-bloque="4" data-respaldo="C" data-titulo="C · ¿Bloquea el banco?">
   <h2>¿La app bloquea el banco sola?</h2>
-  <p class="bajada">No. No existe esa API: el banco verifica al titular por teléfono. Lo que hacemos es poner <b class="menta">el número correcto frente a la persona correcta</b>, con los datos listos.</p>
+  <p class="bajada ancha">No hay API: el banco verifica al titular. Ponemos <b class="menta" style="white-space:nowrap">el número correcto frente a la persona correcta</b>.</p>
   <ul class="lista">
     <li><b>1820 (ASBANC)</b>: conecta con el área de bloqueo de 17 bancos</li>
     <li><b>La operadora</b>: suspende la línea y bloquea el IMEI</li>
@@ -432,21 +426,12 @@
 <section class="lamina respaldo" data-bloque="4" data-respaldo="E" data-titulo="E · Lo que falta">
   <h2>Lo que todavía falta</h2>
   <ul class="lista">
-    <li><b>Arrebatos en bici con GPS grabados por nosotros</b>: no hay datos públicos de arrebatos desde moto</li>
-    <li><b>WhatsApp a cualquiera sin que escriba antes</b>: Meta está revisando las plantillas (el SMS ya llega)</li>
-    <li><b>Si cierras la app deslizándola</b>, la protección se apaga (iPhone y Android)</li>
-    <li><b>Mapa con calles reales</b> en la página del contacto (hoy: mapa esquemático + botón a Google Maps)</li>
+    <li><b>Grabar arrebatos en bici con GPS</b> (no hay datos públicos)</li>
+    <li><b>WhatsApp a cualquiera:</b> Meta revisa las plantillas</li>
+    <li><b>Si cierras la app deslizándola,</b> la protección se apaga</li>
+    <li><b>Mapa con calles reales</b> en la página del contacto</li>
   </ul>
-  <aside class="notas"><p>La lista completa está en el README, sección "Ideas pendientes". El evento pide separar lo que funciona de lo que falta.</p></aside>
-</section>
-
-<section class="lamina respaldo" data-bloque="4" data-respaldo="F" data-titulo="F · Tracción">
-  <h2>¿Alguien de fuera lo usó?</h2>
-  <div class="falta" style="margin-top:56px">
-    <span class="falta-etiqueta">FALTA: DATOS REALES DE USO, MOSTRADOS DESDE EL PRODUCTO</span>
-    <p class="bajada">[Cuántas personas de fuera del equipo: reportes en Cerca, alertas o descargas.]</p>
-  </div>
-  <aside class="notas"><p class="ojo">Solo cuenta si se ve en registros o datos del producto (bonus +0,25). Capturas o cuentas del equipo no valen. Si no hay datos, borra esta lámina.</p></aside>
+  <aside class="notas"><p>El SMS ya llega a cualquiera. Hoy el mapa del contacto es esquemático, con un botón a Google Maps. La lista completa está en el README, sección "Ideas pendientes". El evento pide separar lo que funciona de lo que falta.</p></aside>
 </section>
 
 </div></div>
@@ -484,10 +469,10 @@
 (() => {
   // Bloques oficiales del evento: inicio y fin en segundos
   const BLOQUES = [
-    { n: 1, nombre: "Problema", desde: 0, hasta: 30 },
-    { n: 2, nombre: "Demo en vivo", desde: 30, hasta: 150 },
-    { n: 3, nombre: "Cómo está hecho", desde: 150, hasta: 180 },
-    { n: 4, nombre: "Preguntas", desde: 180, hasta: 300 },
+    { n: 1, nombre: "Problema", corto: "Problema", desde: 0, hasta: 30 },
+    { n: 2, nombre: "Demo en vivo", corto: "Demo en vivo", desde: 30, hasta: 150 },
+    { n: 3, nombre: "Cómo está hecho", corto: "Cómo", desde: 150, hasta: 180 },
+    { n: 4, nombre: "Preguntas", corto: "Preguntas", desde: 180, hasta: 300 },
   ];
   const CORTE = 180;     // a los 3:00 se corta la demo
   const AVISO = 165;     // a los 2:45 el reloj se pone naranja
@@ -516,7 +501,7 @@
     const barra = document.createElement("div");
     barra.className = "progreso";
     barra.innerHTML = BLOQUES.map((x) =>
-      `<span class="${x.n < b.n ? "hecho" : x.n === b.n ? "ahora" : ""}">${x.nombre}</span>`).join("");
+      `<span class="${x.n < b.n ? "hecho" : x.n === b.n ? "ahora" : ""}">${x.corto}</span>`).join("");
     lamina.append(barra);
   });
 
@@ -681,6 +666,8 @@
   window.addEventListener("hashchange", () => { if (desdeHash() !== actual) ir(desdeHash()); });
   ir(desdeHash(), false);
   if (esPresentador) enviar({ tipo: "hola" });
+  // ?captura: sin animación ni ayuda, para sacar capturas de cada lámina
+  if (new URLSearchParams(location.search).has("captura")) document.body.classList.add("captura");
 })();
 </script>
 </body>
