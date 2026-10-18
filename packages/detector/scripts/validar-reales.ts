@@ -175,7 +175,7 @@ async function validarShl(carpeta: string, config: ConfigDetector) {
       if (ev.tipo === 'posible_jalon') jalones[actividad] = (jalones[actividad] ?? 0) + 1;
       if (ev.tipo === 'descartado') descartes[ev.motivo] = (descartes[ev.motivo] ?? 0) + 1;
       if (ev.tipo === 'alerta') {
-        alertas.push({ actividad, t: ev.t, via: ev.via });
+        alertas.push({ actividad, t: ev.t, via: `${ev.via}, confianza ${ev.confianza}` });
         detector.cancelar(ev.t); // el dueño la cancelaría
       }
     }

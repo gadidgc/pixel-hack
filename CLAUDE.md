@@ -29,6 +29,8 @@ packages/detector/   El algoritmo (TypeScript puro, sin dependencias). Corre igu
   scripts/           evaluar.ts (banco de pruebas → reportes/evaluacion.md), reproducir.ts (CSV reales)
   datos/             ejemplos/ (simulados) y grabaciones/ (reales, del modo "grabar" de la app)
 apps/movil/          App Expo (React Native) para iPhone, Android y web. Solo sensores, permisos y pantalla.
+  src/servicio.ts    El servicio de protección (fuera de React: sigue en segundo plano)
+  modules/sensores-fondo/  Módulo nativo propio (Kotlin + Swift): sensores en segundo plano. No funciona en Expo Go
 docs/                PLAN.md, investigación, rúbrica; fase-1/ archivada
 ```
 

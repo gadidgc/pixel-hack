@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["SensoresFondoModule"]
+  },
+  "android": {
+    "modules": ["pe.pixelhack.sensoresfondo.SensoresFondoModule"]
+  }
+}

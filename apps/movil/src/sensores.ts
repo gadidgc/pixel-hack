@@ -1,5 +1,6 @@
 import { G, type MuestraImu } from '@pixel-hack/detector';
 import { Accelerometer, Gyroscope } from 'expo-sensors';
+import SensoresFondo, { type DiagnosticoSensores } from '../modules/sensores-fondo';
 import { INTERVALO_SENSORES_MS } from './sensores.constantes';
 
 export { INTERVALO_SENSORES_MS };
@@ -7,11 +8,61 @@ export { INTERVALO_SENSORES_MS };
 export interface Suscripcion {
   detener: () => void;
   tieneGiroscopio: boolean;
+  /** `true` si los sensores siguen con la pantalla apagada o la app en segundo plano. */
+  segundoPlano: boolean;
+}
+
+export async function pedirPermisoSensores(): Promise<boolean> {
+  // En iPhone pide el permiso de "Movimiento y estado físico" si hace falta.
+  const { granted } = await Accelerometer.requestPermissionsAsync();
+  return granted;
 }
 
 /**
- * Convierte el reloj de los sensores (segundos desde que prendió el celular, según la plataforma)
- * al reloj del GPS (milisegundos de época Unix), para que el detector pueda compararlos.
+ * (iOS y Android; la web usa sensores.web.ts.)
+ * Preferimos nuestro módulo nativo (modules/sensores-fondo), que sigue funcionando en segundo plano.
+ * Si no está compilado (por ejemplo, en Expo Go), usamos expo-sensors, que se detiene al salir de la app.
+ */
+export async function escucharSensores(alRecibir: (m: MuestraImu) => void): Promise<Suscripcion> {
+  if (SensoresFondo) {
+    const disponible = SensoresFondo.disponible();
+    if (!disponible.acelerometro) throw new Error('Este celular no tiene acelerómetro.');
+    const sub = SensoresFondo.addListener('onMuestras', ({ muestras }) => {
+      for (const [t, ax, ay, az, gx, gy, gz] of muestras) {
+        const hayGiro = Number.isFinite(gx) && Number.isFinite(gy) && Number.isFinite(gz);
+        alRecibir({ t, ax, ay, az, gx: hayGiro ? gx : null, gy: hayGiro ? gy : null, gz: hayGiro ? gz : null });
+      }
+    });
+    SensoresFondo.iniciar(INTERVALO_SENSORES_MS);
+    return {
+      tieneGiroscopio: disponible.giroscopio,
+      segundoPlano: true,
+      detener: () => {
+        sub.remove();
+        SensoresFondo?.detener();
+      },
+    };
+  }
+  return escucharConExpoSensors(alRecibir);
+}
+
+/**
+ * Para la pantalla "Herramientas del equipo": cuántas muestras llegaron y hace cuánto la última.
+ * Sirve para comprobar en un celular real que con la pantalla apagada los sensores no se detienen.
+ * `null` si no está el módulo nativo (Expo Go o la web).
+ */
+export function diagnosticoSensores(): DiagnosticoSensores | null {
+  if (!SensoresFondo) return null;
+  try {
+    return SensoresFondo.diagnostico();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Convierte el reloj de expo-sensors (segundos desde que prendió el celular) al reloj de época Unix
+ * que usa el GPS, para que el detector pueda compararlos.
  */
 class Reloj {
   private desfase: number | null = null;
@@ -26,18 +77,8 @@ class Reloj {
   }
 }
 
-export async function pedirPermisoSensores(): Promise<boolean> {
-  // En iPhone (web) el permiso de movimiento solo se puede pedir al tocar un botón.
-  const { granted } = await Accelerometer.requestPermissionsAsync();
-  return granted;
-}
-
-/**
- * (iOS y Android; la web usa sensores.web.ts.)
- * Escucha acelerómetro y giroscopio y entrega muestras ya en las unidades del detector:
- * expo-sensors da la aceleración en g (la pasamos a m/s²) y el giro en rad/s.
- */
-export async function escucharSensores(alRecibir: (m: MuestraImu) => void): Promise<Suscripcion> {
+/** Respaldo con expo-sensors: da la aceleración en g (la pasamos a m/s²) y el giro en rad/s. */
+async function escucharConExpoSensors(alRecibir: (m: MuestraImu) => void): Promise<Suscripcion> {
   if (!(await Accelerometer.isAvailableAsync())) {
     throw new Error('Este dispositivo no tiene acelerómetro (el simulador de iPhone tampoco). Usa "Simular" o un celular real.');
   }
@@ -71,6 +112,7 @@ export async function escucharSensores(alRecibir: (m: MuestraImu) => void): Prom
 
   return {
     tieneGiroscopio,
+    segundoPlano: false,
     detener: () => {
       subAcc.remove();
       subGiro?.remove();

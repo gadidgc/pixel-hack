@@ -5,10 +5,16 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "pe.pixelhack.alertaarrebato"
+      "bundleIdentifier": "pe.pixelhack.alertaarrebato",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location"
+        ],
+        "NSMotionUsageDescription": "Usamos el movimiento del celular para detectar si te lo arranchan, también con la pantalla apagada."
+      }
     },
     "android": {
       "package": "pe.pixelhack.alertaarrebato",
@@ -18,29 +24,66 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "WAKE_LOCK",
+        "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "name": "Alerta Arrebato",
       "shortName": "Arrebato",
       "lang": "es-PE",
-      "themeColor": "#1b5e20"
+      "themeColor": "#0d0c0b",
+      "backgroundColor": "#0d0c0b"
     },
     "plugins": [
       [
         "expo-sensors",
         {
-          "motionPermission": "Usamos el movimiento del celular para detectar si te lo arranchan."
+          "motionPermission": "Usamos el movimiento del celular para detectar si te lo arranchan, también con la pantalla apagada."
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Usamos tu ubicación para confirmar la huida y mandar la ruta a tu familia si te roban el celular."
+          "locationWhenInUsePermission": "Usamos tu ubicación para confirmar la huida y mandar la ruta a tu familia si te roban el celular.",
+          "locationAlwaysAndWhenInUsePermission": "Para protegerte aunque uses otras apps o apagues la pantalla, Alerta Arrebato necesita tu ubicación \"siempre\". Solo se envía si detectamos un robo.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
-      "expo-sharing"
-    ]
+      "expo-sharing",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Para grabar evidencia en video si es seguro para ti.",
+          "microphonePermission": "Para grabar el audio de la evidencia.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Para grabar evidencia solo con audio, con el celular en el bolsillo."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1b5e20"
+        }
+      ]
+    ],
+    "backgroundColor": "#0d0c0b"
   }
 }

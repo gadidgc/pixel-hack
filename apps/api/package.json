@@ -1,0 +1,19 @@
+{
+  "name": "@pixel-hack/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend de Alerta Arrebato: recibe las alertas de la app, guarda la ruta en D1, avisa a la red y sirve la web (Cloudflare Workers).",
+  "scripts": {
+    "dev": "wrangler dev",
+    "desplegar": "npm run exportar:web -w @pixel-hack/movil && wrangler d1 migrations apply alerta-arrebato --remote && wrangler deploy",
+    "migrar:local": "wrangler d1 migrations apply alerta-arrebato --local",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251001.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.38.0"
+  }
+}

@@ -10,11 +10,12 @@
 ## 0. Resumen en 1 minuto
 
 1. **Qué hacemos:** una app (iPhone, Android y web) que detecta cuando un ladrón **en moto** te arrancha el celular y **avisa en segundos** con la ubicación y la ruta de huida, antes de que lo apaguen. Google solo bloquea el celular; nosotros avisamos.
-2. **Ya está construido y probado** (ver §9): el algoritmo, un simulador físico, 61 pruebas automáticas (3 con datos reales), la app Expo con sensores reales, modo demo, modo para grabar datos y un botón para simular casos sin moverse.
+2. **Ya está construido y probado** (ver §9): el algoritmo, un simulador físico, 64 pruebas automáticas (3 con datos reales), la app Expo con sensores reales, modo demo, modo para grabar datos y un botón para simular casos sin moverse.
 3. **Resultados con DATOS REALES** ([validacion-datos-reales.md](validacion-datos-reales.md)):
    - Detecta el jalón en **23 de 24** robos escenificados reales.
-   - **5 falsas alarmas en 93 horas** reales de 3 personas con el celular en la mano; **0 en las 24 h de prueba a ciegas**.
-   - Arrebato completo semi-real (caminar real + jalón real + huida real en vehículo): **81–87%** detectado, alerta a los **~4,5 s**.
+   - **9 falsas alarmas en 93 horas** reales de 3 personas con el celular en la mano (≈ 1 cada 10 h). La familia solo se entera a los 10 s; el dueño cancela con su PIN.
+   - Arrebato completo semi-real (caminar real + jalón real + huida real en vehículo): **85–94%** detectado, alerta a los **~4,5–6 s**; en casos difíciles, **65–89%**.
+   - Una **auditoría independiente** mostró que nuestras primeras pruebas eran optimistas; corregimos detector y app ([validacion §7](validacion-datos-reales.md)).
    - El simulador nos engañaba en varias cosas; lo corregimos con estos datos.
 4. **Lo que falta para ganar:** (a) **grabaciones reales** para confirmar los umbrales, (b) **backend + panel con mapa** (y WhatsApp con Zavu), (c) **URL pública con HTTPS**, (d) **un usuario real** que confirme el problema, (e) el pitch y la demo en vivo.
 5. **Reparto:** Gabriel → integración, despliegue y builds. Mauricio → grabaciones reales y ajuste de umbrales. Piero → backend, panel y WhatsApp. Cesar → usuarios reales, cifras, pitch y demo. Detalle en §8.
@@ -26,7 +27,7 @@
 | Sí | No (por ahora) |
 |---|---|
 | Arrebato desde **moto o bici** (huida a más de 15 km/h) | Ladrón a pie (solo en **modo demo**) |
-| Celular **en la mano o en uso**, app abierta y pantalla prendida | Pantalla apagada / app en segundo plano (fase 2, §5) |
+| Celular **en la mano o en uso**, también con otra app abierta o la pantalla apagada (app compilada, §5) | Expo Go y la web: solo con la app abierta |
 | Avisar con ubicación y ruta de huida | Bloquear el celular, sonar alarma, foto del ladrón |
 | iPhone, Android y web (misma base de código) | Relojes, Bluetooth, Wi-Fi |
 
@@ -47,7 +48,7 @@
 │  Modo grabar → CSV  ◀─────────────────┘                                  │   │
 └──────────────────────────────────────────────────────────────────────────┘   │
                                                                                ▼
-                              posible_jalon · alerta · ubicacion · cancelada (JSON por HTTPS)
+                       alerta · notificar_familia · ubicacion · cancelada (JSON por HTTPS)
                                                                                │
                          ┌─────────────── Backend (pendiente, Piero) ──────────┴──┐
                          │  POST /alertas  →  guarda y reenvía en tiempo real      │
@@ -72,7 +73,7 @@ packages/detector/
   src/config.ts            Todos los umbrales (modo normal y modo demo)
   src/csv.ts               Formato de grabaciones + reproductor
   src/simulador/           Física del celular, comportamientos, 26 escenarios, "día normal", evaluación
-  test/                    61 pruebas (vitest), 3 con datos reales
+  test/                    64 pruebas (vitest), 3 con datos reales
   scripts/validar-reales.ts  Datasets reales de terceros (SHL, SPU) → falsas alarmas y jalones
   scripts/empalme-real.ts    Prueba semi-real de arrebato completo
   datos/reales/            Recortes reales de SHL (dominio público con cita) para las pruebas
@@ -174,9 +175,10 @@ Simula horas de la vida de alguien en Lima **sin robos**: caminar, esperar, comb
 | Medida | Resultado |
 |---|---|
 | Jalón detectado en robos escenificados reales (SPU) | **23/24** |
-| Falsas alarmas en 93 h reales con el celular en la mano (SHL) | **5** (≈ 1 cada 19 h; 0 en 51 h de User2 y User3) |
+| Falsas alarmas en 93 h reales con el celular en la mano (SHL) | **9** (≈ 1 cada 10 h; User3: 0 en 24 h) |
 | Prueba a ciegas (User3, 24 h nunca usadas para ajustar) | **0** falsas alarmas |
-| Arrebato completo semi-real (130 empalmes) | **81,5–86,9%**, alerta a los ~4,5 s |
+| Arrebato completo semi-real (130 empalmes, 13 jalones distintos) | **84,6–93,8%**, alerta a los ~4,5–6 s |
+| Casos difíciles (ladrón lento, GPS cada 2–5 s, sin GPS al inicio, recién bajó del bus) | **65–89%** (antes de la auditoría: 0–80%) |
 
 **Simulación** ([reportes/evaluacion.md](../packages/detector/reportes/evaluacion.md), 100 corridas por escenario): 98,8% de detección, 0% de falsas alarmas en escenarios trampa, 0,24 falsas alarmas por día simulado. Robustez (más ruido, GPS lento, saturación, GPS malo): 95–99%.
 
@@ -211,7 +213,7 @@ Muestra los eventos y si coincide con la etiqueta (`arrebato-…` debe alertar; 
 **Probar en varios celulares:** al menos un iPhone, un Samsung gama A y un Xiaomi/Redmi (los más comunes en el Perú). Anotar si tienen giroscopio.
 
 ### 4.6 Pruebas automáticas
-`npm test` corre 61 pruebas en ~3 s:
+`npm test` corre 64 pruebas en ~3 s:
 - matemática y filtros;
 - cada regla de la máquina de estados, con señales hechas a mano;
 - el formato CSV;
@@ -224,36 +226,53 @@ Muestra los eventos y si coincide con la etiqueta (`arrebato-…` debe alertar; 
 
 ## 5. Plataformas y segundo plano
 
-| Plataforma | Hoy | Límite | Fase 2 |
+**La protección funciona en segundo plano** (usando WhatsApp o Maps, o con la pantalla apagada) en la **app compilada** de iPhone y Android. Para eso exigimos permisos privilegiados; si el usuario no los da, la protección no se activa (se lo explicamos).
+
+| Plataforma | Cómo sigue funcionando en segundo plano | Permisos que exigimos | Límite |
 |---|---|---|---|
-| **Web (URL pública)** | Funciona con la página abierta y la pantalla prendida | Requiere **HTTPS**; en iPhone, permiso al tocar el botón; no funciona dentro de un iframe | — |
-| **Android** | App Expo con la app abierta (pantalla prendida con `expo-keep-awake`) | Con la pantalla apagada, Android pausa los sensores de la app | Servicio en primer plano (notificación fija "Protección activa") con `expo-location` `startLocationUpdatesAsync` + un **módulo nativo** de sensores. Pedir quitar la "optimización de batería" (Xiaomi y Samsung matan apps; dontkillmyapp.com) |
-| **iPhone** | App Expo con la app abierta | iOS **no deja** leer el acelerómetro en tiempo real en segundo plano | Investigar ubicación en segundo plano + Core Motion (riesgoso; Apple podría rechazarla) |
+| **Android** | Servicio en primer plano de `expo-location` (notificación fija "Protección activa") + nuestro **módulo nativo** [`modules/sensores-fondo`](../apps/movil/modules/sensores-fondo) (Kotlin: SensorManager sin atarse a la pantalla + *wake lock* parcial) | Ubicación **"Permitir siempre"**, movimiento, PIN. Botón para quitar la optimización de batería | Algunas marcas (Xiaomi, Samsung) igual matan apps: hay que quitar la optimización de batería ([dontkillmyapp.com](https://dontkillmyapp.com/)) |
+| **iPhone** | Modo de fondo `location` (indicador azul) + módulo nativo (Swift: CoreMotion en su propia cola) | Ubicación **"Permitir siempre"**, movimiento, PIN | Apple no documenta que CoreMotion siga llegando en segundo plano solo con la ubicación activa: **hay que probarlo en un iPhone real**. Apple podría objetarlo al publicar en la App Store |
+| **Web (URL pública)** | No puede: el navegador detiene los sensores | Movimiento y ubicación | Solo con la página abierta; la app lo dice en pantalla |
+| **Expo Go** | No puede (no incluye nuestro módulo nativo) | — | Usa `npx expo run:android` / `run:ios` o un build de EAS |
 
-**Argumento para el jurado:** el arrebato en la calle casi siempre pasa **con el celular en la mano y la pantalla prendida** (mirando el mapa o escribiendo). La versión actual cubre ese momento. *Hay que confirmarlo en las entrevistas (§8, Cesar).*
+**Probado:**
+- **Web, con un "celular falso"** que inyecta movimiento y GPS en el navegador. Flujo completo: crear PIN → activar → jalón → alerta a 1,2 s → estado real ("Panel: NO enviada, sin backend") → cuenta regresiva de 10 s → PIN incorrecto rechazado → PIN correcto cancela.
+- **iPhone:** la app nativa, **con el módulo Swift**, compila y abre en el simulador (iPhone 17 Pro, iOS 26.5). El simulador no tiene acelerómetro, así que los sensores en segundo plano **no se pudieron probar ahí**.
+- **Android:** ver el resultado del build en el PR.
 
-**Probado:** web en el navegador (simulación y el flujo en vivo con un "celular falso" que inyecta movimiento y GPS: posible jalón 2,9 g → alerta a los 1,5 s → cancelar). Los paquetes de iPhone, Android y web compilan (`expo export --platform all`). **La app nativa de iPhone se compiló y corre en el simulador** (iPhone 17 Pro, iOS 26.5): el botón "Simular" da los mismos resultados que en la terminal; el simulador no tiene acelerómetro, así que muestra el aviso correspondiente. **Android nativo:** no se pudo compilar en esta laptop (no tiene Java); se probó el paquete JavaScript. **Falta probar en celulares reales** (§8, Mauricio y Gabriel).
+**Falta (lo más importante):** probar en **celulares reales** que la protección sigue con la pantalla apagada y con otra app abierta (§8, Gabriel y Mauricio).
 
 ---
 
-## 6. Backend, panel y aviso (pendiente, Piero)
+## 6. Backend, panel y aviso
 
-La app ya envía todo a `EXPO_PUBLIC_URL_ALERTAS` ([src/alertas.ts](../apps/movil/src/alertas.ts)). Si no está configurada, la alerta queda solo en la app (la demo no se cae si el backend falla).
+**Ya está construido** en [apps/api](../apps/api) (Cloudflare Workers + D1; ver su README). La app manda todo ahí ([src/alertas.ts](../apps/movil/src/alertas.ts)); `EXPO_PUBLIC_URL_ALERTAS` sirve para apuntar a otro backend (por ejemplo, el local). Si el backend no responde, la alerta queda solo en la app y **la pantalla lo dice**. Publicado en https://alerta-arrebato.gabrieldgc1999.workers.dev. Falta la clave de Zavu.
 
 ### 6.1 Contrato (lo que manda la app)
 `POST <EXPO_PUBLIC_URL_ALERTAS>` con JSON:
 ```jsonc
-{ "dispositivo": "android-k3j9x2ab", "enviadoEn": 1760740000000, "tipo": "posible_jalon", "evento": { ... } }
-{ "dispositivo": "...", "enviadoEn": ..., "tipo": "alerta", "evento": { "tJalon": ..., "via": "velocidad_gps", "confianza": "alta",
-  "velocidadMs": 9.1, "posicionJalon": { "lat": -12.04, "lon": -77.04, "precision": 8, "t": ... }, "ultimaPosicion": { ... } } }
+{ "dispositivo": "android-k3j9x2ab", "enviadoEn": 1760740000000, "tipo": "alerta", "evento": { "tJalon": ..., "via": "velocidad_gps", "confianza": "alta",
+  "velocidadMs": 9.1, "posicionJalon": { "lat": -12.04, "lon": -77.04, "precision": 8, "t": ... }, "ultimaPosicion": { ... } },
+  "ruta": [ { "t": ..., "lat": ..., "lon": ..., "velocidad": 1.2, "precision": 6 }, ... ],
+  "nombre": "Lucía", "contactos": [ { "nombre": "Mamá", "telefono": "+51..." }, ... ] }
+{ "dispositivo": "...", "enviadoEn": ..., "tipo": "notificar_familia", "evento": { ... }, "nombre": "...", "contactos": [ ... ] }
 { "dispositivo": "...", "enviadoEn": ..., "tipo": "ubicacion", "lectura": { "t": ..., "lat": ..., "lon": ..., "velocidad": 8.7, "precision": 6 } }
 { "dispositivo": "...", "enviadoEn": ..., "tipo": "cancelada", "evento": { "motivo": "cancelado", ... } }
+{ "dispositivo": "...", "enviadoEn": ..., "tipo": "prueba", "nombre": "...", "contactos": [ ... ] }
+{ "dispositivo": "...", "enviadoEn": ..., "tipo": "motivo_falsa_alarma", "motivo": "Iba en auto" }
 ```
-Las `ubicacion` llegan cada segundo **mientras** hay un posible jalón o una alerta (la ruta de huida).
+- `alerta`: al instante. El backend la muestra en el panel **sin avisar todavía a la familia**. `ruta` = los últimos 60 s.
+- `notificar_familia`: pasado el tiempo de espera (10, 15 o 20 s, lo elige la persona en "Tú"; 10 s por defecto), si no la canceló con su PIN. **Recién ahí** se manda el WhatsApp/SMS a `contactos`.
+- `ubicacion`: cada segundo **solo mientras dura la alerta** (la ruta de huida).
+- `prueba`: la prueba guiada del onboarding. El backend manda a la red un mensaje marcado como **PRUEBA**.
+- `motivo_falsa_alarma`: opcional, lo que la persona marcó al cancelar ("Iba en auto", "Se me cayó"…). Sirve para mejorar el detector.
+- `nombre` y `contactos` viajan **solo** en `alerta`, `notificar_familia` y `prueba`, para saber a quién escribir. Fuera de eso, quedan guardados solo en el celular.
+- La pausa (30 min con PIN) no se envía: mientras dura, el detector no corre.
+- Un "posible jalón" **no** se envía: caminando hay cientos por hora (auditoría).
 
-### 6.2 Propuesta
-- **Cloudflare Worker + Durable Object** (un objeto por dispositivo): recibe el POST, guarda la ruta y la reenvía por WebSocket al panel. El mismo Worker puede servir la web de la app y el panel (**una sola URL pública con HTTPS**). Alternativa si Piero la conoce mejor: Supabase Realtime.
-- **Panel:** mapa con Leaflet + OpenStreetMap (sin clave): punto del jalón, línea de la ruta, velocidad y hora; lista de alertas.
+### 6.2 Lo que se construyó
+- **Cloudflare Worker + D1**: recibe el POST, guarda la alerta y la ruta, y sirve la web de la app en la misma URL (**una sola URL pública con HTTPS**). La página del contacto lee la alerta cada 2 s (sin WebSocket: más simple y suficiente).
+- **Página del contacto** `/a/<id>?c=<n>`: ruta real sobre un mapa esquemático, rumbo y velocidad, Google Maps, 105 y "Yo me encargo". Pendiente: mapa con calles reales (Leaflet + OpenStreetMap).
 - **WhatsApp/SMS al contacto de confianza: Zavu** (cupón disponible el domingo 18; ver CONTEXT §4). Mensaje: "🚨 Posible robo del celular de X a las 19:42. Ruta en vivo: <link al panel>".
 - Opcional: **n8n** (1 mes de Pro gratis) para enrutar alertas sin código.
 - **CORS:** la web de la app y el backend en el mismo dominio evita problemas.
@@ -261,17 +280,46 @@ Las `ubicacion` llegan cada segundo **mientras** hay un posible jalón o una ale
 ### 6.3 Sponsors que usamos (para el pitch y la entrega)
 | Sponsor | Para qué | Estado |
 |---|---|---|
-| Zavu | WhatsApp/SMS al contacto | Pendiente (domingo) |
+| Zavu | WhatsApp/SMS al contacto | Código listo; falta la clave (domingo) |
+| Cloudflare (Workers + D1) | Web, API y base de datos en una URL | Publicado |
 | n8n | Enrutar alertas (opcional) | Opcional |
 | IALABS / Maritime | Hosting (si lo confirman) | Por confirmar |
 Solo los nombramos si de verdad los usamos.
 
 ---
 
-## 7. Interfaz (después)
+## 7. Interfaz
 
-**Propuesta completa de funcionalidades (Cesar):** [funcionalidades-app.md](funcionalidades-app.md): onboarding, alerta a la familia, "Me robaron" desde otro celular, la primera hora (bloquear todo), reporte de extorsión, panel y "cancelar con PIN". El detector de este plan es su funcionalidad ⭐ (§4.2 de esa propuesta).
-Hoy hay **una pantalla simple** a propósito: activar, lecturas en vivo, alerta con "falsa alarma", modo demo, grabar y simular. Ideas para después: pantalla de alerta grande con cuenta regresiva para cancelar con PIN, contacto de confianza, historial, onboarding de permisos, ícono y nombre definitivos.
+**Propuesta de funcionalidades (Cesar):** [funcionalidades-app.md](funcionalidades-app.md), flujos F1 a F8. El detector de este plan es su funcionalidad ⭐.
+**Diseño:** sistema de diseño "Alerta Arrebato" v2 "Negro cálido" ([artifact](https://claude.ai/artifact/HW9kceGpSuZaAxxFtccVMj)) y 14 pantallas diseñadas ([artifact](https://claude.ai/artifact/3kUXLiWYpeJsixzCv4dpZp)). Ya están implementadas en `apps/movil`.
+
+**Base visual** ([src/ui/](../apps/movil/src/ui)): colores y medidas en `tema.ts` (tema **noche** por defecto; tema **día** para las páginas del contacto y "Me robaron"), íconos propios, componentes (botón, insignia, lecturas, tarjeta, hoja, línea de tiempo, barra de pestañas y animaciones que respetan "reducir movimiento"), un mapa estilizado y las fuentes Lexend, Figtree e IBM Plex Mono.
+
+**Pantallas implementadas** ([src/pantallas/](../apps/movil/src/pantallas), navegación en [App.tsx](../apps/movil/App.tsx)):
+
+| Flujo | Pantalla | Qué hace |
+|---|---|---|
+| F1 Onboarding | Bienvenida, Permisos, Contacto, Prueba | Nombre; permisos; red de confianza con invitación por WhatsApp (link `wa.me`); prueba guiada que pasa un arrebato grabado por **el mismo detector**; creación del PIN |
+| F2 Protección | Inicio | Estado (protegida, en pausa, limitada, apagada), lecturas en vivo, pausa de 30 min con PIN, grabar, apagar con PIN |
+| F4 Alerta | TodoBien | "¿Todo bien?" en silencio con cuenta regresiva antes de avisar a la red; también llega como notificación del sistema (expo-notifications) |
+| F4 Falsa alarma | FalsaAlarma | Línea de tiempo, motivo con chips y cancelar con PIN |
+| F5 Contacto | WebContacto | Lo que ve el contacto (tema día). En la web: `?ver=contacto`. **Datos de ejemplo, marcados como tales**, hasta que exista el backend |
+| F6 Me robaron | MeRobaron | Lista de la primera hora (bloquear línea, cuentas, IMEI…). En la web: `?ver=yo` |
+| F7 Evidencia | Grabar | Video (expo-camera) o audio (expo-audio), guardado en el celular y subido a R2 (`POST /api/evidencias`); si hay una alerta abierta, queda unido a ella. Si la subida falla, lo dice y queda la copia local. No graba en la web |
+| F8 Cerca | Cerca | Mapa primero con puntos y carrusel. **Reportes reales** a 1 km de tu ubicación (`GET/POST /api/reportes`, últimos 30 días, ubicación redondeada a ~100 m) y "Reportar algo". Una alerta avisada a la red aparece sola, anónima; si se cancela, se borra |
+| Ajustes | Tú | Red, tiempo de espera (10/15/20 s), cambiar PIN, permisos y batería, estado del backend, guía de la primera hora, herramientas del equipo |
+| Equipo | Herramientas | Modo demo, grabar sensores en CSV, simulaciones y registro |
+
+Las preferencias (nombre, red, tiempo de espera) se guardan **solo en el celular** ([src/preferencias.ts](../apps/movil/src/preferencias.ts), SecureStore o localStorage en la web).
+
+**No son pantallas, son contenido del sistema:**
+- **Notificación fija de Android:** "Estás protegida · Desde las HH:MM. Usa tu celular normal."
+- **Mensaje de WhatsApp:** el texto está en el diseño; lo manda el backend de Piero con Zavu (§6.2).
+
+**Pendiente a propósito (no lo hicimos):**
+- Activarse sola al salir de casa o de lugares conocidos.
+- Reporte en PDF para la denuncia policial.
+- Huella digital: usamos PIN.
 
 ---
 
@@ -323,12 +371,13 @@ Cada uno trabaja en su rama `<nombre>/<tema>` y abre PR. `npm test` debe pasar.
 |---|---|
 | Detector con máquina de estados, filtro complementario, velocidad derivada, modo sin GPS, modo demo | Ajuste con grabaciones reales |
 | Simulador físico, 26 escenarios, día normal, robustez | Probar en celulares reales (iPhone, Samsung, Xiaomi) |
-| 61 pruebas automáticas, reporte reproducible | Backend + panel con mapa |
+| 64 pruebas automáticas, reporte reproducible | Backend + panel con mapa |
 | **Validado con datos reales:** 93 h de SHL, 24 robos de SPU, 130 empalmes semi-reales | Arrebatos simulados en bici con GPS (grabaciones nuestras) |
-| App Expo SDK 58 (iPhone, Android, web): protección, alerta, cancelar, grabar CSV, simular | WhatsApp/SMS con Zavu |
+| App Expo SDK 58 (iPhone, Android, web): protección, alerta, cancelar, grabar CSV, simular | WhatsApp/SMS con Zavu (el texto del mensaje ya está diseñado) |
 | Flujo en vivo probado en el navegador con un "celular falso" | URL pública con HTTPS |
-| Paquetes de iPhone, Android y web compilan; app nativa de iPhone corre en el simulador | Build nativo de Android (falta Java en la laptop de Gabriel) · Segundo plano / pantalla apagada (fase 2) |
-| Reproductor de grabaciones en la terminal | Diseño de la interfaz |
+| Segundo plano programado (módulo nativo Kotlin + Swift, GPS en segundo plano, permisos obligatorios), PIN, estado real de la alerta; app de iPhone con el módulo compila y abre | **Probar el segundo plano en celulares reales** (pantalla apagada, otra app abierta) |
+| Reproductor de grabaciones en la terminal | Datos reales en Cerca y en la página del contacto (hoy son de ejemplo) |
+| **Interfaz implementada** (§7): sistema de diseño "Negro cálido", onboarding con prueba guiada, Inicio, "¿Todo bien?", falsa alarma, página del contacto, "Me robaron", grabar evidencia, Cerca, Tú | Activarse sola al salir de casa, reporte PDF, huella |
 
 ---
 
@@ -337,14 +386,16 @@ Cada uno trabaja en su rama `<nombre>/<tema>` y abre PR. `npm test` debe pasar.
 |---|---|---|
 | Complejidad técnica | 30% | Validación con datasets reales de terceros (SHL, SPU) y prueba a ciegas, fusión de sensores (filtro complementario con rotación exacta), máquina de estados, autocorrelación para ritmo de pasos, simulador físico propio, banco de pruebas con robustez, app multiplataforma, backend en tiempo real |
 | Funciona | 25% | Demo en vivo desde la URL pública: arranchan el celular → alerta en el panel en ~3 s. Botón "Simular" para preguntas fuera del guion. **Datos reales** (grabaciones) para llegar a 5 |
-| Calidad técnica | 20% | Paquete sin dependencias, tipado estricto, 61 pruebas (algunas con datos reales), errores manejados (permisos, sin GPS, sin giroscopio, backend caído), nada de claves |
+| Calidad técnica | 20% | Paquete sin dependencias, tipado estricto, 64 pruebas (algunas con datos reales), errores manejados (permisos, sin GPS, sin giroscopio, backend caído), nada de claves |
 | Problema e impacto | 15% | Entrevistas a víctimas reales + cifra oficial |
 | Claridad | 10% | Este plan: decisiones, tradeoffs (modo demo, pantalla prendida) y qué quedó fuera |
 
 ## 11. Riesgos
 | Riesgo | Mitigación |
 |---|---|
-| Falsas alarmas al usar el celular en un auto que arranca después de estar **más de 2 min** parado (3 de las 5 reales) | Fase 2 nativa: veto por Bluetooth del auto o Wi-Fi conocido (lo que hace Google). Hoy: el botón "falsa alarma" |
+| Falsas alarmas al subir a un vehículo o cuando arranca (la mayoría de las 9 reales en 93 h) | La familia recién se entera a los 10 s y el dueño cancela con su PIN. Siguiente paso: veto por Bluetooth del auto o Wi-Fi conocido (lo que hace Google) |
+| El sistema mata la app en segundo plano (Xiaomi, Samsung) o iOS deja de mandar el movimiento | Botón para quitar la optimización de batería; probar en celulares reales antes de la demo |
+| El ladrón apaga el celular antes de que se confirme (~5 s) | La alerta sale apenas se confirma; el PIN impide apagar la protección desde la app (no impide apagar el celular) |
 | No hay datos públicos de arrebatos desde moto | Nuestras grabaciones en bici + empalmes semi-reales; decirlo en el pitch |
 | Los umbrales no sirven con celulares reales | Ya validados con 93 h reales (SHL) y 24 robos reales (SPU); faltan celulares peruanos de gama baja |
 | La demo en vivo no alerta | Modo demo + ensayo 10 veces + botón "Simular" como respaldo + reproducir una grabación real |

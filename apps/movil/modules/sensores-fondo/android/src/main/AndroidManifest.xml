@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Mantener la CPU despierta mientras la protección está activa (pantalla apagada). -->
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+  <!--
+    Para mostrar el diálogo "¿Permitir que la app se ejecute en segundo plano?" (sin optimización de batería).
+    Google Play lo acepta para apps de seguridad personal:
+    https://developer.android.com/training/monitoring-device-state/doze-standby#exemption-cases
+  -->
+  <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+</manifest>

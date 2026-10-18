@@ -62,6 +62,8 @@ export async function escucharSensores(alRecibir: (m: MuestraImu) => void): Prom
   }
   return {
     tieneGiroscopio,
+    // El navegador detiene los sensores con la pestaña en segundo plano.
+    segundoPlano: false,
     detener: () => window.removeEventListener('devicemotion', alMoverse),
   };
 }
