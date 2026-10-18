@@ -127,6 +127,23 @@ describe('máquina de estados del detector', () => {
     expect(g.tipos()).toEqual(['posible_jalon', 'descartado:sin_huida', 'alerta']);
     const alerta = g.eventos.find((e) => e.tipo === 'alerta');
     expect(alerta && alerta.tipo === 'alerta' && alerta.confianza).toBe('media');
+    // La velocidad del aviso es la de la huida, no la de los 10 s quietos del primer intento.
+    expect(alerta && alerta.tipo === 'alerta' && alerta.velocidadMs).toBe(9);
+  });
+
+  it('una muestra con NaN se ignora: el detector no queda sordo', () => {
+    const g = new Guion().durante(3);
+    g.detector.procesarImu({ t: g.t + 10, ax: NaN, ay: 0, az: G, gx: 0, gy: 0, gz: 0 });
+    g.detector.procesarGps({ t: g.t + 10, lat: NaN, lon: NaN, velocidad: 0, precision: null });
+    g.durante(9).jalon().durante(6, { velocidad: 9, vibracion: 0.15 });
+    expect(g.tipos()).toEqual(['posible_jalon', 'alerta']);
+  });
+
+  it('reiniciar() también limpia la telemetría', () => {
+    const g = new Guion().durante(3, { velocidad: 9 });
+    expect(g.detector.obtenerTelemetria().velocidadMs).toBe(9);
+    g.detector.reiniciar();
+    expect(g.detector.obtenerTelemetria()).toMatchObject({ velocidadMs: null, precisionGpsM: null, t: 0 });
   });
 
   it('la velocidad sube de a poco (auto que arranca) → descartado (arranque_gradual)', () => {
