@@ -25,7 +25,7 @@ export function TodoBien({ onVer }: { onVer: () => void }) {
 
   useEffect(() => {
     if (!alerta || alerta.familia !== 'esperando' || reducir) return;
-    barra.setValue(alerta.segundosParaFamilia / espera);
+    barra.setValue(Math.min(1, alerta.segundosParaFamilia / espera));
     const anim = Animated.timing(barra, { toValue: 0, duration: alerta.segundosParaFamilia * 1000, easing: Easing.linear, useNativeDriver: Platform.OS !== 'web' });
     anim.start();
     return () => anim.stop();
@@ -51,7 +51,7 @@ export function TodoBien({ onVer }: { onVer: () => void }) {
           </T>
         </View>
         <View style={{ height: 3, borderRadius: 99, backgroundColor: c.superficie2, overflow: 'hidden' }}>
-          <Animated.View style={{ height: 3, width: '100%', backgroundColor: c.textoSuave, transform: [{ scaleX: reducir ? s / espera : barra }], transformOrigin: 'left' }} />
+          <Animated.View style={{ height: 3, width: '100%', backgroundColor: c.textoSuave, transform: [{ scaleX: reducir ? Math.min(1, s / espera) : barra }], transformOrigin: 'left' }} />
         </View>
         <T v="cuerpoFuerte" style={[TIPO.cuerpoFuerte, { fontSize: 17 }]}>
           ¿Todo bien?

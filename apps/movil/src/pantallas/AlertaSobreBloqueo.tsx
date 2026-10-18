@@ -41,7 +41,7 @@ export function AlertaSobreBloqueo() {
     const ok = await servicio.cancelarAlerta(valor).catch(() => false);
     setOcupado(false);
     setPin('');
-    if (!ok) setError('PIN incorrecto.');
+    if (!ok) setError(servicio.mensajePin() ?? 'PIN incorrecto.');
   };
 
   const tocar = (tecla: (typeof TECLAS)[number]) => {

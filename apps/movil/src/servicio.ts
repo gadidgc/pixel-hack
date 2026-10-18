@@ -98,6 +98,12 @@ export function describirEvento(e: EventoDetector): string {
   }
 }
 
+/** Segundos extra para avisar a la red cuando el dueño tiene que desbloquear Android antes de cancelar. */
+export const SEGUNDOS_EXTRA_DESBLOQUEO = 15;
+/** PIN incorrectos seguidos antes de hacer esperar, y cuánto (crece con cada intento de más). */
+const INTENTOS_PIN = 5;
+const ESPERA_PIN_MS = 30_000;
+
 class ServicioProteccion {
   private estado: EstadoProteccion = {
     activa: false,
@@ -126,6 +132,8 @@ class ServicioProteccion {
   private cuentaPendiente: { evento: Extract<EventoDetector, { tipo: 'alerta' }>; nombre: string; contactos: Contacto[]; limite: number } | null = null;
   private ultimaRevisionCuenta = 0;
   private idNotificacion: string | null = null;
+  private pinFallidos = 0;
+  private pinEsperarHasta = 0;
 
   obtener(): EstadoProteccion {
     return this.estado;
@@ -289,10 +297,18 @@ class ServicioProteccion {
    * falsa alarma.
    */
   async cancelarAlerta(pin: string): Promise<boolean> {
+    if (this.mensajePin()) return false;
     if (!(await verificarPin(pin))) {
+      this.pinFallidos++;
+      if (this.pinFallidos >= INTENTOS_PIN) {
+        // Sobre la pantalla de bloqueo cualquiera puede probar PINs: frenamos el adivinar por fuerza bruta.
+        this.pinEsperarHasta = Date.now() + ESPERA_PIN_MS * (this.pinFallidos - INTENTOS_PIN + 1);
+      }
       this.registrar('PIN incorrecto: la alerta sigue.', 'error');
       return false;
     }
+    this.pinFallidos = 0;
+    this.pinEsperarHasta = 0;
     const alerta = this.estado.alerta;
     this.detenerCuentaFamilia();
     void quitarAviso(this.idNotificacion);
@@ -309,6 +325,12 @@ class ServicioProteccion {
     return true;
   }
 
+  /** Si hubo demasiados PIN incorrectos, cuánto falta para poder intentar de nuevo; si no, `null`. */
+  mensajePin(): string | null {
+    const faltan = Math.ceil((this.pinEsperarHasta - Date.now()) / 1000);
+    return faltan > 0 ? `Demasiados intentos. Espera ${faltan} s para volver a intentar.` : null;
+  }
+
   /** Motivo opcional de una falsa alarma ("Iba en auto", "Se me cayó"…): nos ayuda a mejorar el detector. */
   enviarMotivo(motivo: string): void {
     if (hayBackend()) void enviar({ tipo: 'motivo_falsa_alarma', motivo });
@@ -316,7 +338,7 @@ class ServicioProteccion {
   }
 
   private iniciarAlerta(evento: Extract<EventoDetector, { tipo: 'alerta' }>): void {
-    const espera = preferencias().esperaFamiliaS;
+    const elegida = preferencias().esperaFamiliaS;
     const conVelocidad = evento.velocidadMs !== null ? ` y luego ${Math.round(evento.velocidadMs * 3.6)} km/h` : '';
 
     // 0) Bloqueo de Android, lo primero: si el celular estaba desbloqueado en la mano, cada segundo cuenta.
@@ -324,7 +346,11 @@ class ServicioProteccion {
     const bloqueo = bloquearAlDetectar();
     // Con el celular bloqueado, el "¿Todo bien?" se abre ENCIMA de la pantalla de bloqueo (como un
     // despertador): el dueño cancela con el PIN de la app sin tener que desbloquear Android primero.
-    const sobreBloqueo = bloqueo.estado === 'solicitado' && mostrarSobreBloqueo(espera);
+    const sobreBloqueo = bloqueo.estado === 'solicitado' && mostrarSobreBloqueo(elegida);
+    // Respaldo: si Android no deja la pregunta sobre el bloqueo, el dueño tiene que desbloquear Android
+    // antes de escribir el PIN. Le damos 15 s más para que una falsa alarma no avise a su familia.
+    const extra = bloqueo.estado === 'solicitado' && !sobreBloqueo ? SEGUNDOS_EXTRA_DESBLOQUEO : 0;
+    const espera = elegida + extra;
 
     this.cambiar({
       alerta: {
@@ -345,7 +371,7 @@ class ServicioProteccion {
     });
     this.registrar(`Bloqueo de pantalla: ${bloqueo.detalle}`, bloqueo.estado === 'solicitado' ? 'info' : 'aviso');
     if (bloqueo.estado === 'solicitado' && !sobreBloqueo) {
-      this.registrar('Android no deja mostrar el "¿Todo bien?" sobre la pantalla de bloqueo: para cancelar hay que desbloquear.', 'aviso');
+      this.registrar(`Android no deja mostrar el "¿Todo bien?" sobre la pantalla de bloqueo: para cancelar hay que desbloquear. Esperamos ${extra} s más antes de avisar.`, 'aviso');
     }
     // Sobre la pantalla de bloqueo ya va nuestro aviso de pantalla completa; no repetimos la notificación.
     if (!sobreBloqueo) void avisarTodoBien(espera).then((id) => (this.idNotificacion = id));

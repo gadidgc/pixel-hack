@@ -192,3 +192,44 @@ describe('"¿Todo bien?" sobre la pantalla de bloqueo', () => {
     expect(dobles.ocultar).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('respaldos del bloqueo', () => {
+  it('sin pregunta sobre el bloqueo da 15 s más antes de avisar a la red', async () => {
+    dobles.mostrar.mockReturnValue(false);
+    reproducirCaso('arrebato_moto');
+    expect(servicio.obtener().alerta?.segundosParaFamilia).toBe(25);
+    expect(dobles.avisar).toHaveBeenCalledWith(25);
+    expect(dobles.enviar).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'alerta', esperaS: 25 }));
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(servicio.obtener().alerta?.familia).toBe('esperando');
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(servicio.obtener().alerta?.familia).toBe('avisada');
+  });
+  it('con la pregunta sobre el bloqueo respeta la espera elegida', () => {
+    reproducirCaso('arrebato_moto');
+    expect(servicio.obtener().alerta?.segundosParaFamilia).toBe(10);
+  });
+  it('sin bloqueo no agrega espera', () => {
+    dobles.bloquear.mockReturnValue({ estado: 'sin_autorizacion', detalle: 'Falta.' });
+    dobles.mostrar.mockReturnValue(false);
+    reproducirCaso('arrebato_moto');
+    expect(servicio.obtener().alerta?.segundosParaFamilia).toBe(10);
+  });
+  it('tras 5 PIN incorrectos hace esperar 30 s, aunque el siguiente sea el correcto', async () => {
+    dobles.pinOk = false;
+    reproducirCaso('arrebato_moto');
+    for (let i = 0; i < 5; i++) expect(await servicio.cancelarAlerta('0000')).toBe(false);
+    expect(servicio.mensajePin()).toContain('Espera 30 s');
+    dobles.pinOk = true;
+    expect(await servicio.cancelarAlerta('1234')).toBe(false);
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(servicio.mensajePin()).toBeNull();
+    expect(await servicio.cancelarAlerta('1234')).toBe(true);
+  });
+  it('4 PIN incorrectos no hacen esperar', async () => {
+    dobles.pinOk = false;
+    reproducirCaso('arrebato_moto');
+    for (let i = 0; i < 4; i++) await servicio.cancelarAlerta('0000');
+    expect(servicio.mensajePin()).toBeNull();
+  });
+});
