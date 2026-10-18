@@ -70,7 +70,7 @@ export function Tu({
 
   return (
     <View style={{ flex: 1, backgroundColor: c.fondo }}>
-      <Pantalla style={{ gap: 14 }}>
+      <Pantalla style={{ gap: 14 }} conPestanas>
         <T v="titulo26" accessibilityRole="header">
           Tú
         </T>
