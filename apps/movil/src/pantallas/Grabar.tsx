@@ -68,14 +68,18 @@ export function Grabar({ onPestana }: { onPestana: (p: Pestana) => void }) {
     cambiarSubida(uri, r.ok ? { estado: 'subida', enlace: r.enlace, conAlerta: r.conAlerta } : { estado: 'local', motivo: r.motivo });
   }, []);
 
-  /** Mueve el archivo a la carpeta de documentos de la app (la caché se borra sola) y lo sube. */
-  const guardar = (uri: string, m: Modo, duracionS: number) => {
+  /**
+   * Mueve el archivo a la carpeta de documentos de la app (la caché se borra sola) y lo sube.
+   * Ojo: desde expo-file-system 58, `move()` es asíncrono. Sin el `await`, la subida empezaba
+   * antes de que el archivo llegara a su sitio y fallaba con "no se encontró el archivo".
+   */
+  const guardar = async (uri: string, m: Modo, duracionS: number) => {
     const { extension, mime } = tipoDe(uri, m);
     let final = uri;
     try {
       const origen = new File(uri);
       const destino = new File(Paths.document, `evidencia-${Date.now()}.${extension}`);
-      origen.move(destino);
+      await origen.move(destino);
       final = destino.uri;
     } catch {
       // Si no se pudo mover, queda en la caché: igual se puede compartir.
@@ -95,7 +99,7 @@ export function Grabar({ onPestana }: { onPestana: (p: Pestana) => void }) {
         setGrabando(true);
         const r = await camara.current?.recordAsync({ maxDuration: 600 });
         setGrabando(false);
-        if (r?.uri) guardar(r.uri, 'video', Math.round((Date.now() - inicio.current) / 1000));
+        if (r?.uri) await guardar(r.uri, 'video', Math.round((Date.now() - inicio.current) / 1000));
       } else {
         const p = await AudioModule.requestRecordingPermissionsAsync();
         if (!p.granted) return setError('Sin permiso de micrófono.');
@@ -119,7 +123,7 @@ export function Grabar({ onPestana }: { onPestana: (p: Pestana) => void }) {
       } else {
         await grabadora.stop();
         setGrabando(false);
-        if (grabadora.uri) guardar(grabadora.uri, 'audio', Math.round((Date.now() - inicio.current) / 1000));
+        if (grabadora.uri) await guardar(grabadora.uri, 'audio', Math.round((Date.now() - inicio.current) / 1000));
       }
     } catch (e) {
       setGrabando(false);
