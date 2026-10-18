@@ -38,6 +38,7 @@
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION",
         "WAKE_LOCK",
+        "VIBRATE",
         "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
       ]
     },
