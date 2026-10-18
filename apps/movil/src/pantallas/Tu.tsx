@@ -6,7 +6,7 @@ import { abrirAjustesDeFondo, pedirSinOptimizacionBateria, sinOptimizacionBateri
 import { PedirPin } from '../componentes/PedirPin';
 import { ConfiguracionBloqueo } from '../componentes/ConfiguracionBloqueo';
 import { guardarPin, verificarPin } from '../pin';
-import { guardarPreferencias } from '../preferencias';
+import { ENTIDADES, OPERADORES, guardarPreferencias } from '../preferencias';
 import { useProteccion, usePreferencias } from '../useProteccion';
 import { BarraPestanas, Fila, Grupo, Pantalla, Rotulo, T, type Pestana } from '../ui/componentes';
 import { Icono } from '../ui/iconos';
@@ -16,7 +16,19 @@ import { RADIO, useTema } from '../ui/tema';
  * Ajustes ("Tú"). Solo muestra lo que de verdad funciona: tu red, el tiempo de "¿Todo bien?", el PIN,
  * los permisos y la batería. "Activarse al salir" y "lugares conocidos" del diseño quedan para después.
  */
-export function Tu({ onPestana, onRed, onHerramientas, onMeRobaron }: { onPestana: (p: Pestana) => void; onRed: () => void; onHerramientas: () => void; onMeRobaron: () => void }) {
+export function Tu({
+  onPestana,
+  onRed,
+  onCuentas,
+  onHerramientas,
+  onMeRobaron,
+}: {
+  onPestana: (p: Pestana) => void;
+  onRed: () => void;
+  onCuentas: () => void;
+  onHerramientas: () => void;
+  onMeRobaron: () => void;
+}) {
   const c = useTema();
   const prefs = usePreferencias();
   const { estado } = useProteccion();
@@ -137,6 +149,19 @@ export function Tu({ onPestana, onRed, onHerramientas, onMeRobaron }: { onPestan
 
         <Rotulo>SI TE ROBARON</Rotulo>
         <Grupo>
+          <Fila
+            titulo="Para bloquear tus cuentas"
+            detalle={
+              prefs.bloqueo.entidades.length || prefs.bloqueo.operador
+                ? [...ENTIDADES.filter((e) => prefs.bloqueo.entidades.includes(e.id)).map((e) => e.nombre), OPERADORES.find((o) => o.id === prefs.bloqueo.operador)?.nombre]
+                    .filter(Boolean)
+                    .join(', ') + (prefs.bloqueo.imei ? ' · IMEI guardado' : '')
+                : 'Tus bancos, tu operadora y tu IMEI, por si te roban'
+            }
+            onPress={onCuentas}
+            fondo={!prefs.bloqueo.entidades.length && !prefs.bloqueo.operador ? c.avisoFondo : undefined}
+            derecha={<Icono nombre="flecha" tam={18} color={c.textoSuave} />}
+          />
           <Fila titulo="Qué hacer en la primera hora" detalle="Suspender la línea, bloquear el IMEI, cambiar claves" onPress={onMeRobaron} ultima derecha={<Icono nombre="flecha" tam={18} color={c.textoSuave} />} />
         </Grupo>
 

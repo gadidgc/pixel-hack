@@ -105,6 +105,8 @@ export function T({
   children: ReactNode;
   numberOfLines?: number;
   accessibilityRole?: 'header' | 'text' | 'alert';
+  /** Para copiar un número largo (IMEI, DNI) en la web. */
+  selectable?: boolean;
 }) {
   const c = useTema();
   return (
@@ -312,9 +314,12 @@ export function Pasos({ paso, total, onVolver, titulo }: { paso: number; total: 
       ) : (
         <Text style={{ fontFamily: FUENTES.titular, fontSize: 17, color: c.texto }}>{titulo ?? 'Alerta Arrebato'}</Text>
       )}
-      <Text style={[TIPO.hora, { color: c.textoSuave }]}>
-        {paso} / {total}
-      </Text>
+      {/* Un "1 / 1" no dice nada: en pantallas sueltas solo queda el botón de volver. */}
+      {total > 1 && (
+        <Text style={[TIPO.hora, { color: c.textoSuave }]}>
+          {paso} / {total}
+        </Text>
+      )}
     </View>
   );
 }
@@ -363,7 +368,7 @@ export function Chip({ texto, activo, onPress }: { texto: string; activo: boolea
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: activo }}
-      style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: RADIO.total, justifyContent: 'center', backgroundColor: activo ? c.texto : c.superficie2 }}
+      style={{ minHeight: 48, paddingHorizontal: 14, borderRadius: RADIO.total, justifyContent: 'center', backgroundColor: activo ? c.texto : c.superficie2 }}
     >
       <Text style={[TIPO.apoyo, { fontFamily: FUENTES.textoFuerte, color: activo ? c.fondo : c.texto }]}>{texto}</Text>
     </Pressable>

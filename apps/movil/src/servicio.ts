@@ -16,7 +16,7 @@ import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, type Resu
 import { Grabadora, type Etiqueta } from './grabadora';
 import { avisarTodoBien, pedirPermisoNotificaciones, quitarAviso } from './notificaciones';
 import { hayPin, verificarPin } from './pin';
-import { guardarPreferencias, preferencias, type Contacto } from './preferencias';
+import { guardarPreferencias, perfilParaEnviar, preferencias, type Contacto } from './preferencias';
 import { escucharSensores, pedirPermisoSensores } from './sensores';
 import { escucharUbicacion, pedirPermisosUbicacion } from './ubicacion';
 
@@ -386,8 +386,8 @@ class ServicioProteccion {
     if (!sobreBloqueo) void avisarTodoBien(espera).then((id) => (this.idNotificacion = id));
 
     // 1) Al panel, al instante y en silencio, con la ruta de los últimos segundos.
-    const { nombre, contactos } = preferencias();
-    this.envioAlerta = enviar({ tipo: 'alerta', evento, ruta: [...this.ruta], nombre, contactos, esperaS: espera });
+    const { nombre, contactos, bloqueo: perfil } = preferencias();
+    this.envioAlerta = enviar({ tipo: 'alerta', evento, ruta: [...this.ruta], nombre, contactos, esperaS: espera, bloqueo: perfilParaEnviar(perfil) });
     void this.envioAlerta.then((panel) => {
       if (this.estado.alerta?.evento !== evento) return;
       this.cambiar({ alerta: { ...this.estado.alerta, panel, enlace: panel.enlace ?? this.estado.alerta.enlace } });
@@ -415,7 +415,7 @@ class ServicioProteccion {
     this.detenerCuentaFamilia();
     const { evento, nombre, contactos } = p;
     this.cambiar({ alerta: { ...a, segundosParaFamilia: 0, familia: 'enviando' } });
-    void enviar({ tipo: 'notificar_familia', evento, nombre, contactos }).then((r) => {
+    void enviar({ tipo: 'notificar_familia', evento, nombre, contactos, bloqueo: perfilParaEnviar(preferencias().bloqueo) }).then((r) => {
       const actual = this.estado.alerta;
       if (actual?.evento !== evento) return;
       const quienes = contactos.map((c) => c.nombre).join(', ') || 'tu red';

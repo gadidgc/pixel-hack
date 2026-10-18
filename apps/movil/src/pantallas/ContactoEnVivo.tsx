@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { urlBackend } from '../alertas';
+import type { Kit } from '../componentes/KitBloqueo';
 import { T, hora, type Paso } from '../ui/componentes';
 import { COLORES } from '../ui/tema';
 import { EJEMPLO_CONTACTO, WebContacto, type Coordenada, type DatosContacto } from './WebContacto';
@@ -13,12 +14,15 @@ import { EJEMPLO_CONTACTO, WebContacto, type Coordenada, type DatosContacto } fr
 
 interface AlertaPublica {
   nombre: string;
-  estado: 'en_espera' | 'avisada' | 'cancelada';
+  estado: 'en_espera' | 'avisada' | 'robo_confirmado' | 'cancelada';
   velocidadMs: number | null;
   tJalon: number | null;
   jalon: Coordenada | null;
   ruta: Array<Coordenada & { t: number; velocidad: number | null }>;
   encargado: string | null;
+  roboConfirmadoPor: string | null;
+  roboConfirmado: number | null;
+  kit: Kit | null;
   cancelada: number | null;
   ahora: number;
 }
@@ -51,6 +55,7 @@ function aDatos(a: AlertaPublica): DatosContacto {
   const pasos: Paso[] = [];
   if (a.estado === 'cancelada' && a.cancelada) pasos.push({ hora: hora(a.cancelada, true), texto: `${a.nombre} confirmó que está bien`, clave: true, ahora: true });
   else if (ultima) pasos.push({ hora: hora(ultima.t, true), texto: hacia ? `Va hacia el ${hacia}${kmh !== null ? ` · ${kmh} km/h` : ''}` : 'Última ubicación', clave: true, ahora: true });
+  if (a.roboConfirmado) pasos.push({ hora: hora(a.roboConfirmado, true), texto: `${a.roboConfirmadoPor ?? 'Alguien de su red'} confirmó el robo`, clave: true });
   if (a.encargado) pasos.push({ hora: '', texto: `${a.encargado} se está encargando` });
   if (a.tJalon) pasos.push({ hora: hora(a.tJalon, true), texto: 'Jalón: le arrancharon el celular', clave: true });
   return {
@@ -63,6 +68,8 @@ function aDatos(a: AlertaPublica): DatosContacto {
     jalon: a.jalon,
     estado: a.estado,
     encargado: a.encargado,
+    roboConfirmadoPor: a.roboConfirmadoPor,
+    kit: a.kit,
   };
 }
 
@@ -106,6 +113,35 @@ export function ContactoEnVivo({ id, contacto }: { id: string; contacto: number 
     <WebContacto
       datos={aDatos(alerta)}
       ejemplo={false}
+      onConfirmarRobo={async () => {
+        try {
+          const r = await fetch(`${urlBackend()}/api/alertas/${id}/robo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contacto }),
+          });
+          const d = (await r.json().catch(() => ({}))) as { detalle?: string };
+          if (!r.ok) return d.detalle ? `No se pudo confirmar: ${d.detalle}.` : 'No se pudo confirmar. Inténtalo otra vez.';
+          // Leemos la alerta otra vez para mostrar el kit sin esperar la siguiente vuelta.
+          const v = await fetch(`${urlBackend()}/api/alertas/${id}`, { cache: 'no-store' });
+          if (v.ok) setAlerta((await v.json()) as AlertaPublica);
+          return null;
+        } catch {
+          return 'Sin conexión. Revisa tu internet e inténtalo otra vez.';
+        }
+      }}
+      onMarcarPaso={async (paso, hecho) => {
+        try {
+          const r = await fetch(`${urlBackend()}/api/alertas/${id}/bloqueo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paso, hecho, contacto }),
+          });
+          return r.ok;
+        } catch {
+          return false;
+        }
+      }}
       onEncargarme={async () => {
         try {
           const r = await fetch(`${urlBackend()}/api/alertas/${id}/encargado`, {

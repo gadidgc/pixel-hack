@@ -39,7 +39,8 @@ vi.mock('../src/pin', () => ({
   verificarPin: async () => dobles.pinOk,
 }));
 vi.mock('../src/preferencias', () => ({
-  preferencias: () => ({ esperaFamiliaS: 10, nombre: 'Prueba', contactos: [] }),
+  preferencias: () => ({ esperaFamiliaS: 10, nombre: 'Prueba', contactos: [], bloqueo: { entidades: ['yape'], operador: 'claro', linea: '', imei: '', dni: '' } }),
+  perfilParaEnviar: (p: { entidades: string[]; operador: string | null }) => ({ entidades: p.entidades, operador: p.operador }),
   guardarPreferencias: async () => undefined,
 }));
 vi.mock('../src/grabadora', () => ({
@@ -125,6 +126,10 @@ describe('detector real conectado al bloqueo', () => {
     expect(tipos).toContain('alerta');
     expect(tipos).toContain('notificar_familia');
     expect(servicio.obtener().alerta?.bloqueo?.estado).toBe('sin_autorizacion');
+    // El perfil para el kit de bloqueo viaja con la alerta y con el aviso a la red.
+    const perfil = { entidades: ['yape'], operador: 'claro' };
+    expect(dobles.enviar).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'alerta', bloqueo: perfil }));
+    expect(dobles.enviar).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'notificar_familia', bloqueo: perfil }));
   });
   it('la prueba guiada no bloquea físicamente el teléfono', async () => {
     await servicio.probar();
