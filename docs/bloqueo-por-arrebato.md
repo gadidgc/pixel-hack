@@ -101,6 +101,26 @@ El estado `solicitado` significa que lockNow retornó sin excepción. No se pres
 como prueba de bloqueo físico: este se verifica por separado en el dispositivo.
 La pantalla de falsa alarma y el registro muestran el resultado de la orden.
 
+## Probado en emulador (Android 15, API 35) — 17 de octubre
+
+Build release (`assembleRelease`, sin backend: `EXPO_PUBLIC_URL_ALERTAS=ninguno`), clave de
+Android puesta y administrador autorizado con `adb`. Con **Herramientas → Ensayar en 5 s** y la
+app en segundo plano (en el inicio de Android):
+
+- Android se bloqueó (`isKeyguardShowing=true`) y el "¿Todo bien?" apareció **encima** del bloqueo
+  con la cuenta regresiva corriendo. Android muestra "bloqueado por política": tras `lockNow`
+  pide la clave (no huella ni cara), bueno contra el ladrón.
+- PIN incorrecto: "PIN incorrecto", la alerta sigue. PIN correcto: alerta cancelada "antes de
+  avisar a tu red" y vuelve la pantalla de bloqueo de Android (sigue pidiendo su clave).
+- El botón de inicio no saca la pregunta del bloqueo. "Atrás" la cerraba (y al tocar la
+  notificación Android pedía desbloquear): corregido, ahora "Atrás" no hace nada ahí.
+- Encontrado y corregido: con la app en segundo plano los temporizadores de JS se congelan; el
+  ensayo ahora se revisa con cada lote de sensores, como la cuenta para la familia.
+
+**No probado todavía:** un celular físico, el GPS con pantalla bloqueada y el respaldo sin
+permiso de pantalla completa en el emulador (sí está cubierto por pruebas automáticas). Un
+emulador no es un celular real: no presentarlo como validación física.
+
 ## Verificación antes de aprobar
 
 Las pruebas automáticas pasan señales del simulador por el detector real, conectadas
