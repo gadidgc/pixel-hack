@@ -7,6 +7,12 @@
       "runtimeArgs": ["expo", "start", "--web", "--port", "8081"],
       "cwd": "apps/movil",
       "port": 8081
+    },
+    {
+      "name": "presentacion",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8090"],
+      "port": 8090
     }
   ]
 }
