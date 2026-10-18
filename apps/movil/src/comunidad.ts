@@ -8,7 +8,8 @@ import { servicio } from './servicio';
  * El backend redondea la ubicación a ~100 m y nunca devuelve quién reportó.
  */
 
-export type TipoReporte = 'arrebato_moto' | 'arrebato_a_pie' | 'intento' | 'robo' | 'sospechoso' | 'zona_oscura';
+/** 'grabacion' no se elige al reportar: lo crea el servidor cuando alguien sube una grabación con ubicación. */
+export type TipoReporte = 'arrebato_moto' | 'arrebato_a_pie' | 'intento' | 'robo' | 'sospechoso' | 'zona_oscura' | 'grabacion';
 
 /** Cómo se agrupan en el mapa (los colores del diseño): arrebato, aviso o robo. */
 export type Categoria = 'arrebato' | 'aviso' | 'robo';
@@ -20,6 +21,7 @@ export const TIPOS: Record<TipoReporte, { nombre: string; categoria: Categoria }
   robo: { nombre: 'Robo', categoria: 'robo' },
   sospechoso: { nombre: 'Moto o persona sospechosa', categoria: 'aviso' },
   zona_oscura: { nombre: 'Zona oscura o sin vigilancia', categoria: 'aviso' },
+  grabacion: { nombre: 'Grabación de un vecino', categoria: 'aviso' },
 };
 
 export const MAX_NOTA = 140;
@@ -33,6 +35,21 @@ export interface Reporte {
   /** 'alerta': la app lo detectó y se avisó a la red. 'comunidad': lo reportó alguien. */
   origen: 'alerta' | 'comunidad';
   creado: number;
+  /** Grabaciones colgadas del reporte (un servidor viejo no los manda). */
+  videos?: number;
+  audios?: number;
+  /** URL de un cuadro del video más nuevo, para la tarjeta. */
+  miniatura?: string | null;
+}
+
+/** "2 videos", "1 audio", "1 video · 1 audio"; vacío si no tiene grabaciones. */
+export function textoMedios(r: Pick<Reporte, 'videos' | 'audios'>): string {
+  const partes: string[] = [];
+  const v = r.videos ?? 0;
+  const a = r.audios ?? 0;
+  if (v > 0) partes.push(v === 1 ? '1 video' : `${v} videos`);
+  if (a > 0) partes.push(a === 1 ? '1 audio' : `${a} audios`);
+  return partes.join(' · ');
 }
 
 export type Resultado<T> = { ok: true; datos: T } | { ok: false; motivo: string };
