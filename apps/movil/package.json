@@ -43,7 +43,8 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "exportar:web": "expo export --platform web",
-    "qr:descarga": "node scripts/qr-descarga.mjs"
+    "qr:descarga": "node scripts/qr-descarga.mjs",
+    "iconos": "sh scripts/iconos.sh"
   },
   "private": true
 }

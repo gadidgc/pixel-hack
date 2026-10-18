@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { Boton, Onda, Pantalla, Pasos, Respira, T } from '../ui/componentes';
-import { Icono } from '../ui/iconos';
+import { MarcaGlifo } from '../ui/iconos';
 import { RADIO, TIPO, useTema } from '../ui/tema';
 
 /**
@@ -17,7 +17,7 @@ export function Bienvenida({ onSeguir }: { onSeguir: () => void }) {
         <View style={{ width: 248, height: 248, borderRadius: RADIO.total, backgroundColor: c.superficie, alignItems: 'center', justifyContent: 'center' }}>
           <Respira>
             <View style={{ width: 200, height: 200, borderRadius: RADIO.total, backgroundColor: c.protegidoFondo, alignItems: 'center', justifyContent: 'center' }}>
-              <Icono nombre="escudoCheck" tam={72} color={c.protegido} grosor={1.8} />
+              <MarcaGlifo tam={88} color={c.protegido} />
             </View>
           </Respira>
         </View>

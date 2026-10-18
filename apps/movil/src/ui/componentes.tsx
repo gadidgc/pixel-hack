@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGrabacionEnCurso } from '../grabacionEvidencia';
-import { Icono, type NombreIcono } from './iconos';
+import { Icono, Marca, type NombreIcono } from './iconos';
 import { CONTROL, ESPACIO, FUENTES, RADIO, TIPO, useTema, type Colores } from './tema';
 
 // --- Movimiento ------------------------------------------------------------------------------------
@@ -312,7 +312,10 @@ export function Pasos({ paso, total, onVolver, titulo }: { paso: number; total: 
           <Icono nombre="volver" color={c.texto} />
         </Pressable>
       ) : (
-        <Text style={{ fontFamily: FUENTES.titular, fontSize: 17, color: c.texto }}>{titulo ?? 'Alerta Arrebato'}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          {!titulo && <Marca tam={28} ficha={c.texto} glifo={c.fondo} />}
+          <Text style={{ fontFamily: FUENTES.titular, fontSize: 17, color: c.texto }}>{titulo ?? 'Alerta Arrebato'}</Text>
+        </View>
       )}
       {/* En pantallas sueltas (total 1) solo queda el botón de volver. */}
       {total > 1 && (
