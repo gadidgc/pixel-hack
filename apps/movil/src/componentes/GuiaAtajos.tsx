@@ -18,6 +18,17 @@ const PASOS = [
 ];
 
 /**
+ * Que no lo pongan en modo avión: sin señal no llega el SMS que lo bloquea. Con el iPhone bloqueado, el modo
+ * avión solo se activa desde el Centro de control; si se apaga en la pantalla de bloqueo, el ladrón necesita
+ * el código. Ajustes no deja abrir esa pantalla directo desde una app, por eso van como texto.
+ */
+const PASOS_MODO_AVION = [
+  "Abre Ajustes › Face ID y código (o Touch ID y código) y escribe tu código.",
+  "Baja hasta «Permitir acceso cuando está bloqueado» y apaga «Centro de control».",
+  "En esa misma pantalla, activa «Protección de dispositivo robado».",
+];
+
+/**
  * iPhone: Apple no deja que una app bloquee la pantalla, pero Atajos sí. La dueña crea una vez la
  * automatización "Al recibir un SMS con la palabra → Bloquear pantalla" y, al confirmar un arrebato, el
  * backend le manda ese SMS a su número. Necesita señal: tarda unos segundos (el escudo de Tiempo de uso no).
@@ -113,6 +124,23 @@ export function GuiaAtajos() {
           ? `Listo: al confirmar un arrebato mandaremos el SMS a ${telefonoOculto(numeroPropio)}.`
           : "Pendiente: prueba con tu número para activarlo."}
       </T>
+      <T v="cuerpoFuerte" style={{ marginTop: 8 }}>
+        Que no lo pongan en modo avión
+      </T>
+      <T v="apoyo" suave>
+        Sin señal, el SMS no llega y tu iPhone no se bloquea (tu red igual
+        recibe la alerta). Haz que el modo avión pida tu código:
+      </T>
+      {PASOS_MODO_AVION.map((paso, i) => (
+        <View key={i} style={{ flexDirection: "row", gap: 8 }}>
+          <T v="apoyo" color={c.protegido}>
+            {i + 1}.
+          </T>
+          <T v="apoyo" style={{ flex: 1 }}>
+            {paso}
+          </T>
+        </View>
+      ))}
     </View>
   );
 }
