@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Platform, Pressable, Share, Switch, View } from 'react-native';
-import { ESPACIOS_DEMO, type EspacioDemo } from '@pixel-hack/detector';
+import { DISTANCIA_DEMO_M, ESPACIOS_DEMO, type EspacioDemo } from '@pixel-hack/detector';
 import { hayBackend } from '../alertas';
 import { PedirPin } from '../componentes/PedirPin';
 import { consultarBloqueo, faltaParaBloqueo } from '../bloqueo';
@@ -75,6 +75,9 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
             <T v="apoyo13" suave>
               {ESPACIOS_DEMO[estado.espacioDemo].detalle}
             </T>
+            {estado.espacioDemo !== 'sin_gps' && (
+              <SelectorDistancia valor={estado.distanciaDemoM} onCambiar={(m) => servicio.cambiarDistanciaDemo(m)} />
+            )}
           </View>
         )}
       </Grupo>
@@ -232,4 +235,77 @@ function textoRegistro(estado: EstadoProteccion): string {
     ...[...estado.registros].reverse().map((r) => `${hora(r.t, true)} [${r.tipo}] ${r.texto}`),
   ];
   return lineas.join('\n');
+}
+
+/**
+ * Cuántos metros hay que correr en la demo: barra que se toca o arrastra, más botones de 1 m.
+ * Hecha con View (sin librería nativa de slider). Solo avisa al soltar, para no reiniciar el detector
+ * con cada movimiento del dedo.
+ */
+function SelectorDistancia({ valor, onCambiar }: { valor: number; onCambiar: (m: number) => void }) {
+  const c = useTema();
+  const [ancho, setAncho] = useState(0);
+  const [arrastre, setArrastre] = useState<number | null>(null);
+  const { min, max } = DISTANCIA_DEMO_M;
+  const mostrado = arrastre ?? valor;
+  const fraccion = (mostrado - min) / (max - min);
+  const limitar = (m: number) => Math.min(max, Math.max(min, Math.round(m)));
+  const desdeX = (x: number) => limitar(min + (ancho > 0 ? x / ancho : 0) * (max - min));
+  const soltar = (m: number) => {
+    setArrastre(null);
+    onCambiar(m);
+  };
+
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <T v="apoyo13" suave>
+          Distancia de huida
+        </T>
+        <T v="cuerpo15Fuerte">{mostrado} m</T>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Pressable onPress={() => soltar(limitar(valor - 1))} accessibilityRole="button" accessibilityLabel="Un metro menos" style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: c.superficie2 }}>
+          <T v="cuerpo15Fuerte">−</T>
+        </Pressable>
+        <View
+          style={{ flex: 1, height: 44, justifyContent: 'center' }}
+          onLayout={(e) => setAncho(e.nativeEvent.layout.width)}
+          onStartShouldSetResponder={() => true}
+          onMoveShouldSetResponder={() => true}
+          onResponderTerminationRequest={() => false}
+          onResponderGrant={(e) => setArrastre(desdeX(e.nativeEvent.locationX))}
+          onResponderMove={(e) => setArrastre(desdeX(e.nativeEvent.locationX))}
+          onResponderRelease={(e) => soltar(desdeX(e.nativeEvent.locationX))}
+          accessibilityRole="adjustable"
+          accessibilityLabel="Distancia de huida"
+          accessibilityValue={{ min, max, now: mostrado, text: `${mostrado} metros` }}
+          accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+          onAccessibilityAction={(e) => soltar(limitar(valor + (e.nativeEvent.actionName === 'increment' ? 1 : -1)))}
+        >
+          <View pointerEvents="none" style={{ height: 6, borderRadius: 3, backgroundColor: c.superficie2 }}>
+            <View style={{ width: `${fraccion * 100}%`, height: 6, borderRadius: 3, backgroundColor: c.texto }} />
+          </View>
+          <View
+            pointerEvents="none"
+            style={{ position: 'absolute', left: Math.max(0, fraccion * ancho - 12), width: 24, height: 24, borderRadius: 12, backgroundColor: c.texto }}
+          />
+        </View>
+        <Pressable onPress={() => soltar(limitar(valor + 1))} accessibilityRole="button" accessibilityLabel="Un metro más" style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: c.superficie2 }}>
+          <T v="cuerpo15Fuerte">+</T>
+        </Pressable>
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 54 }}>
+        <T v="apoyo13" suave>
+          {min} m
+        </T>
+        <T v="apoyo13" suave>
+          {max} m
+        </T>
+      </View>
+      <T v="apoyo13" suave>
+        Hay que recorrerla a 1,5–2 m/s (trote). Menos de 25 m: no se exige que supere el error del GPS, así que salen más falsas alarmas.
+      </T>
+    </View>
+  );
 }

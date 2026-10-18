@@ -2,6 +2,7 @@ import {
   CONFIG_POR_DEFECTO,
   ESPACIOS_DEMO,
   configDemo,
+  distanciaDemoPorDefecto,
   DetectorArrebato,
   reproducir,
   simular,
@@ -77,6 +78,8 @@ export interface EstadoProteccion {
   modoDemo: boolean;
   /** Dónde se hace la demo: cambia cuánto hay que correr y si se usa el GPS (solo con el modo demo). */
   espacioDemo: EspacioDemo;
+  /** Cuántos metros hay que correr en la demo (con GPS). Cambia al elegir otro espacio. */
+  distanciaDemoM: number;
   telemetria: Telemetria | null;
   tieneGiroscopio: boolean | null;
   tieneGps: boolean | null;
@@ -123,6 +126,7 @@ class ServicioProteccion {
     permisosFaltantes: [],
     modoDemo: false,
     espacioDemo: 'calle',
+    distanciaDemoM: distanciaDemoPorDefecto('calle'),
     telemetria: null,
     tieneGiroscopio: null,
     tieneGps: null,
@@ -651,21 +655,28 @@ class ServicioProteccion {
 
   /** Los umbrales que usa ahora el detector (normal, o demo según el espacio elegido). */
   configDetector(): ConfigDetector {
-    return this.estado.modoDemo ? configDemo(this.estado.espacioDemo) : CONFIG_POR_DEFECTO;
+    return this.estado.modoDemo ? configDemo(this.estado.espacioDemo, this.estado.distanciaDemoM) : CONFIG_POR_DEFECTO;
   }
 
   cambiarModoDemo(modoDemo: boolean): void {
     this.cambiar({ modoDemo, alerta: null });
     this.reiniciarDetector();
     this.registrar(
-      modoDemo ? `Modo demo: la huida corriendo cuenta (${ESPACIOS_DEMO[this.estado.espacioDemo].titulo}).` : 'Modo normal: solo huida en vehículo.',
+      modoDemo ? `Modo demo: la huida corriendo cuenta (${ESPACIOS_DEMO[this.estado.espacioDemo].titulo}, ${this.estado.distanciaDemoM} m).` : 'Modo normal: solo huida en vehículo.',
     );
   }
 
   cambiarEspacioDemo(espacioDemo: EspacioDemo): void {
-    this.cambiar({ espacioDemo });
+    this.cambiar({ espacioDemo, distanciaDemoM: distanciaDemoPorDefecto(espacioDemo) });
     this.reiniciarDetector();
-    this.registrar(`Espacio de la demo: ${ESPACIOS_DEMO[espacioDemo].titulo}.`);
+    this.registrar(`Espacio de la demo: ${ESPACIOS_DEMO[espacioDemo].titulo}${espacioDemo === 'sin_gps' ? '' : ` (${this.estado.distanciaDemoM} m)`}.`);
+  }
+
+  cambiarDistanciaDemo(distanciaDemoM: number): void {
+    if (distanciaDemoM === this.estado.distanciaDemoM) return;
+    this.cambiar({ distanciaDemoM });
+    this.reiniciarDetector();
+    this.registrar(`Distancia de huida en la demo: ${distanciaDemoM} m.`);
   }
 
   private reiniciarDetector(): void {
