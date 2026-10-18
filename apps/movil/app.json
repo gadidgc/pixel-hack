@@ -87,6 +87,12 @@
         }
       ]
     ],
-    "backgroundColor": "#0d0c0b"
+    "backgroundColor": "#0d0c0b",
+    "owner": "gadidgc",
+    "extra": {
+      "eas": {
+        "projectId": "9f3aef50-34c2-4293-8d31-10052d475999"
+      }
+    }
   }
 }
