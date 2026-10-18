@@ -156,6 +156,18 @@ describe('máquina de estados del detector', () => {
     expect(g.tipos()).toEqual(['posible_jalon', 'descartado:sin_huida']);
   });
 
+  it('el descarte trae lo que vio el GPS después del jalón (para el registro de la app)', () => {
+    const g = new Guion({ huidaInmediataMs: null }).durante(12).jalon().durante(12, { vibracion: 0.15, velocidad: 1 });
+    const descarte = g.eventos.find((e) => e.tipo === 'descartado');
+    expect(descarte?.tipo === 'descartado' && descarte.motivo).toBe('sin_huida');
+    const d = descarte?.tipo === 'descartado' ? descarte.diagnostico : null;
+    expect(d).toMatchObject({ mejorPrecisionM: 8, maxVelocidadMs: 1 });
+    expect(d!.lecturasGps).toBeGreaterThan(5);
+    expect(d!.lecturasGpsValidas).toBe(d!.lecturasGps);
+    expect(d!.maxDesplazamientoM).toBeGreaterThan(5);
+    expect(d!.energiaG).toBeGreaterThan(0.05);
+  });
+
   it('sin GPS (modo con alerta solo con sensores): vibración sin ritmo de pasos → alerta (confianza media)', () => {
     const g = new Guion({ alertaSoloSensores: true }).durante(12, { gps: false }).jalon().durante(12, { vibracion: 0.15, gps: false });
     expect(g.tipos()).toEqual(['posible_jalon', 'alerta']);
