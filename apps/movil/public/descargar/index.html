@@ -8,7 +8,8 @@
 <meta name="theme-color" content="#0d0c0b">
 <meta property="og:title" content="Alerta Arrebato">
 <meta property="og:description" content="Te arranchan el celular. Tu familia lo sabe al toque.">
-<meta property="og:image" content="/descargar/img/hero.jpg">
+<meta property="og:url" content="https://alerta-arrebato.gabrieldgc1999.workers.dev/descargar/">
+<meta property="og:image" content="https://alerta-arrebato.gabrieldgc1999.workers.dev/descargar/img/hero.jpg">
 <link rel="icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,8 +93,14 @@
   }
   .insignia::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: var(--protegido); }
 
-  /* Pantallas medianas: la tarjeta taparía a la persona de la foto */
-  @media (max-width: 1180px) { .mama { display: none; } }
+  /* Pantallas medianas: la tarjeta se vuelve una franja baja para no tapar a la persona */
+  @media (max-width: 1180px) and (min-width: 861px) {
+    .mama { left: auto; right: 24px; bottom: 24px; width: 300px; flex-direction: row; align-items: center; gap: 12px; padding: 8px 16px 8px 8px; border-radius: 22px; }
+    .mama img { width: 60px; height: 60px; aspect-ratio: auto; border-radius: 14px; flex: 0 0 auto; object-position: 45% 30%; }
+    .mama-textos { padding: 0; gap: 2px; }
+    .mama-nombre { justify-content: flex-start; font-size: 16px; }
+    .mama p { font-size: 14px; line-height: 20px; }
+  }
 
   /* Celular: la foto pasa arriba, los botones quedan a la vista y se ocultan los QR */
   @media (max-width: 860px) {
@@ -163,7 +170,7 @@
       </div>
 
       <div class="qrs">
-        <div class="qr"><img src="img/qr-iphone.svg" alt="Código QR para abrir Alerta Arrebato en iPhone">iPhone</div>
+        <div class="qr"><img src="img/qr-iphone.svg" alt="Código QR para abrir la versión web de Alerta Arrebato en iPhone">iPhone · web</div>
         <div class="qr"><img src="img/qr-android.svg" alt="Código QR para descargar Alerta Arrebato en Android">Android</div>
         <p>¿Estás en la compu? Escanea con la cámara de tu celular.</p>
       </div>
@@ -180,13 +187,14 @@
 </main>
 
 <script>
-  // En un iPhone, el botón de iPhone va primero
-  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+  // El botón del celular de quien visita va primero.
+  // iPadOS 13+ se presenta como "Macintosh", por eso también se mira si tiene pantalla táctil.
+  var ua = navigator.userAgent;
+  var esApple = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+  var primero = esApple ? 'boton-iphone' : /Android/i.test(ua) ? 'boton-android' : null;
+  if (primero) {
     var botones = document.getElementById('botones');
-    botones.insertBefore(document.getElementById('boton-iphone'), botones.firstChild);
-  } else if (/Android/i.test(navigator.userAgent)) {
-    var lista = document.getElementById('botones');
-    lista.insertBefore(document.getElementById('boton-android'), lista.firstChild);
+    botones.insertBefore(document.getElementById(primero), botones.firstChild);
   }
 </script>
 </body>
