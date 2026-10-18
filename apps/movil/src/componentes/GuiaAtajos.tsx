@@ -18,15 +18,30 @@ const PASOS = [
 ];
 
 /**
- * Que no lo pongan en modo avión: sin señal no llega el SMS que lo bloquea. Con el iPhone bloqueado, el modo
- * avión solo se activa desde el Centro de control; si se apaga en la pantalla de bloqueo, el ladrón necesita
- * el código. Ajustes no deja abrir esa pantalla directo desde una app, por eso van como texto.
+ * Que sea más difícil dejarlo sin señal: sin señal no llega el SMS que lo bloquea. Con el iPhone bloqueado, el
+ * modo avión sale del Centro de control (o de Siri); si se apagan en la pantalla de bloqueo, el ladrón necesita
+ * el código. No evita que lo apaguen con los botones. Ajustes no deja abrir esa pantalla desde una app.
  */
-const PASOS_MODO_AVION = [
+const PASOS_SIN_SENAL = [
   "Abre Ajustes › Face ID y código (o Touch ID y código) y escribe tu código.",
-  "Baja hasta «Permitir acceso cuando está bloqueado» y apaga «Centro de control».",
-  "En esa misma pantalla, activa «Protección de dispositivo robado».",
+  "Baja hasta «Permitir acceso cuando está bloqueado» y apaga «Centro de control» y «Siri».",
+  "En esa misma pantalla, activa «Protección de dispositivo robado»: protege tus claves y tu cuenta de Apple.",
 ];
+
+/** Lista numerada de pasos, con el número en verde. */
+function ListaPasos({ pasos }: { pasos: string[] }) {
+  const c = useTema();
+  return pasos.map((paso, i) => (
+    <View key={i} style={{ flexDirection: "row", gap: 8 }}>
+      <T v="apoyo" color={c.protegido}>
+        {i + 1}.
+      </T>
+      <T v="apoyo" style={{ flex: 1 }}>
+        {paso}
+      </T>
+    </View>
+  ));
+}
 
 /**
  * iPhone: Apple no deja que una app bloquee la pantalla, pero Atajos sí. La dueña crea una vez la
@@ -70,16 +85,7 @@ export function GuiaAtajos() {
         el ladrón necesitará tu código. Se configura una vez, en un minuto.
         Necesita iOS 17 o más.
       </T>
-      {PASOS.map((paso, i) => (
-        <View key={i} style={{ flexDirection: "row", gap: 8 }}>
-          <T v="apoyo" color={c.protegido}>
-            {i + 1}.
-          </T>
-          <T v="apoyo" style={{ flex: 1 }}>
-            {paso}
-          </T>
-        </View>
-      ))}
+      <ListaPasos pasos={PASOS} />
       <Boton
         texto="Abrir Atajos"
         variante="secundario"
@@ -125,22 +131,14 @@ export function GuiaAtajos() {
           : "Pendiente: prueba con tu número para activarlo."}
       </T>
       <T v="cuerpoFuerte" style={{ marginTop: 8 }}>
-        Que no lo pongan en modo avión
+        Que no lo dejen sin señal tan fácil
       </T>
       <T v="apoyo" suave>
-        Sin señal, el SMS no llega y tu iPhone no se bloquea (tu red igual
-        recibe la alerta). Haz que el modo avión pida tu código:
+        Sin señal (modo avión o apagado), el SMS no llega y tu iPhone no se
+        bloquea; tu red igual recibe la alerta. Así el ladrón necesitará tu
+        código para poner el modo avión (apagarlo con los botones sí puede):
       </T>
-      {PASOS_MODO_AVION.map((paso, i) => (
-        <View key={i} style={{ flexDirection: "row", gap: 8 }}>
-          <T v="apoyo" color={c.protegido}>
-            {i + 1}.
-          </T>
-          <T v="apoyo" style={{ flex: 1 }}>
-            {paso}
-          </T>
-        </View>
-      ))}
+      <ListaPasos pasos={PASOS_SIN_SENAL} />
     </View>
   );
 }

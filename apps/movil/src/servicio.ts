@@ -146,7 +146,14 @@ class ServicioProteccion {
   /** Lecturas GPS de los últimos 60 s: la ruta que acompaña a la alerta. */
   private ruta: LecturaGps[] = [];
   private cuentaFamilia: ReturnType<typeof setInterval> | null = null;
-  private cuentaPendiente: { evento: Extract<EventoDetector, { tipo: 'alerta' }>; nombre: string; contactos: Contacto[]; limite: number } | null = null;
+  private cuentaPendiente: {
+    evento: Extract<EventoDetector, { tipo: 'alerta' }>;
+    nombre: string;
+    contactos: Contacto[];
+    limite: number;
+    /** iPhone con Atajos: el mismo número de la `alerta`, para repetir el SMS de bloqueo al vencer. */
+    numeroPropio: string;
+  } | null = null;
   private ultimaRevisionCuenta = 0;
   private idNotificacion: string | null = null;
   private ensayo: { hora: number; plantilla: Extract<EventoDetector, { tipo: 'alerta' }> } | null = null;
@@ -493,7 +500,7 @@ class ServicioProteccion {
     // en el bolsillo y alcance a cancelar si fue falsa alarma. Va DESPUÉS de `detenerCuentaFamilia`, que
     // la apaga: así la vibración dura lo mismo que la cuenta.
     Vibration.vibrate(PATRON_VIBRACION_TODO_BIEN, true);
-    this.cuentaPendiente = { evento, nombre, contactos, limite: Date.now() + espera * 1000 };
+    this.cuentaPendiente = { evento, nombre, contactos, limite: Date.now() + espera * 1000, numeroPropio };
     this.cuentaFamilia = setInterval(() => this.revisarCuentaFamilia(), 1000);
   }
 
@@ -507,10 +514,9 @@ class ServicioProteccion {
       return;
     }
     this.detenerCuentaFamilia();
-    const { evento, nombre, contactos } = p;
+    const { evento, nombre, contactos, numeroPropio } = p;
     this.cambiar({ alerta: { ...a, segundosParaFamilia: 0, familia: 'enviando' } });
     // iPhone con Atajos: venció el "¿Todo bien?" sin PIN, así que pedimos otra vez el SMS que bloquea la pantalla.
-    const numeroPropio = Platform.OS === 'ios' ? preferencias().numeroPropio : '';
     if (numeroPropio) this.registrar('iPhone: venció la espera; pedimos otra vez el SMS que bloquea la pantalla.');
     void enviar({
       tipo: 'notificar_familia',

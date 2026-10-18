@@ -57,6 +57,11 @@ export type Mensaje =
 
 export class ErrorDeDatos extends Error {}
 
+/** iPhone: número propio opcional. Un número inválido no frena el mensaje, solo se queda sin el SMS de bloqueo. */
+function numeroPropioOpcional(valor: unknown): string | null {
+  return typeof valor === 'string' ? normalizarTelefono(valor.slice(0, 30)) : null;
+}
+
 const MAX_CONTACTOS = 5;
 const MAX_RUTA = 600;
 
@@ -136,13 +141,12 @@ export function validarMensaje(cuerpo: unknown): Mensaje {
       const ruta = o.ruta.slice(-MAX_RUTA).map((p, i) => punto(p, `ruta[${i}]`));
       // Espera de "¿Todo bien?" elegida en la app (10, 15 o 20 s). Versiones viejas no la mandan: 10 s.
       const esperaS = o.esperaS === undefined ? 10 : Math.round(numero(o.esperaS, 'esperaS', 5, 60));
-      // Opcional: un número inválido no frena la alerta, solo se queda sin el SMS de bloqueo.
-      const numeroPropio = typeof o.numeroPropio === 'string' ? normalizarTelefono(o.numeroPropio.slice(0, 30)) : null;
+      const numeroPropio = numeroPropioOpcional(o.numeroPropio);
       // `bloqueo` (kit de bloqueo) es opcional y nunca rechaza la alerta: si viene mal, se ignora.
       return { tipo: 'alerta', dispositivo, evento: evento(o.evento), ruta, nombre: nombre(), contactos: contactos(o.contactos), esperaS, numeroPropio, bloqueo: validarPerfil(o.bloqueo) };
     }
     case 'notificar_familia': {
-      const numeroPropio = typeof o.numeroPropio === 'string' ? normalizarTelefono(o.numeroPropio.slice(0, 30)) : null;
+      const numeroPropio = numeroPropioOpcional(o.numeroPropio);
       return { tipo: 'notificar_familia', dispositivo, evento: evento(o.evento), nombre: nombre(), contactos: contactos(o.contactos), bloqueo: validarPerfil(o.bloqueo), numeroPropio };
     }
     case 'cancelada':
