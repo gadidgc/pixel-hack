@@ -187,10 +187,10 @@ export const ESPACIOS_DEMO: Record<EspacioDemo, { titulo: string; detalle: strin
     cambios: {},
   },
   sala: {
-    titulo: 'Sala chica (8 m)',
-    detalle: 'Basta correr unos 8 m. Usa el GPS pero sin exigir que supere su error.',
+    titulo: 'Sala chica (4 m)',
+    detalle: 'Basta correr unos 4 m. Usa el GPS pero sin exigir que supere su error.',
     cambios: {
-      desplazamientoHuidaM: 8,
+      desplazamientoHuidaM: 4,
       desplazamientoSobreErrorGps: false,
       velocidadHuidaMs: 1.5,
       // Con el ruido del GPS bajo techo, "1,6 m/s antes del jalón" salía aunque estuviéramos parados.
