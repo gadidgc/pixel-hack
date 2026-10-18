@@ -6,6 +6,8 @@
  * - WhatsApp fuera de la ventana de 24 h exige una plantilla aprobada por Meta: si hay `ZAVU_PLANTILLA_ALERTA`,
  *   la alerta se manda con esa plantilla (variables 1 = nombre, 2 = hora, 3 = enlace).
  * - Sin `ZAVU_API_KEY` no se manda nada y lo decimos tal cual (la app muestra "no se pudo avisar").
+ * - Con una clave de prueba (`zv_test_…`, el sandbox de Zavu) solo existe WhatsApp, desde el número de Zavu y
+ *   solo a teléfonos del equipo: mandamos por WhatsApp y sin respaldo por SMS.
  * Los textos van sin tildes ni emojis: en SMS, una tilde baja el límite de 160 a 70 caracteres.
  */
 
@@ -43,15 +45,18 @@ export async function mandarMensaje(
   a: { telefono: string; texto: string; idempotencia: string; plantilla?: Record<string, string> },
 ): Promise<ResultadoMensaje> {
   if (!env.ZAVU_API_KEY) return { ok: false, canal: null, detalle: 'falta configurar Zavu, el servicio de WhatsApp y SMS' };
+  const sandbox = env.ZAVU_API_KEY.startsWith('zv_test_');
   const cuerpo =
-    a.plantilla && env.ZAVU_PLANTILLA_ALERTA
+    sandbox
+      ? { to: a.telefono, channel: 'whatsapp', text: a.texto }
+      : a.plantilla && env.ZAVU_PLANTILLA_ALERTA
       ? { to: a.telefono, messageType: 'template', content: { templateId: env.ZAVU_PLANTILLA_ALERTA, templateVariables: a.plantilla } }
       : { to: a.telefono, channel: 'auto', text: a.texto };
   try {
     const r = await fetch('https://api.zavu.dev/v1/messages', {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.ZAVU_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...cuerpo, fallbackEnabled: true, idempotencyKey: a.idempotencia }),
+      body: JSON.stringify({ ...cuerpo, fallbackEnabled: !sandbox, idempotencyKey: a.idempotencia }),
       signal: AbortSignal.timeout(8000),
     });
     const datos = (await r.json().catch(() => ({}))) as { message?: { channel?: string }; error?: { code?: string; message?: string } };
