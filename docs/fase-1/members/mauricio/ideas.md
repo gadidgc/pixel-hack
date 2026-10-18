@@ -1,0 +1,304 @@
+# Ideas de Mauricio · Track 04: Seguridad
+
+---
+
+## 1. NexoRoto AI (Inteligencia de Grafos contra Extorsión)
+
+> **Enfoque clave:** Diseñado para atacar directamente el Track 04 (Extorsión a comercios y transportistas), garantizar el 75% técnico y asegurar el bonus de tracción (+0.5).
+
+### A. La problemática que resuelve
+* **El dolor:** La extorsión sistemática a comercios (bodegas) y transportistas (choferes y líneas de combis/buses) mediante el uso de **"mulas digitales"**.
+* **La barrera:** Las víctimas no denuncian ante la policía por miedo a represalias directas y desconfianza.
+* **El mecanismo criminal:** Los extorsionadores ocultan el rastro del dinero usando cuentas de Yape/Plin y números telefónicos de terceros (mulas o identidades falsas), por lo que las investigaciones individuales nunca logran ver el cuadro completo.
+
+---
+
+### B. Cómo funciona en 4 pasos
+1. **Reporte anónimo y seguro:** El transportista o bodeguero reenvía el mensaje de texto, captura o audio extorsivo a un **bot anónimo en Telegram**.
+2. **Procesamiento y privacidad:** El sistema procesa el mensaje de forma totalmente privada y extrae únicamente los datos financieros clave:
+   * Número de billetera digital (Yape / Plin).
+   * Monto exigido (cobro de cupo diario o semanal).
+   * Alias o nombre que figura en la billetera.
+   * Línea de transporte o zona de la bodega afectada.
+3. **Inyección en grafo y triangulación:** En lugar de dejar el reporte como un simple registro en una tabla, los datos se inyectan en un mapa de nodos.
+4. **Detección del nodo central:** Cuando múltiples transportistas o bodegas reportan diferentes "mulas", el algoritmo de grafos dibuja las conexiones trianguladas en tiempo real para **identificar el nodo central de la mafia financiera**.
+
+---
+
+### C. Stack Técnico y Arquitectura (75% Rúbrica Técnica)
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Orquestación** | **n8n** *(sponsor del evento)* | Recepción y flujo de webhooks del bot de Telegram en tiempo real |
+| **Backend & IA** | **Python + FastAPI** | API de alto rendimiento con procesamiento asíncrono |
+| **Modelo NER** | **LLM local (Llama 3)** | Extracción de Entidades Nombradas (NER) de forma privada, garantizando que datos sensibles no se filtren a servicios externos y demostrando arquitectura avanzada |
+| **Base de Datos de Grafos** | **Neo4j** | Modelado de relaciones complejas, clústeres y detección de comunidades criminales |
+| **Base de Datos Relacional** | **MariaDB / MySQL** | Almacenamiento plano estructurado y auditoría de eventos |
+| **Frontend & Dashboard** | **React + Vite + Tailwind CSS** | Panel de inteligencia criminal en tiempo real, responsive y desplegado en una **URL pública** |
+| **Documentación técnica** | **PlantUML** | Diagramas de arquitectura y flujo integrados en el `README.md` del repositorio (para asegurar la máxima puntuación en Calidad Técnica - 20%) |
+
+---
+
+### D. Estrategia de Evaluación y Tracción (+0.5 Bonus)
+* **Funciona en vivo (25%):** El dashboard en React estará desplegado en una URL pública accesible para el jurado en su propia laptop, mostrando la actualización reactiva del grafo sin requerir instalación local ni login.
+* **Bonus de Tracción (+0.5):** 
+  * Se pondrá a disposición de los participantes del evento el bot de Telegram.
+  * Durante el hackathon, se recolectarán más de 20 reportes de prueba simulados enviados por compañeros y asistentes.
+  * Al momento del pitch, el jurado verá en pantalla los datos entrando en vivo y el grafo triangulando a los criminales en directo.
+
+---
+
+## 2. DeepShield RAG (Agente Autónomo de Contraste)
+
+> **Enfoque clave:** Subárea de Desinformación y Estafas masivas. Motor de verificación Zero-Trust con citas a fuentes oficiales peruanas.
+
+### A. La problemática que resuelve
+* **El dolor:** La viralización descontrolada de desinformación, noticias falsas y estafas masivas (como esquemas piramidales, ofertas laborales falsas o bonos gubernamentales fraudulentos tipo "Bono Yanapay falso").
+* **Público afectado:** Usuarios vulnerables (adultos mayores, familias) en grupos masivos de WhatsApp y Telegram que no tienen herramientas para validar la veracidad de cadenas virales.
+
+---
+
+### B. Cómo funciona
+1. **Reenvío de cadena sospechosa:** El usuario recibe un mensaje o enlace dudoso en su aplicación de mensajería y lo reenvía directamente al sistema.
+2. **Vectorización y Recuperación (RAG Zero-Trust):** El texto se transforma en embeddings vectoriales y el agente RAG escanea al instante una base de datos de conocimiento oficial precargada con:
+   * Boletines oficiales del Ministerio del Interior (Mininter).
+   * Alertas y comunicados de la División de Investigación de Delitos de Alta Tecnología (Divindat / PNP).
+   * Normativas y comunicados de la SBS (Superintendencia de Banca, Seguros y AFP) sobre entidades financieras no autorizadas.
+3. **Refutación fundamentada:** Si el sistema identifica el patrón de estafas o falsedad, genera una **refutación detallada citando textualmente la fuente oficial**, lista para que el usuario la comparta en su grupo y frene la desinformación.
+
+---
+
+### C. Stack Técnico y Arquitectura
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Ingesta de peticiones** | **n8n / Node.js + Express** | Recepción de mensajes entrantes y preprocesamiento de la cadena |
+| **Backend & Motor RAG** | **Python + FastAPI** | Pipeline de generación y recuperación de contexto con LLM local |
+| **Base de Datos Vectorial** | **Qdrant / ChromaDB** | Almacenamiento e indexación semántica de boletines de la PNP, Mininter y SBS |
+| **Frontend de Demostración** | **React + Vite + Tailwind CSS** | Panel interactivo que expone el flujo de verificación y comparación semántica en vivo para el jurado |
+| **Validación y Fuentes** | **Tavily API** *(sponsor)* | Complemento opcional de búsqueda en tiempo real para noticias de última hora |
+
+---
+
+## 3. EspectroForensic (Validador de Deepfakes de Audio)
+
+> **Enfoque clave:** Subárea de Suplantación de Identidad y Estafas con Clonación de Voz por IA.
+
+### A. La problemática que resuelve
+* **El dolor:** La suplantación de identidad mediante clonación de voz con inteligencia artificial.
+* **El modus operandi:** Bandas criminales clonan la voz de un familiar (hijos, nietos) simulando un accidente o secuestro exprés ("mamá, estoy en la comisaría / me secuestraron"), o simulan la voz de una autoridad policial exigiendo transferencias inmediatas de dinero bajo pánico y presión psicológica extrema.
+
+---
+
+### B. Cómo funciona
+1. **Reenvío preventivo:** El usuario recibe la nota de voz sospechosa por WhatsApp y, antes de desesperarse o transferir dinero, la reenvía inmediatamente al bot del sistema.
+2. **Análisis espectral y frecuencias:** El sistema no analiza el contenido del mensaje (texto), sino la **señal física y las frecuencias del archivo de audio**.
+3. **Detección forense de artefactos:** Genera el espectrograma y rastrea artefactos digitales, cortes de fase y anomalías acústicas características de las herramientas de síntesis/clonación de voz (como ElevenLabs, RVC, etc.).
+4. **Veredicto inmediato:** Devuelve al usuario una alerta visual clara e instantánea (🟩 Voz humana orgánica / 🟥 Voz sintética clonada por IA) con la recomendación de colgar y verificar por llamada convencional.
+
+---
+
+### C. Stack Técnico y Arquitectura
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Ingesta de Archivos** | **n8n** | Descarga y gestión de archivos de audio (`.ogg`, `.mp3`) de los servidores de mensajería |
+| **Procesamiento de Señal & ML** | **Python + Librosa + FastAPI** | Extracción de espectrogramas, coeficientes MFCC y ejecución de modelo clasificador de ML |
+| **API de Respuesta & Mensajería** | **Node.js** | Envío de alerta inmediata con veredicto directo al chat del usuario |
+| **Dashboard Web Público** | **React + Vite** | Renderizado en tiempo real de la forma de onda y el espectrograma de frecuencias para la demo en vivo ante el jurado |
+
+---
+
+## 4. Proyecto Hydra: Red de Honeypots Autónomos (Agentes Activos)
+
+> **Enfoque clave:** Seguridad activa / Ofensiva defensiva contra extorsión y estafas algorítmicas. Inversión del modelo tradicional: en vez de esperar la denuncia de una víctima, el sistema crea víctimas simuladas con agentes autónomos para extraer la infraestructura del criminal.
+
+### A. La problemática que resuelve
+* **El problema:** La extorsión y las estafas operan a escala algorítmica y masiva. Esperar a que una víctima real denuncie suele ser tarde: la víctima ya pagó o tiene demasiado miedo para hablar.
+* **El concepto:** Despliegue de un **enjambre de "agentes señuelo" (honeypots)** impulsados por LLMs que simulan ser pequeños empresarios (bodegueros, transportistas) o personas vulnerables en redes sociales y Telegram.
+* **Ingeniería social inversa:** Cuando un extorsionador contacta a un señuelo, el agente autónomo mantiene la conversación de manera creíble, finge temor y negocia hasta que el delincuente **revela sus cuentas bancarias, números de Yape/Plin o billeteras cripto** para recibir el pago.
+
+---
+
+### B. Cómo funciona
+1. **Detección y enganche:** El extorsionador escribe amenazando al número señuelo. El agente autónomo toma el control de la conversación.
+2. **Persistencia de personalidad y contexto:** El agente utiliza memoria contextual para no romper su falsa identidad (edad, tono asustado, rubro del negocio).
+3. **Extracción activa:** El agente solicita formalmente los datos de pago para "hacer el depósito del cupo", extrayendo las cuentas receptoras.
+4. **Alimentación automática del grafo:** En el momento exacto en que el delincuente envía el número de cuenta o Yape, el sistema lo captura y dibuja el nodo en un mapa de calor y grafo en vivo.
+
+---
+
+### C. Stack Técnico y Arquitectura (30% Complejidad)
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Orquestación de sesiones** | **n8n** | Manejo de webhooks y múltiples sesiones de chat concurrentes |
+| **Backend & Memoria de Agentes** | **Python + FastAPI + Arquitectura RAG / Memoria** | Gestión de contexto, perfiles de identidad y persistencia (apoyado con **AtomicMemory**, sponsor del evento) |
+| **Generación de Diálogo Humano** | **LLM local** | Respuestas humanas, dialecto peruano y manejo de presión psicológica en tiempo real |
+| **Inteligencia de Datos** | **Neo4j** | Base de datos de grafos que se auto-puebla en vivo conforme los señuelos extraen cuentas |
+| **Dashboard Administrativo** | **React + Vite** | Panel de control desplegado en URL pública con métricas de atacantes neutralizados y grafos en tiempo real |
+
+---
+
+### D. El Show para el Pitch (25% Funciona en vivo)
+* **Demostración interactiva con el jurado:** Durante el pitch, se proyecta el dashboard administrativo en React.
+* Se invita a un miembro del jurado a que tome su propio celular y le escriba al bot señuelo simulando ser un extorsionador exigiendo dinero.
+* El jurado y la audiencia ven en pantalla cómo la IA le responde con naturalidad, le pide la cuenta para "pagar", y en cuanto el jurado envía el número de prueba, **el nodo criminal y su relación financiera aparecen automáticamente proyectados en el mapa de calor**.
+
+---
+
+## 5. ShieldStream: Interceptor VoIP en Tiempo Real (Procesamiento Edge)
+
+> **Enfoque clave:** Ingeniería pura de procesamiento en streaming vs. procesamiento estático. Detección en vivo de voces clonadas durante la llamada misma, antes de que el usuario cuelgue o transfiera dinero.
+
+### A. La problemática que resuelve
+* **El problema:** Subir un archivo `.mp3` grabado a una web es un flujo pasivo y tardío. En una extorsión o estafa con secuestro exprés telefónico, la decisión de transferir dinero ocurre **durante los 60 a 90 segundos de la llamada**. Si no se avisa en tiempo real, el daño ya está hecho.
+* **El concepto:** Un interceptor en segundo plano (simulado en PWA / cliente local / webapp de monitoreo) que procesa llamadas VoIP entrantes mientras ocurren. Mientras el usuario habla con el supuesto "familiar en apuros", el sistema analiza la latencia, jitter y formantes vocales milisegundo a milisegundo.
+
+---
+
+### B. Cómo funciona
+1. **Streaming continuo vía WebSockets:** El flujo de audio del interlocutor se fragmenta en pequeños chunks binarios y se envía de forma continua mediante WebSockets bidireccionales.
+2. **Inferencia acústica en streaming:** El backend procesa los chunks de audio sin cortar la llamada a través de un clasificador espectral ligero optimizado para baja latencia.
+3. **Detección sub-segundo:** En el instante en que el interlocutor utiliza una voz clonada (detectable por anomalías de fase y corte de frecuencias sintéticas), el sistema dispara la alerta.
+
+---
+
+### C. Stack Técnico y Arquitectura (30% Complejidad Técnica)
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Streaming de Audio** | **WebSockets (Full-Duplex)** | Transmisión continua de fragmentos de audio desde el cliente al servidor sin buffering perceptible |
+| **Backend Asíncrono** | **Python + FastAPI (Asyncio)** | Inferencia ultra-rápida chunk por chunk sin bloqueo |
+| **Procesamiento Distribuido** | **Algoritmo de Elección de Líder / Nodos Worker** | Capacidad de distribuir la carga de análisis espectral entre múltiples instancias/nodos concurrentes |
+| **Visualización en Vivo** | **React + Canvas / Web Audio API** | Renderizado del osciloscopio y análisis espectral en tiempo real |
+
+---
+
+### D. El Show para el Pitch (25% Funciona en vivo)
+* **Demostración de alto impacto escénico:** 
+  1. Durante la presentación, se realiza una llamada VoIP en vivo usando un micrófono en la sala.
+  2. En el dashboard en React (desplegado en URL pública) se proyecta un **osciloscopio digital** con la onda de voz humana en verde.
+  3. En vivo, el orador conmuta el audio hacia un modulador o sintetizador con voz clonada por IA.
+  4. En cuestión de milisegundos y **en medio de la frase**, la onda cambia abruptamente a rojo y salta una alerta visual crítica en pantalla: **`⚠️ CLONACIÓN DETECTADA - VOZ SINTÉTICA DETECTADA EN VIVO`**, antes de que termine la llamada.
+
+---
+
+## 6. OmniRAG Desktop: Análisis Multimodal Continuo
+
+> **Enfoque clave:** Detección de estafas visuales, phishing y desinformación sin fricción de usuario. Copiloto de seguridad Zero-Click/Atajo con procesamiento on-premise para máxima privacidad.
+
+### A. La problemática que resuelve
+* **El problema:** La barrera del usuario frente a la verificación. Los usuarios comunes **no copian y pegan textos largos** ni guardan archivos para subirlos a un verificador web; simplemente ven capturas de pantalla en TikTok, mensajes en WhatsApp Web o visitan páginas de bancos clonadas sin darse cuenta.
+* **El concepto:** Un copiloto de seguridad de escritorio (aplicación de escritorio / overlay nativo) que asiste al usuario de forma contextual. Si el usuario está viendo una noticia dudosa, un correo sospechoso, un QR fraudulento o un sitio bancario clonado, presiona un atajo de teclado y el sistema analiza la pantalla completa de inmediato, **sin enviar capturas a la nube ni comprometer su privacidad**.
+
+---
+
+### B. Cómo funciona
+1. **Captura y OCR instantáneo:** Al pulsar la tecla macro o atajo global, la app toma un fotograma de la ventana activa y ejecuta un motor OCR local ultrarrápido para extraer textos, URLs impresas y códigos QR.
+2. **Pipeline Multimodal Local:** El texto y los metadatos visuales se inyectan en un motor RAG que consulta una base de datos vectorial local.
+3. **Cruce Zero-Trust con dominios y alertas oficiales:** Compara dominios detectados contra listas de phishing y boletines de la SBS/Bancos oficiales (ej. detecta `bcp-bancasegura.com` vs `viabcp.com`).
+4. **Overlay de alerta inmediata:** Se proyecta una superposición translúcida sobre la misma pantalla que resalta en rojo los elementos peligrosos y muestra los enlaces y datos oficiales verificados.
+
+---
+
+### C. Stack Técnico y Arquitectura (30% Complejidad + 10% Claridad)
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **App de Escritorio & Overlay** | **Electron / Tauri / Python PyQt** | Captura de pantalla a nivel de sistema operativo y renderizado de overlay sin latencia |
+| **Motor OCR** | **Tesseract OCR / PaddleOCR local** | Extracción de texto y lectura de QRs en pantalla sin salir de la máquina |
+| **Pipeline RAG Multimodal** | **Python + FastAPI + LangChain/LlamaIndex** | Vectorización e inferencia contextual |
+| **Base Vectorial Local** | **ChromaDB / Qdrant local** | Almacenamiento de embeddings de boletines oficiales, firmas de phishing y normativas |
+| **Tradeoff de Diseño (10% Claridad):** | **Arquitectura 100% On-Premise** | Decisión técnica deliberada: no enviar imágenes de la pantalla del usuario a servidores en la nube para garantizar secreto bancario y privacidad de datos personales. |
+
+---
+
+### D. El Show para el Pitch (25% Funciona en vivo)
+* **Demostración visual en vivo:**
+  1. En la pantalla de presentación se abre una página web idéntica a la banca por internet de un banco peruano (sitio clonado de phishing simulado) o un post viral falso de Twitter/TikTok.
+  2. El presentador presiona el atajo de teclado en vivo.
+  3. En milisegundos se despliega el **overlay interactivo** en pantalla marcando en rojo los campos falsos, señalando la URL engañosa y desplegando la advertencia oficial de la SBS extraída de la base vectorial local.
+
+---
+
+## 7. Audio-Poisoning: Inmunización Proactiva contra Deepfakes
+
+> **Enfoque clave:** Paradigma de Seguridad Proactiva vs. Reactiva. En lugar de limitarse a detectar la clonación una vez que ya fuiste víctima, destruyes la capacidad del atacante de clonar tu voz desde el origen.
+
+### A. La problemática que resuelve
+* **El dolor:** Las bandas criminales descargan audios y videos cotidianos que la gente sube libremente a TikTok, Instagram o historias de WhatsApp para alimentar modelos de síntesis de voz (Few-Shot Voice Cloning) y luego llamar a sus familias simulando secuestros o emergencias.
+* **La falla del modelo reactivo:** Esperar a detectar un deepfake cuando ya te están extorsionando deja a la víctima en pánico. 
+* **La solución proactiva:** Inmunizar cualquier contenido audiovisual antes de que sea publicado en redes públicas.
+
+---
+
+### B. Cómo funciona
+1. **Carga del archivo:** El usuario sube su video o nota de voz a una plataforma web pública antes de publicarlo o compartirlo.
+2. **Inyección de Ruido Adversario (Adversarial Perturbation):** El motor procesa el espectrograma del audio e inyecta perturbaciones acústicas diseñadas específicamente contra las capas de codificación de modelos de síntesis de voz (como RVC, FastSpeech, ElevenLabs o VITS).
+3. **Transparencia psicoacústica:** Para el oído humano, el audio suena idéntico y con fidelidad perfecta (el ruido se oculta bajo los umbrales de enmascaramiento auditivo).
+4. **Colapso del modelo clonador:** Si un atacante descarga ese audio y lo introduce en un software de clonación por IA, las perturbaciones adversarias hacen que el extractor de características colapse, generando un audio resultante ininteligible, metálico y distorsionado.
+
+---
+
+### C. Stack Técnico y Arquitectura (30% Complejidad Técnica)
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Microservicio de Procesamiento** | **Python + FastAPI** | Backend de alta velocidad para análisis espectral y generación de perturbaciones |
+| **Algoritmos Adversarios** | **PyTorch + Librosa / SciPy** | Generación de ataques adversarios acústicos (perturbaciones FGSM o proyectadas) optimizadas para modelos neuronales de voz |
+| **Frontend Web Público** | **React + Vite + Tailwind CSS** | Plataforma drag-and-drop disponible en URL pública para procesar e inmunizar audios al instante |
+| **Orquestación & Almacenamiento** | **n8n / FastAPI Storage** | Flujo de entrega del archivo protegido listo para descargar |
+
+---
+
+### D. El Show para el Pitch (25% Funciona en vivo)
+* **Demostración de alto impacto auditivo ante el jurado:**
+  1. **Prueba 1 (Sin protección):** Se sube un audio de voz limpio de 5 segundos a una herramienta de clonación por IA en vivo: el sistema clona la voz perfectamente y el jurado escucha el clon idéntico.
+  2. **Prueba 2 (Con Audio-Poisoning):** Se procesa ese mismo audio en la plataforma web (inmunización de 2 segundos). El jurado lo escucha y comprueba que suena idéntico al original.
+  3. **El colapso en vivo:** Se introduce el audio inmunizado en la herramienta de clonación: el modelo colapsa en tiempo real y reproduce un audio robótico e incomprensible. La voz quedó blindada contra cualquier clonación futura.
+
+---
+
+## 8. Shadow-Trace: Honeypot Activo contra Extorsionadores
+
+> **Enfoque clave:** Inteligencia de Contraataque Digital (Deception Technology). Inversión del flujo de extorsión mediante vouchers trampa para desenmascarar el dispositivo físico y la red del delincuente.
+
+### A. La problemática que resuelve
+* **El dolor:** Los extorsionadores operan desde el anonimato total mediante chips desechables o números extranjeros en WhatsApp/Telegram exigiendo pagos de cupos a bodegas y transportistas.
+* **La falla del bloqueo simple:** Bloquear el número no soluciona el problema; los criminales compran otro chip o envían sicarios al local comercial. La policía no puede actuar porque no tiene pistas técnicas del dispositivo del extorsionador.
+* **El concepto:** En lugar de bloquear o ceder al miedo, la víctima genera un **"comprobante de pago falso / voucher encubierto"** (enlace web señuelo con diseño idéntico a una pasarela bancaria o visor de voucher de Yape/Plin/BCP). La víctima le envía el enlace al extorsionador: *"Hermano, ya te hice la transferencia, entra al link para verificar el voucher"*.
+
+---
+
+### B. Cómo funciona
+1. **Generación del Voucher Señuelo:** La víctima ingresa al dashboard o bot, indica el monto acordado y genera un link único con apariencia oficial (`https://voucher-verificacion.pe/yape/v8291...`).
+2. **Apertura de la trampa:** El extorsionador, ansioso por confirmar el cobro del dinero, abre el enlace en su propio teléfono inteligente.
+3. **Extracción silenciosa de Huella Digital (Browser Fingerprinting Avanzado):** Mientras la página simula cargar un voucher bancario legítimo con spinner de carga, un script cliente recolecta al instante la telemetría del dispositivo:
+   * Dirección IP real y geolocalización aproximada / ASN del proveedor de internet (red móvil vs. WiFi).
+   * WebGL Fingerprint (tarjeta gráfica / chip GPU del smartphone, identificador único de hardware).
+   * Canvas Fingerprint, resolución exacta de pantalla y relación de aspecto.
+   * Nivel de batería, estado de carga (API BatteryManager) y cantidad de núcleos CPU.
+   * Parámetros de zona horaria y User-Agent real.
+4. **Alerta y Perfilamiento para Autoridades:** La información se envía en milisegundos al backend y genera una ficha pericial digital del extorsionador lista para la Divindat/PNP.
+
+---
+
+### C. Stack Técnico y Arquitectura (30% Complejidad)
+
+| Componente | Tecnología | Rol en la solución |
+|---|---|---|
+| **Página Honeypot / Señuelo** | **HTML5 + Canvas + WebGL + JavaScript** | Simulación de interfaz bancaria con extracción de telemetría de hardware en cliente |
+| **Fingerprinting Engine** | **FingerprintJS / Custom WebGL shader** | Generación del hash identificador único del hardware del extorsionador |
+| **Backend & Webhooks** | **Node.js + Express / FastAPI** | Recepción de telemetría, resolución de IP/ASN y almacenamiento de trazas |
+| **Base de Datos & Grafos** | **PostgreSQL / Neo4j** | Correlación de múltiples ataques: detecta si dos números de extorsión distintos provienen del mismo dispositivo físico (mismo WebGL hash) |
+| **Dashboard Policial / Web** | **React + Vite + Leaflet / Mapbox** | Mapa interactivo de calor y panel de dispositivos rastreados en tiempo real desplegado en **URL pública** |
+
+---
+
+### D. El Show para el Pitch (25% Funciona en vivo)
+* **Demostración interactiva de contraataque en vivo con el jurado:**
+  1. Durante la presentación, se proyecta el dashboard policial en la pantalla grande.
+  2. El presentador le envía el enlace del voucher trampa por Telegram o WhatsApp a uno de los miembros del jurado (simulando ser el extorsionador).
+  3. En el segundo exacto en que el jurado hace clic y abre la página en su teléfono móvil, suena una sirena/alerta en el dashboard y **aparece un pop-up en la pantalla gigante con el modelo exacto del celular del jurado, su nivel de batería actual, su resolución de pantalla y el mapa geolocalizado**.
+  4. Es una demostración impactante de cómo se puede quitar el anonimato a las mafias en cuestión de segundos.
