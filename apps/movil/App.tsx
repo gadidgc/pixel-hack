@@ -2,7 +2,7 @@ import { Figtree_400Regular, Figtree_500Medium, Figtree_600SemiBold } from '@exp
 import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
 import { Lexend_300Light, Lexend_500Medium, Lexend_600SemiBold, useFonts } from '@expo-google-fonts/lexend';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { guardarPreferencias } from './src/preferencias';
@@ -110,7 +110,10 @@ function Navegacion() {
   const [extra, setExtra] = useState<Extra>(null);
   const web = paginaWeb();
   // Grabar se monta la primera vez que la abres y ya no se desmonta (ver Grabar.tsx).
-  const grabarMontado = useRef(false);
+  const [grabarMontado, setGrabarMontado] = useState(false);
+  useEffect(() => {
+    if (pestana === 'grabar') setGrabarMontado(true);
+  }, [pestana]);
   const listas = Boolean(prefs?.bienvenidaHecha);
   useEffect(() => {
     if (listas && !web && Platform.OS !== 'web') void servicio.reanudarSiEstabaActiva();
@@ -160,14 +163,12 @@ function Navegacion() {
     contenido = <Inicio onPestana={setPestana} onCerca={() => setPestana('cerca')} />;
   }
 
-  if (enGrabar) grabarMontado.current = true;
-
   return (
     <View style={{ flex: 1, backgroundColor: COLORES.noche.fondo }}>
       {contenido}
-      {grabarMontado.current && (
+      {(grabarMontado || enGrabar) && (
         <View style={{ flex: 1, display: enGrabar ? 'flex' : 'none' }}>
-          <Grabar visible={enGrabar} onPestana={setPestana} />
+          <Grabar visible={enGrabar} enPestana={pestana === 'grabar'} onPestana={setPestana} />
         </View>
       )}
       {/* "¿Todo bien?" va encima de todo mientras se espera la respuesta (aunque estés en otra pestaña). */}

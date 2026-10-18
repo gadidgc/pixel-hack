@@ -3,7 +3,7 @@ import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Platform, Pressable, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { subirEvidencia } from '../evidencias';
 import { marcarGrabacion } from '../grabacionEvidencia';
@@ -28,12 +28,15 @@ interface Evidencia {
   subida: Subida;
 }
 
-/** Cuántas grabaciones se ven abajo. El espacio está reservado para que el botón no se mueva. */
+/** Cuántas filas caben abajo (las demás con scroll). El espacio está reservado para que el botón no se mueva. */
 const FILAS_VISIBLES = 2;
 const ALTO_FILA = 52;
 
 /** Cuánto esperamos a que la cámara esté lista después de dar el permiso. */
 const ESPERA_CAMARA_MS = 4000;
+
+/** Si al detener el video la cámara no responde en este tiempo, liberamos el botón y lo decimos. */
+const ESPERA_GUARDAR_MS = 5000;
 
 /** iOS graba video en .mov (QuickTime); Android en .mp4. El audio es .m4a (AAC en MP4). */
 function tipoDe(uri: string, m: Modo): { extension: string; mime: string } {
@@ -57,10 +60,10 @@ function mensajeDeError(e: unknown, m: Modo): string {
  * copia del celular queda y la pantalla dice por qué. "Graba solo si es seguro para ti."
  *
  * La pantalla queda montada aunque cambies de pestaña (`visible` en falso): el audio sigue grabando con
- * el celular en el bolsillo y la lista de grabaciones no se pierde. El video sí se detiene y se guarda
- * al salir, porque la cámara no graba sin estar en pantalla.
+ * el celular en el bolsillo y la lista de grabaciones no se pierde. El video se detiene y se guarda
+ * cuando TÚ cambias de pestaña (`enPestana` en falso); si una alerta tapa la pantalla, sigue grabando.
  */
-export function Grabar({ visible, onPestana }: { visible: boolean; onPestana: (p: Pestana) => void }) {
+export function Grabar({ visible, enPestana, onPestana }: { visible: boolean; enPestana: boolean; onPestana: (p: Pestana) => void }) {
   const c = useTema();
   const ins = useSafeAreaInsets();
   const [modo, setModo] = useState<Modo>('video');
@@ -75,13 +78,20 @@ export function Grabar({ visible, onPestana }: { visible: boolean; onPestana: (p
   const alEstarLista = useRef<(() => void) | null>(null);
   const grabadora = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const inicio = useRef(0);
+  /** En falso mientras recordAsync no termina: para saber si la cámara respondió al detener. */
+  const videoTerminado = useRef(true);
   const ocupada = fase !== 'lista';
 
+  // Oculta no se refresca el contador: al volver se calcula desde `inicio`.
   useEffect(() => {
-    if (fase !== 'grabando') return;
+    if (fase !== 'grabando' || !visible) return;
+    setSegundos(Math.round((Date.now() - inicio.current) / 1000));
     const t = setInterval(() => setSegundos(Math.round((Date.now() - inicio.current) / 1000)), 500);
     return () => clearInterval(t);
-  }, [fase]);
+  }, [fase, visible]);
+
+  // Si la pantalla se desmonta, la pestaña no puede quedarse diciendo "Grabando".
+  useEffect(() => () => marcarGrabacion(null), []);
 
   const web = Platform.OS === 'web';
   const pos = servicio.ultimaPosicion();
@@ -154,10 +164,13 @@ export function Grabar({ visible, onPestana }: { visible: boolean; onPestana: (p
         setSegundos(0);
         setFase('grabando');
         marcarGrabacion({ modo: 'video', desde: inicio.current });
+        videoTerminado.current = false;
         const r = await camara.current.recordAsync({ maxDuration: 600 });
+        videoTerminado.current = true;
         marcarGrabacion(null);
         setFase('lista');
         if (r?.uri) guardar(r.uri, 'video', Math.round((Date.now() - inicio.current) / 1000));
+        else setError('El video no se guardó (quizá fue muy corto). Graba otra vez.');
       } else {
         const p = await AudioModule.requestRecordingPermissionsAsync();
         if (!p.granted) {
@@ -173,6 +186,7 @@ export function Grabar({ visible, onPestana }: { visible: boolean; onPestana: (p
         marcarGrabacion({ modo: 'audio', desde: inicio.current });
       }
     } catch (e) {
+      videoTerminado.current = true;
       marcarGrabacion(null);
       setFase('lista');
       setError(mensajeDeError(e, modo));
@@ -185,7 +199,15 @@ export function Grabar({ visible, onPestana }: { visible: boolean; onPestana: (p
     try {
       if (modo === 'video') {
         // recordAsync (en empezar) termina, guarda el archivo y vuelve a 'lista'.
-        camara.current?.stopRecording();
+        if (!camara.current) throw new Error('La cámara no está lista');
+        camara.current.stopRecording();
+        setTimeout(() => {
+          if (videoTerminado.current) return;
+          videoTerminado.current = true;
+          marcarGrabacion(null);
+          setFase('lista');
+          setError('La cámara no respondió y el video pudo no guardarse. Graba otra vez.');
+        }, ESPERA_GUARDAR_MS);
       } else {
         await grabadora.stop();
         marcarGrabacion(null);
@@ -199,12 +221,12 @@ export function Grabar({ visible, onPestana }: { visible: boolean; onPestana: (p
     }
   };
 
-  // Al salir de la pestaña grabando video: se detiene y se guarda (el audio sigue).
+  // Al cambiar TÚ de pestaña grabando video: se detiene y se guarda (el audio sigue). Una alerta no lo corta.
   const detenerRef = useRef(detener);
   detenerRef.current = detener;
   useEffect(() => {
-    if (!visible && modo === 'video' && fase === 'grabando') void detenerRef.current();
-  }, [visible, modo, fase]);
+    if (!enPestana && modo === 'video' && fase === 'grabando') void detenerRef.current();
+  }, [enPestana, modo, fase]);
 
   const cambiarModo = (m: Modo) => {
     if (ocupada) return;
@@ -305,13 +327,13 @@ export function Grabar({ visible, onPestana }: { visible: boolean; onPestana: (p
         <T v="apoyo13" suave style={{ textAlign: 'center' }}>
           {fase === 'preparando' ? 'Preparando…' : fase === 'deteniendo' ? 'Guardando…' : 'Se guarda en tu celular y se sube a un enlace privado. Si tienes una alerta abierta, tu red lo ve.'}
         </T>
-        <View style={{ alignSelf: 'stretch', height: FILAS_VISIBLES * ALTO_FILA, justifyContent: evidencias.length ? 'flex-start' : 'center' }}>
+        <ScrollView style={{ alignSelf: 'stretch', height: FILAS_VISIBLES * ALTO_FILA, flexGrow: 0 }} contentContainerStyle={{ flexGrow: 1, justifyContent: evidencias.length ? 'flex-start' : 'center' }}>
           {evidencias.length === 0 && (
             <T v="apoyo13" suave style={{ textAlign: 'center' }}>
               Tus grabaciones aparecerán aquí.
             </T>
           )}
-          {evidencias.slice(0, FILAS_VISIBLES).map((e) => (
+          {evidencias.map((e) => (
             <View key={e.uri} style={{ height: ALTO_FILA, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Icono nombre={e.modo === 'video' ? 'grabar' : 'microfono'} tam={18} color={c.textoSuave} />
               <View style={{ flex: 1, gap: 2 }}>
@@ -339,7 +361,7 @@ export function Grabar({ visible, onPestana }: { visible: boolean; onPestana: (p
               <Boton texto="Compartir" variante="secundario" principal={false} icono="compartir" onPress={() => void Sharing.shareAsync(e.uri, { mimeType: e.mime })} />
             </View>
           ))}
-        </View>
+        </ScrollView>
         <View style={{ alignSelf: 'stretch', marginHorizontal: -16 }}>
           <BarraPestanas actual="grabar" onCambiar={onPestana} />
         </View>

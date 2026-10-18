@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Platform, Pressable, View } from 'react-native';
 import { PedirPin } from '../componentes/PedirPin';
 import { useProteccion } from '../useProteccion';
@@ -17,6 +17,10 @@ export function Inicio({ onPestana, onCerca }: { onPestana: (p: Pestana) => void
   const [pedido, setPedido] = useState<null | 'pausar' | 'apagar'>(null);
   const [activando, setActivando] = useState(false);
   const [errorActivar, setErrorActivar] = useState('');
+  // Si la protección se activa por otro camino, el error viejo ya no aplica.
+  useEffect(() => {
+    if (estado.activa) setErrorActivar('');
+  }, [estado.activa]);
   const tel = estado.telemetria;
 
   const limitada = estado.activa && (estado.segundoPlano === false || estado.tieneGps === false || estado.permisosFaltantes.length > 0);
