@@ -61,3 +61,4 @@ Meta exige un método de pago en la cuenta de WhatsApp Business para mandar plan
 - **Evidencias en R2:** el enlace es un token aleatorio, como el de la alerta. La app guarda siempre una copia en el celular; si la subida falla, lo dice ("Guardada solo en tu celular: <motivo>").
 - **Mensajes sin tildes:** en SMS una tilde baja el límite de 160 a 70 caracteres por parte.
 - Si no hay clave de Zavu, el backend lo dice ("falta configurar Zavu") y la app muestra "No pudimos avisar": nunca dice que avisó si no salió ningún mensaje.
+- **Límite por IP** (Workers Rate Limiting, en `wrangler.jsonc`): lo que manda WhatsApp o SMS (`alerta`, `notificar_familia`, `prueba`, `probar_bloqueo`, "Yo me encargo") admite 10 por minuto por IP; el resto de los POST, 30. Al pasarse responde 429 "espera un minuto". `ubicacion` y `cancelada` nunca se limitan: son la ruta en vivo y el "está bien" de una alerta real. El límite por `dispositivo` no basta, porque ese id lo elige quien llama.

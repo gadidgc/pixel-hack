@@ -36,6 +36,10 @@ export interface Env extends EnvMensajes {
   ASSETS: Fetcher;
   /** Bucket R2 `alerta-arrebato-evidencias`. */
   EVIDENCIAS: R2Bucket;
+  /** Lo que manda WhatsApp o SMS: 10 por minuto por IP. Opcional: sin el binding no se limita. */
+  LIMITE_MENSAJES?: RateLimit;
+  /** El resto de los POST (reportes, evidencias, botones de la página): 30 por minuto por IP. */
+  LIMITE_GENERAL?: RateLimit;
 }
 
 const MAX_CUERPO = 128 * 1024;
@@ -53,6 +57,21 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, X-Dispositivo, X-Lat, X-Lon, Range',
   'Access-Control-Expose-Headers': 'Content-Range, Content-Length, Accept-Ranges',
 };
+
+/** Eventos que mandan WhatsApp o SMS: los que cuestan saldo y se podrían usar para molestar a cualquier número. */
+const EVENTOS_CON_MENSAJES = new Set<Mensaje['tipo']>(['alerta', 'notificar_familia', 'prueba', 'probar_bloqueo']);
+/**
+ * Nunca se limitan: `ubicacion` llega cada segundo durante una alerta real y solo escribe en una alerta ya
+ * abierta; `cancelada` le dice a la familia que todo está bien y no debe fallar nunca.
+ */
+const EVENTOS_SIN_LIMITE = new Set<Mensaje['tipo']>(['ubicacion', 'cancelada']);
+
+/** `true` si esta IP todavía puede hacer otra petición. Sin binding o sin IP (desarrollo local), no limita. */
+async function dentroDelLimite(limitador: RateLimit | undefined, peticion: Request): Promise<boolean> {
+  const ip = peticion.headers.get('CF-Connecting-IP');
+  if (!limitador || !ip) return true;
+  return (await limitador.limit({ key: ip })).success;
+}
 
 function json(datos: unknown, estado = 200): Response {
   return new Response(JSON.stringify(datos), { status: estado, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...CORS } });
@@ -647,6 +666,8 @@ async function salud(env: Env): Promise<Response> {
   return json({ ok: base, base, mensajes: proveedores(env) ?? 'sin proveedor' }, base ? 200 : 503);
 }
 
+const DEMASIADOS = () => json({ ok: false, detalle: 'demasiados intentos desde esta conexión: espera un minuto' }, 429);
+
 export default {
   async fetch(peticion: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(peticion.url);
@@ -678,7 +699,17 @@ export default {
         } catch {
           return json({ ok: false, detalle: 'JSON inválido' }, 400);
         }
-        return await procesar(env, ctx, validarMensaje(cuerpo), url.origin);
+        const mensaje = validarMensaje(cuerpo);
+        if (!EVENTOS_SIN_LIMITE.has(mensaje.tipo)) {
+          const limitador = EVENTOS_CON_MENSAJES.has(mensaje.tipo) ? env.LIMITE_MENSAJES : env.LIMITE_GENERAL;
+          if (!(await dentroDelLimite(limitador, peticion))) return DEMASIADOS();
+        }
+        return await procesar(env, ctx, mensaje, url.origin);
+      }
+      if (peticion.method === 'POST') {
+        // "Yo me encargo" avisa a toda la red; lo demás (reportes, evidencias, pasos del kit) va al límite general.
+        const limitador = url.pathname.endsWith('/encargado') ? env.LIMITE_MENSAJES : env.LIMITE_GENERAL;
+        if (!(await dentroDelLimite(limitador, peticion))) return DEMASIADOS();
       }
       const ver = url.pathname.match(/^\/api\/alertas\/([a-z0-9]{16})(?:\/(encargado|robo|bloqueo))?$/);
       if (ver && !ver[2] && peticion.method === 'GET') return await verAlerta(env, ver[1], url.origin);
