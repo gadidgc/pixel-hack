@@ -67,3 +67,8 @@ export async function escucharSensores(alRecibir: (m: MuestraImu) => void): Prom
     detener: () => window.removeEventListener('devicemotion', alMoverse),
   };
 }
+
+/** En la web no hay módulo nativo: no hay diagnóstico (igual que en Expo Go). */
+export function diagnosticoSensores(): null {
+  return null;
+}
