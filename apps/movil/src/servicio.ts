@@ -1,9 +1,12 @@
 import {
-  CONFIG_DEMO,
   CONFIG_POR_DEFECTO,
+  ESPACIOS_DEMO,
+  configDemo,
   DetectorArrebato,
   reproducir,
   simular,
+  type ConfigDetector,
+  type EspacioDemo,
   type EventoDetector,
   type LecturaGps,
   type MuestraImu,
@@ -72,6 +75,8 @@ export interface EstadoProteccion {
   /** Permisos que faltaron al activar (modo limitado). */
   permisosFaltantes: string[];
   modoDemo: boolean;
+  /** Dónde se hace la demo: cambia cuánto hay que correr y si se usa el GPS (solo con el modo demo). */
+  espacioDemo: EspacioDemo;
   telemetria: Telemetria | null;
   tieneGiroscopio: boolean | null;
   tieneGps: boolean | null;
@@ -117,6 +122,7 @@ class ServicioProteccion {
     pausadaHasta: null,
     permisosFaltantes: [],
     modoDemo: false,
+    espacioDemo: 'calle',
     telemetria: null,
     tieneGiroscopio: null,
     tieneGps: null,
@@ -540,7 +546,7 @@ class ServicioProteccion {
    */
   async probar(): Promise<ResultadoPrueba> {
     const sim = simular('arrebato_moto', 1 + Math.floor(Math.random() * 500));
-    const r = reproducir(sim.entradas, this.estado.modoDemo ? CONFIG_DEMO : CONFIG_POR_DEFECTO);
+    const r = reproducir(sim.entradas, this.configDetector());
     const jalon = r.eventos.find((e) => e.tipo === 'posible_jalon');
     const base = sim.tJalon ?? 0;
     const { nombre, contactos } = preferencias();
@@ -643,11 +649,28 @@ class ServicioProteccion {
 
   // --- Herramientas del equipo -------------------------------------------------------------------------
 
+  /** Los umbrales que usa ahora el detector (normal, o demo según el espacio elegido). */
+  configDetector(): ConfigDetector {
+    return this.estado.modoDemo ? configDemo(this.estado.espacioDemo) : CONFIG_POR_DEFECTO;
+  }
+
   cambiarModoDemo(modoDemo: boolean): void {
-    this.detector = new DetectorArrebato(modoDemo ? CONFIG_DEMO : CONFIG_POR_DEFECTO);
-    this.detenerCuentaFamilia();
     this.cambiar({ modoDemo, alerta: null });
-    this.registrar(modoDemo ? 'Modo demo: la huida corriendo cuenta.' : 'Modo normal: solo huida en vehículo.');
+    this.reiniciarDetector();
+    this.registrar(
+      modoDemo ? `Modo demo: la huida corriendo cuenta (${ESPACIOS_DEMO[this.estado.espacioDemo].titulo}).` : 'Modo normal: solo huida en vehículo.',
+    );
+  }
+
+  cambiarEspacioDemo(espacioDemo: EspacioDemo): void {
+    this.cambiar({ espacioDemo });
+    this.reiniciarDetector();
+    this.registrar(`Espacio de la demo: ${ESPACIOS_DEMO[espacioDemo].titulo}.`);
+  }
+
+  private reiniciarDetector(): void {
+    this.detector = new DetectorArrebato(this.configDetector());
+    this.detenerCuentaFamilia();
   }
 
   empezarGrabacion(etiqueta: Etiqueta): void {

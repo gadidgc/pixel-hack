@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Platform, Pressable, Share, Switch, View } from 'react-native';
+import { ESPACIOS_DEMO, type EspacioDemo } from '@pixel-hack/detector';
 import { hayBackend } from '../alertas';
 import { PedirPin } from '../componentes/PedirPin';
 import { consultarBloqueo, faltaParaBloqueo } from '../bloqueo';
@@ -61,6 +62,21 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
           </View>
           <Switch value={estado.modoDemo} onValueChange={(v) => servicio.cambiarModoDemo(v)} />
         </View>
+        {estado.modoDemo && (
+          <View style={{ gap: 8, paddingHorizontal: 14, paddingBottom: 14 }}>
+            <T v="apoyo13" suave>
+              ¿Dónde es la demo?
+            </T>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {(Object.keys(ESPACIOS_DEMO) as EspacioDemo[]).map((x) => (
+                <Chip key={x} texto={ESPACIOS_DEMO[x].titulo} activo={estado.espacioDemo === x} onPress={() => servicio.cambiarEspacioDemo(x)} />
+              ))}
+            </View>
+            <T v="apoyo13" suave>
+              {ESPACIOS_DEMO[estado.espacioDemo].detalle}
+            </T>
+          </View>
+        )}
       </Grupo>
 
       <Rotulo>EN VIVO</Rotulo>
@@ -128,7 +144,7 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
       <Rotulo>SIMULAR (SIN MOVERSE)</Rotulo>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {ESCENARIOS_APP.map((x) => (
-          <Chip key={x.nombre} texto={x.titulo} activo={false} onPress={() => setSimulacion(correrSimulacion(x.nombre, x.titulo, estado.modoDemo))} />
+          <Chip key={x.nombre} texto={x.titulo} activo={false} onPress={() => setSimulacion(correrSimulacion(x.nombre, x.titulo, servicio.configDetector()))} />
         ))}
       </View>
       {simulacion && (
@@ -205,7 +221,7 @@ function textoRegistro(estado: EstadoProteccion): string {
   const lineas = [
     'Alerta Arrebato · registro',
     `Celular: ${celular} (${Platform.OS} ${Platform.Version})`,
-    `Protección: ${estado.activa ? 'activa' : 'apagada'} · Modo demo: ${sino(estado.modoDemo)} · Segundo plano: ${sino(estado.segundoPlano)}`,
+    `Protección: ${estado.activa ? 'activa' : 'apagada'} · Modo demo: ${estado.modoDemo ? `sí (${ESPACIOS_DEMO[estado.espacioDemo].titulo})` : 'no'} · Segundo plano: ${sino(estado.segundoPlano)}`,
     `Giroscopio: ${sino(estado.tieneGiroscopio)} · GPS: ${sino(estado.tieneGps)} · Permisos que faltan: ${estado.permisosFaltantes.length ? estado.permisosFaltantes.join(', ') : 'ninguno'}`,
     diag
       ? `Sensores: ${diag.muestras} muestras, última hace ${diag.msDesdeUltimaMuestra} ms, ${diag.reinicios} reinicios, wake lock ${sino(diag.wakeLock)}`

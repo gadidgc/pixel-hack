@@ -46,6 +46,13 @@ export interface ConfigDetector {
   velocidadHuidaSinPasosMs: number | null;
   /** Distancia desde el punto del jalón que también confirma la huida (m). */
   desplazamientoHuidaM: number;
+  /**
+   * El desplazamiento solo cuenta si supera el error sumado de las dos lecturas GPS. `false` solo para la
+   * demo en un espacio chico: con 8 m de carrera el error del GPS (10–30 m) lo taparía siempre.
+   */
+  desplazamientoSobreErrorGps: boolean;
+  /** `false`: el detector ignora el GPS y decide solo con los sensores (demo bajo techo). */
+  usarGps: boolean;
   /** Lecturas GPS con peor precisión que esta se ignoran (m). */
   precisionGpsMaxM: number;
   /** Tiempo máximo para confirmar la huida después del jalón (ms). */
@@ -111,6 +118,8 @@ export const CONFIG_POR_DEFECTO: ConfigDetector = {
   lecturasHuidaMin: 2,
   velocidadHuidaSinPasosMs: 2.8,
   desplazamientoHuidaM: 40,
+  desplazamientoSobreErrorGps: true,
+  usarGps: true,
   precisionGpsMaxM: 35,
   ventanaConfirmacionMs: 10_000,
   huidaInmediataMs: 7000,
@@ -163,6 +172,50 @@ export const CONFIG_DEMO: ConfigDetector = {
   // En la demo el jalón lo hace una persona, no una moto: pedimos un pico menor.
   umbralJalonG: 1.2,
 };
+
+/**
+ * Dónde se hace la demo (Herramientas del equipo). Solo cambia CONFIG_DEMO; nunca el modo normal.
+ * Lo agregamos tras los ensayos del 18/10: en un local chico nadie corre 25 m, el GPS bajo techo
+ * da "ya en vehículo" por ruido, y al correr sin GPS cada pisada reiniciaba la cuenta del jalón.
+ */
+export type EspacioDemo = 'calle' | 'sala' | 'sin_gps';
+
+export const ESPACIOS_DEMO: Record<EspacioDemo, { titulo: string; detalle: string; cambios: Partial<ConfigDetector> }> = {
+  calle: {
+    titulo: 'Calle (25 m)',
+    detalle: 'Al aire libre con GPS: hay que correr unos 25 m.',
+    cambios: {},
+  },
+  sala: {
+    titulo: 'Sala chica (8 m)',
+    detalle: 'Basta correr unos 8 m. Usa el GPS pero sin exigir que supere su error.',
+    cambios: {
+      desplazamientoHuidaM: 8,
+      desplazamientoSobreErrorGps: false,
+      velocidadHuidaMs: 1.5,
+      // Con el ruido del GPS bajo techo, "1,6 m/s antes del jalón" salía aunque estuviéramos parados.
+      velocidadPeatonMaxMs: 3,
+      historialVehiculoMs: 0,
+      // Al correr, cada pisada parece un jalón nuevo y reiniciaba la cuenta: el primero es el que vale.
+      reanclarJalon: false,
+    },
+  },
+  sin_gps: {
+    titulo: 'Solo sensores',
+    detalle: 'Ignora el GPS: alerta si después del jalón la persona corre unos segundos.',
+    cambios: {
+      usarGps: false,
+      historialVehiculoMs: 0,
+      reanclarJalon: false,
+      // Se decide antes: la persona corre 4–8 s y se detiene; con 10 s el promedio se diluía.
+      ventanaConfirmacionMs: 7000,
+    },
+  },
+};
+
+export function configDemo(espacio: EspacioDemo): ConfigDetector {
+  return crearConfig(ESPACIOS_DEMO[espacio].cambios, CONFIG_DEMO);
+}
 
 export function crearConfig(cambios: Partial<ConfigDetector> = {}, base = CONFIG_POR_DEFECTO): ConfigDetector {
   return { ...base, ...cambios };

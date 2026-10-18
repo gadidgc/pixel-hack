@@ -138,6 +138,7 @@ export class DetectorArrebato {
   procesarGps(l: LecturaGps): EventoDetector[] {
     const eventos: EventoDetector[] = [];
     if (![l.t, l.lat, l.lon].every(Number.isFinite)) return eventos;
+    if (!this.config.usarGps) return eventos;
     this.tActual = Math.max(this.tActual, l.t);
 
     const valida = l.precision === null || l.precision <= this.config.precisionGpsMaxM;
@@ -181,7 +182,7 @@ export class DetectorArrebato {
       const segundos = Math.max(1, (l.t - jalon.posicion.t) / 1000);
       const seMovio =
         desplazamiento >= this.config.desplazamientoHuidaM &&
-        desplazamiento > errorConjunto &&
+        (!this.config.desplazamientoSobreErrorGps || desplazamiento > errorConjunto) &&
         desplazamiento / segundos >= this.config.velocidadHuidaMs;
 
       if (jalon.lecturasRapidas > 0 || seMovio) jalon.huidaVista = true;

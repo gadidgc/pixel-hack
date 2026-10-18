@@ -1,5 +1,5 @@
 export { DetectorArrebato } from './detector';
-export { CONFIG_POR_DEFECTO, CONFIG_DEMO, crearConfig, type ConfigDetector } from './config';
+export { CONFIG_POR_DEFECTO, CONFIG_DEMO, ESPACIOS_DEMO, configDemo, crearConfig, type ConfigDetector, type EspacioDemo } from './config';
 export { CABECERA_CSV, aCsv, filaCsv, leerCsv, reproducir, type Entrada, type Grabacion, type ResultadoReproduccion } from './csv';
 export { distanciaM, desplazarLatLon } from './geo';
 export { G } from './matematica';
