@@ -107,7 +107,9 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
           Alert.alert(
             'Ensayar la alerta completa',
             falta
-              ? `Ojo: ${falta} Así el celular NO se bloqueará${Platform.OS === 'ios' ? ' (ni sus apps)' : ''}: solo verás la notificación y se avisará a tu red si no cancelas. Arréglalo en Tú › Bloqueo antirrobo.`
+              ? Platform.OS === 'ios'
+                ? `Ojo: ${falta} Así el iPhone NO se bloqueará solo: verás la notificación y se avisará a tu red si no cancelas. Arréglalo en Tú › Bloqueo antirrobo.`
+                : `Ojo: ${falta} Así el celular NO se bloqueará: solo verás la notificación y se avisará a tu red si no cancelas. Arréglalo en Tú › Bloqueo antirrobo.`
               : bloqueo.disponible
                 ? Platform.OS === 'ios'
                   ? 'Es una alerta real: tapa las demás apps del iPhone (al cancelar con tu PIN vuelven) y, si no cancelas con tu PIN a tiempo, avisa a tu red.'
