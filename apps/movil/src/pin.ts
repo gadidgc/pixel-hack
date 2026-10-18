@@ -40,3 +40,16 @@ export async function verificarPin(pin: string): Promise<boolean> {
   const guardado = await leer();
   return guardado !== null && guardado === pin;
 }
+
+/** Herramientas del equipo: borra el PIN para volver a crearlo en la bienvenida. */
+export async function borrarPin(): Promise<void> {
+  if (Platform.OS === 'web') {
+    try {
+      globalThis.localStorage?.removeItem(CLAVE);
+    } catch {
+      // Navegación privada: no había nada guardado.
+    }
+    return;
+  }
+  await SecureStore.deleteItemAsync(CLAVE);
+}

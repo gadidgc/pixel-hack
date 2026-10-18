@@ -156,6 +156,14 @@ export async function guardarPreferencias(cambios: Partial<Preferencias>): Promi
   return actuales;
 }
 
+/**
+ * Herramientas del equipo: vuelve a como recién instalada (sin nombre, sin red, sin bienvenida) para probar
+ * la bienvenida otra vez. El id de la instalación se queda: no es un dato personal y lo usa el backend.
+ */
+export async function borrarPreferencias(): Promise<Preferencias> {
+  return guardarPreferencias({ ...INICIAL, dispositivo: actuales.dispositivo });
+}
+
 export function suscribirPreferencias(oyente: (p: Preferencias) => void): () => void {
   oyentes.add(oyente);
   return () => oyentes.delete(oyente);
