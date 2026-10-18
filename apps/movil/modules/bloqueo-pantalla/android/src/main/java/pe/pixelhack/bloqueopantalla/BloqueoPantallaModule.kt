@@ -15,6 +15,7 @@ import android.os.Build
 import android.provider.Settings
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -78,10 +79,16 @@ class BloqueoPantallaModule : Module() {
      */
     Function("mostrarSobreBloqueo") { titulo: String, texto: String ->
       val ctx = contexto()
+      // Sin el aviso publicado, Android no abre nada sobre el bloqueo: decimos `false` para que JS use la
+      // notificación normal y dé los 15 s extra (notificaciones apagadas o sin permiso).
+      if (!puedePantallaCompleta(ctx)) return@Function false
+      if (!notificar(ctx, titulo, texto)) {
+        (ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(ID_NOTIFICACION)
+        return@Function false
+      }
       sobreBloqueo = true
       appContext.currentActivity?.let { aplicar(it, true) }
-      notificar(ctx, titulo, texto)
-      puedePantallaCompleta(ctx)
+      true
     }
     Function("ocultarSobreBloqueo") {
       sobreBloqueo = false
@@ -89,8 +96,10 @@ class BloqueoPantallaModule : Module() {
       (contexto().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(ID_NOTIFICACION)
     }
     // Si Android recrea la actividad durante la alerta, vuelve a quedar encima del bloqueo.
+    // También al revés: si la alerta terminó con la app en segundo plano, se quitan aquí las banderas,
+    // para que la app completa nunca quede visible sobre la pantalla de bloqueo.
     OnActivityEntersForeground {
-      if (sobreBloqueo) appContext.currentActivity?.let { aplicar(it, true) }
+      appContext.currentActivity?.let { aplicar(it, sobreBloqueo) }
     }
   }
 
@@ -107,15 +116,17 @@ class BloqueoPantallaModule : Module() {
     }
   }
 
-  private fun notificar(ctx: Context, titulo: String, texto: String) {
+  /** `true` solo si el aviso de pantalla completa quedó publicado y puede verse. */
+  private fun notificar(ctx: Context, titulo: String, texto: String): Boolean {
     val gestor = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    if (!NotificationManagerCompat.from(ctx).areNotificationsEnabled()) return false
     if (Build.VERSION.SDK_INT >= 26) {
       gestor.createNotificationChannel(NotificationChannel(CANAL, "Alerta sobre la pantalla de bloqueo",
         NotificationManager.IMPORTANCE_HIGH).apply { setSound(null, null); vibrationPattern = longArrayOf(0, 400, 150, 400) })
     }
     val abrirApp = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)?.apply {
       addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-    } ?: return
+    } ?: return false
     val pendiente = PendingIntent.getActivity(ctx, 0, abrirApp,
       PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     val aviso = NotificationCompat.Builder(ctx, CANAL)
@@ -129,7 +140,9 @@ class BloqueoPantallaModule : Module() {
       .setContentIntent(pendiente)
       .setFullScreenIntent(pendiente, true)
       .build()
-    try { gestor.notify(ID_NOTIFICACION, aviso) } catch (_: SecurityException) { /* sin permiso de notificaciones */ }
+    try { gestor.notify(ID_NOTIFICACION, aviso) } catch (_: SecurityException) { return false }
+    // El usuario puede silenciar solo este canal: entonces tampoco se abre sobre el bloqueo.
+    return Build.VERSION.SDK_INT < 26 || gestor.getNotificationChannel(CANAL)?.importance != NotificationManager.IMPORTANCE_NONE
   }
 
   private fun puedePantallaCompleta(ctx: Context): Boolean =

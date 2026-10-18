@@ -138,7 +138,8 @@ export function pantallaBloqueada(): boolean {
 export function usePantallaBloqueada(activo: boolean): boolean {
   const [bloqueada, setBloqueada] = useState(true);
   useEffect(() => {
-    if (!activo) return;
+    // Al terminar una alerta vuelve a "bloqueada": la próxima empieza mostrando solo el "¿Todo bien?".
+    if (!activo) return setBloqueada(true);
     const revisar = () => setBloqueada(pantallaBloqueada());
     revisar();
     const reloj = setInterval(revisar, 500);

@@ -75,6 +75,7 @@ export function TodoBien({ onVer }: { onVer: () => void }) {
         explicacion="Escribe tu PIN y no avisaremos a nadie."
         textoConfirmar="Estoy bien"
         alConfirmar={(p) => servicio.cancelarAlerta(p)}
+        mensajeError={() => servicio.mensajePin()}
         alCerrar={() => setPin(false)}
       />
     </View>

@@ -260,3 +260,42 @@ describe('ensayo de la alerta completa (Herramientas)', () => {
     expect(servicio.ensayarAlertaCompleta(5)).toBe(false);
   });
 });
+
+describe('cancelar llega siempre al servidor (que cuenta por su lado)', () => {
+  const tipos = () => dobles.enviar.mock.calls.map(([m]) => m.tipo);
+  it('ensayo cancelado a tiempo: el servidor recibe "cancelada" y no avisa a la red', async () => {
+    servicio.ensayarAlertaCompleta(5);
+    await vi.advanceTimersByTimeAsync(5_100);
+    expect(await servicio.cancelarAlerta('1234')).toBe(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(tipos()).toContain('cancelada');
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(tipos()).not.toContain('notificar_familia');
+  });
+  it('cancelar antes de que responda el envío de la alerta: "cancelada" sale después, no antes', async () => {
+    let responder!: (r: { enviado: boolean; detalle: string }) => void;
+    dobles.enviar.mockImplementation((m: { tipo: string }) =>
+      m.tipo === 'alerta' ? new Promise((r) => (responder = r)) : Promise.resolve({ enviado: true, detalle: 'ok' }),
+    );
+    reproducirCaso('arrebato_moto');
+    await servicio.cancelarAlerta('1234');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(tipos()).not.toContain('cancelada');
+    responder({ enviado: true, detalle: 'ok' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(tipos()).toContain('cancelada');
+  });
+  it('los PIN incorrectos de una alerta anterior no bloquean la siguiente', async () => {
+    dobles.pinOk = false;
+    reproducirCaso('arrebato_moto');
+    for (let i = 0; i < 5; i++) await servicio.cancelarAlerta('0000');
+    expect(servicio.mensajePin()).not.toBeNull();
+    servicio.descartarPantallaAlerta();
+    await vi.advanceTimersByTimeAsync(31_000);
+    servicio.descartarPantallaAlerta();
+    servicio.ensayarAlertaCompleta(1);
+    await vi.advanceTimersByTimeAsync(1_100);
+    await servicio.cancelarAlerta('0000');
+    expect(servicio.mensajePin()).toBeNull();
+  });
+});

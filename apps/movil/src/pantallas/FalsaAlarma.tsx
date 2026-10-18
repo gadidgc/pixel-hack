@@ -69,6 +69,7 @@ export function FalsaAlarma({ onVerAviso, onCerrar }: { onVerAviso: () => void; 
       <PedirPin
         visible={pin}
         titulo="Fue falsa alarma"
+        mensajeError={() => servicio.mensajePin()}
         explicacion={avisada ? `Escribe tu PIN y le diremos a ${quienes} que estás bien.` : 'Escribe tu PIN para cancelar la alerta.'}
         alConfirmar={async (p) => {
           const ok = await servicio.cancelarAlerta(p);

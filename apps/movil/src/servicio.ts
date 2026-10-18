@@ -133,6 +133,7 @@ class ServicioProteccion {
   private ultimaRevisionCuenta = 0;
   private idNotificacion: string | null = null;
   private ensayo: { hora: number; plantilla: Extract<EventoDetector, { tipo: 'alerta' }> } | null = null;
+  private envioAlerta: Promise<ResultadoEnvio> | null = null;
   private pinFallidos = 0;
   private pinEsperarHasta = 0;
 
@@ -313,9 +314,13 @@ class ServicioProteccion {
     const alerta = this.estado.alerta;
     this.detenerCuentaFamilia();
     void quitarAviso(this.idNotificacion);
-    const eventos = this.detector.cancelar();
-    if (alerta && (alerta.panel?.enviado || alerta.familia === 'avisada')) {
-      for (const e of eventos) void enviar({ tipo: 'cancelada', evento: e });
+    this.detector.cancelar();
+    // El backend cuenta por su lado y avisa a la red si no le llega "cancelada". Se manda SIEMPRE que haya
+    // backend (también en un ensayo, donde el detector no tiene alerta, y aunque el envío de la alerta siga
+    // en camino): esperamos a que llegue la alerta para que "cancelada" no llegue antes que ella.
+    if (alerta && hayBackend()) {
+      const evento = alerta.evento;
+      void (this.envioAlerta ?? Promise.resolve()).finally(() => void enviar({ tipo: 'cancelada', evento }));
     }
     this.cambiar({ alerta: null });
     this.registrar(
@@ -340,6 +345,9 @@ class ServicioProteccion {
 
   private iniciarAlerta(evento: Extract<EventoDetector, { tipo: 'alerta' }>): void {
     const elegida = preferencias().esperaFamiliaS;
+    // Los intentos de PIN cuentan por alerta: errores de otros días no deben dejar a la dueña sin poder cancelar.
+    this.pinFallidos = 0;
+    this.pinEsperarHasta = 0;
     const conVelocidad = evento.velocidadMs !== null ? ` y luego ${Math.round(evento.velocidadMs * 3.6)} km/h` : '';
 
     // 0) Bloqueo de Android, lo primero: si el celular estaba desbloqueado en la mano, cada segundo cuenta.
@@ -379,7 +387,8 @@ class ServicioProteccion {
 
     // 1) Al panel, al instante y en silencio, con la ruta de los últimos segundos.
     const { nombre, contactos } = preferencias();
-    void enviar({ tipo: 'alerta', evento, ruta: [...this.ruta], nombre, contactos, esperaS: espera }).then((panel) => {
+    this.envioAlerta = enviar({ tipo: 'alerta', evento, ruta: [...this.ruta], nombre, contactos, esperaS: espera });
+    void this.envioAlerta.then((panel) => {
       if (this.estado.alerta?.evento !== evento) return;
       this.cambiar({ alerta: { ...this.estado.alerta, panel, enlace: panel.enlace ?? this.estado.alerta.enlace } });
       this.registrar(`Panel: ${panel.detalle}`, panel.enviado ? 'info' : 'aviso');
@@ -517,7 +526,7 @@ class ServicioProteccion {
     this.grabadora.agregar({ tipo: 'gps', lectura: l });
     this.ruta = [...this.ruta.filter((x) => l.t - x.t <= 60_000), l];
     // Durante una alerta mandamos la ruta de huida en vivo (1 lectura por segundo, solo en ese momento).
-    if (this.detector.estado === 'alerta' && hayBackend()) void enviar({ tipo: 'ubicacion', lectura: l });
+    if ((this.detector.estado === 'alerta' || this.estado.alerta) && hayBackend()) void enviar({ tipo: 'ubicacion', lectura: l });
     if (!this.estado.tieneGps) this.cambiar({ tieneGps: true });
     if (this.enPausa()) return;
     this.atender(this.detector.procesarGps(l));
