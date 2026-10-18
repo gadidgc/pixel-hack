@@ -29,7 +29,8 @@ export function urlBackend(): string {
 /**
  * Lo que la app manda (nada más: un "posible jalón" NO se envía, porque caminando hay cientos por hora).
  * - `alerta`: al instante, al panel, con la ruta de los últimos segundos.
- * - `notificar_familia`: 10 s después, si el dueño no la canceló con su PIN.
+ * - `notificar_familia`: 10 s después, si el dueño no la canceló con su PIN. En iPhone, con `numeroPropio`, el
+ *   backend repite el SMS que bloquea la pantalla (Atajos).
  * - `ubicacion`: cada lectura GPS mientras dure la alerta (la ruta de huida).
  * - `cancelada`: el dueño puso su PIN: era falsa alarma.
  * - `prueba`: la prueba guiada; el backend manda a la red un mensaje marcado como PRUEBA.
@@ -39,7 +40,7 @@ export function urlBackend(): string {
  */
 export type MensajeAlerta =
   | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[]; nombre: string; contactos: Contacto[]; esperaS: number; bloqueo?: Partial<PerfilBloqueo>; numeroPropio?: string }
-  | { tipo: 'notificar_familia'; evento: EventoDetector; nombre: string; contactos: Contacto[]; bloqueo?: Partial<PerfilBloqueo> }
+  | { tipo: 'notificar_familia'; evento: EventoDetector; nombre: string; contactos: Contacto[]; bloqueo?: Partial<PerfilBloqueo>; numeroPropio?: string }
   | { tipo: 'cancelada'; evento: EventoDetector }
   | { tipo: 'ubicacion'; lectura: LecturaGps }
   | { tipo: 'prueba'; nombre: string; contactos: Contacto[] }

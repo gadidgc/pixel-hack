@@ -33,6 +33,13 @@ describe('la alerta nunca se cae por el perfil', () => {
     expect(m.tipo === 'alerta' && m.bloqueo).toBeNull();
   });
 
+  it('notificar_familia trae el número propio del iPhone para repetir el SMS de bloqueo', () => {
+    const m = validarMensaje({ dispositivo: 'x', tipo: 'notificar_familia', evento, nombre: 'Ana', contactos: [], numeroPropio: '987654321' });
+    expect(m.tipo === 'notificar_familia' && m.numeroPropio).toBe('+51987654321');
+    const sin = validarMensaje({ dispositivo: 'x', tipo: 'notificar_familia', evento, nombre: 'Ana', contactos: [] });
+    expect(sin.tipo === 'notificar_familia' && sin.numeroPropio).toBeNull();
+  });
+
   it('notificar_familia trae el perfil', () => {
     const m = validarMensaje({ dispositivo: 'x', tipo: 'notificar_familia', evento, nombre: 'Ana', contactos: [], bloqueo: { entidades: ['yape'] } });
     expect(m.tipo === 'notificar_familia' && m.bloqueo?.entidades).toEqual(['yape']);

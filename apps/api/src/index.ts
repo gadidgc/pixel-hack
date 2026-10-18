@@ -275,6 +275,18 @@ async function avisarVencidas(env: Env): Promise<void> {
   }
 }
 
+/**
+ * iPhone: el SMS de Atajos otra vez cuando vence el "¿Todo bien?" sin PIN (como Android, que queda bloqueado).
+ * Si el primero (al detectar) no llegó o la dueña desbloqueó para cancelar y no alcanzó, este lo bloquea.
+ * Una sola clave de idempotencia para la app y la cuenta del servidor: Zavu no lo manda dos veces.
+ */
+async function smsBloqueoAlVencer(env: Env, alertaId: string, numero: string): Promise<void> {
+  const r = await mandarSmsBloqueo(env, numero, `${alertaId}-bloqueo-vencido`);
+  await env.DB.prepare('INSERT INTO envios (alerta_id, tipo, destino, canal, ok, detalle, creado) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .bind(alertaId, 'bloqueo_iphone', enmascarar(numero), r.canal, r.ok ? 1 : 0, r.detalle, Date.now())
+    .run();
+}
+
 /** El enlace que recibe cada contacto: `?c=<n>` dice quién es, para "Yo me encargo". */
 function enlace(origen: string, id: string, indice?: number): string {
   return `${origen}/a/${id}${indice === undefined ? '' : `?c=${indice}`}`;
@@ -326,8 +338,16 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
         );
       }
       // La cuenta del servidor: si el celular se apaga o se queda sin señal, igual se avisa a la red.
+      // iPhone: si para entonces la alerta quedó avisada (nadie puso el PIN), también el SMS de bloqueo otra vez.
+      const numeroPropio = m.numeroPropio;
       ctx.waitUntil(
-        new Promise((listo) => setTimeout(listo, m.esperaS * 1000 + MARGEN_SERVIDOR_MS)).then(() => avisarVencidas(env)),
+        new Promise((listo) => setTimeout(listo, m.esperaS * 1000 + MARGEN_SERVIDOR_MS))
+          .then(() => avisarVencidas(env))
+          .then(async () => {
+            if (!numeroPropio) return;
+            const fila = await env.DB.prepare('SELECT estado FROM alertas WHERE id = ?').bind(id).first<{ estado: string }>();
+            if (fila && fila.estado !== 'en_espera' && fila.estado !== 'cancelada') await smsBloqueoAlVencer(env, id, numeroPropio);
+          }),
       );
       return json({ ok: true, id, enlace: enlace(origen, id), detalle: 'en el panel' });
     }
@@ -367,6 +387,8 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
       if (m.bloqueo && !fila.bloqueo_json) {
         await env.DB.prepare('UPDATE alertas SET bloqueo_json = ? WHERE id = ?').bind(JSON.stringify(m.bloqueo), fila.id).run();
       }
+      // iPhone: el SMS de bloqueo sale a la vez que el aviso a la red, sin esperarlo.
+      if (m.numeroPropio) ctx.waitUntil(smsBloqueoAlVencer(env, fila.id, m.numeroPropio).catch((e) => console.error('No se pudo mandar el SMS de bloqueo', e)));
       const r = await avisarFamilia(env, fila, origen);
       return json({ ok: true, id: fila.id, enlace: enlace(origen, fila.id), ...r });
     }

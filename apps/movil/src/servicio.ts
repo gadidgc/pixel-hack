@@ -509,7 +509,17 @@ class ServicioProteccion {
     this.detenerCuentaFamilia();
     const { evento, nombre, contactos } = p;
     this.cambiar({ alerta: { ...a, segundosParaFamilia: 0, familia: 'enviando' } });
-    void enviar({ tipo: 'notificar_familia', evento, nombre, contactos, bloqueo: perfilParaEnviar(preferencias().bloqueo) }).then((r) => {
+    // iPhone con Atajos: venció el "¿Todo bien?" sin PIN, así que pedimos otra vez el SMS que bloquea la pantalla.
+    const numeroPropio = Platform.OS === 'ios' ? preferencias().numeroPropio : '';
+    if (numeroPropio) this.registrar('iPhone: venció la espera; pedimos otra vez el SMS que bloquea la pantalla.');
+    void enviar({
+      tipo: 'notificar_familia',
+      evento,
+      nombre,
+      contactos,
+      bloqueo: perfilParaEnviar(preferencias().bloqueo),
+      ...(numeroPropio ? { numeroPropio } : {}),
+    }).then((r) => {
       const actual = this.estado.alerta;
       if (actual?.evento !== evento) return;
       const quienes = contactos.map((c) => c.nombre).join(', ') || 'tu red';

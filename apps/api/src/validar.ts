@@ -39,7 +39,16 @@ export type Mensaje =
       numeroPropio: string | null;
       bloqueo: PerfilBloqueo | null;
     }
-  | { tipo: 'notificar_familia'; dispositivo: string; evento: EventoAlerta; nombre: string; contactos: Contacto[]; bloqueo: PerfilBloqueo | null }
+  | {
+      tipo: 'notificar_familia';
+      dispositivo: string;
+      evento: EventoAlerta;
+      nombre: string;
+      contactos: Contacto[];
+      bloqueo: PerfilBloqueo | null;
+      /** iPhone: al vencer el "¿Todo bien?" repetimos el SMS de Atajos (por si el primero no llegó). */
+      numeroPropio: string | null;
+    }
   | { tipo: 'cancelada'; dispositivo: string }
   | { tipo: 'ubicacion'; dispositivo: string; lectura: Punto }
   | { tipo: 'prueba'; dispositivo: string; nombre: string; contactos: Contacto[] }
@@ -132,8 +141,10 @@ export function validarMensaje(cuerpo: unknown): Mensaje {
       // `bloqueo` (kit de bloqueo) es opcional y nunca rechaza la alerta: si viene mal, se ignora.
       return { tipo: 'alerta', dispositivo, evento: evento(o.evento), ruta, nombre: nombre(), contactos: contactos(o.contactos), esperaS, numeroPropio, bloqueo: validarPerfil(o.bloqueo) };
     }
-    case 'notificar_familia':
-      return { tipo: 'notificar_familia', dispositivo, evento: evento(o.evento), nombre: nombre(), contactos: contactos(o.contactos), bloqueo: validarPerfil(o.bloqueo) };
+    case 'notificar_familia': {
+      const numeroPropio = typeof o.numeroPropio === 'string' ? normalizarTelefono(o.numeroPropio.slice(0, 30)) : null;
+      return { tipo: 'notificar_familia', dispositivo, evento: evento(o.evento), nombre: nombre(), contactos: contactos(o.contactos), bloqueo: validarPerfil(o.bloqueo), numeroPropio };
+    }
     case 'cancelada':
       return { tipo: 'cancelada', dispositivo };
     case 'ubicacion':
