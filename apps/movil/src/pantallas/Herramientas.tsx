@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alert, Platform, Pressable, Share, Switch, View } from 'react-native';
 import { hayBackend } from '../alertas';
+import { PedirPin } from '../componentes/PedirPin';
 import { consultarBloqueo, faltaParaBloqueo } from '../bloqueo';
 import { diagnosticoSensores } from '../sensores';
 import type { EstadoProteccion } from '../servicio';
@@ -23,6 +24,7 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
   const [simulacion, setSimulacion] = useState<ResultadoSimulacion | null>(null);
   const tel = estado.telemetria;
   const [copiado, setCopiado] = useState(false);
+  const [pedirPinBorrar, setPedirPinBorrar] = useState(false);
 
   async function compartirRegistro() {
     const texto = textoRegistro(estado);
@@ -166,6 +168,25 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
         principal={false}
         icono="compartir"
         onPress={() => void compartirRegistro()}
+      />
+
+      <Rotulo>PROBAR LA BIENVENIDA</Rotulo>
+      <T v="apoyo" suave>
+        Borra tu nombre, tu red, el PIN y lo de bloqueo, apaga la protección y vuelve a la bienvenida, como recién instalada. Los permisos del celular siguen dados (para quitarlos, borra la app).
+      </T>
+      <Boton
+        texto="Borrar todo y ver la bienvenida"
+        variante="secundario"
+        principal={false}
+        onPress={() => setPedirPinBorrar(true)}
+      />
+      <PedirPin
+        visible={pedirPinBorrar}
+        titulo="Borrar todo"
+        explicacion="Escribe tu PIN. Se borra todo lo que configuraste y la app vuelve a la bienvenida."
+        textoConfirmar="Borrar todo"
+        alConfirmar={(pin) => servicio.borrarTodo(pin)}
+        alCerrar={() => setPedirPinBorrar(false)}
       />
     </Pantalla>
   );

@@ -15,8 +15,8 @@ import { enviar, hayBackend, type ResultadoEnvio } from './alertas';
 import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, quitarBloqueoApps, type ResultadoBloqueo } from './bloqueo';
 import { Grabadora, type Etiqueta } from './grabadora';
 import { avisarTodoBien, pedirPermisoNotificaciones, quitarAviso } from './notificaciones';
-import { hayPin, verificarPin } from './pin';
-import { guardarPreferencias, perfilParaEnviar, preferencias, type Contacto } from './preferencias';
+import { borrarPin, hayPin, verificarPin } from './pin';
+import { borrarPreferencias, guardarPreferencias, perfilParaEnviar, preferencias, type Contacto } from './preferencias';
 import { escucharSensores, pedirPermisoSensores } from './sensores';
 import { escucharUbicacion, pedirPermisosUbicacion } from './ubicacion';
 
@@ -194,6 +194,8 @@ class ServicioProteccion {
 
   private async activarUnaVez(): Promise<boolean> {
     if (this.estado.activa) return true;
+    // Lo que faltó en un intento anterior ya no vale: si este falla por otra razón, no hay que repetirlo.
+    this.cambiar({ permisosFaltantes: [] });
     try {
       if (!(await hayPin())) {
         this.registrar('Primero crea tu PIN: lo necesitarás para cancelar una alerta o apagar la protección.', 'error');
@@ -290,6 +292,24 @@ class ServicioProteccion {
     await this.apagar();
     void guardarPreferencias({ proteccionActiva: false });
     this.registrar('Protección desactivada.');
+    return true;
+  }
+
+  /**
+   * Herramientas del equipo: apaga la protección y borra todo lo guardado (red, nombre, PIN) para ver la
+   * bienvenida otra vez. Pide el PIN como apagar: si no, el ladrón podría usarlo para quitar la protección.
+   * Los permisos del sistema no se pueden quitar desde la app: siguen dados.
+   */
+  async borrarTodo(pin: string): Promise<boolean> {
+    if ((await hayPin()) && !(await verificarPin(pin))) {
+      this.registrar('PIN incorrecto: no se borró nada.', 'error');
+      return false;
+    }
+    if (this.estado.alerta && this.detector.estado === 'alerta') await this.cancelarAlerta(pin);
+    await this.apagar();
+    await borrarPin();
+    await borrarPreferencias();
+    this.registrar('Se borró todo: la app vuelve a la bienvenida.');
     return true;
   }
 

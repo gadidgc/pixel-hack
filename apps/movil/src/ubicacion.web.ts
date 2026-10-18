@@ -25,6 +25,11 @@ export async function pedirPermisosUbicacion(): Promise<PermisosUbicacion> {
   return { primerPlano: granted, segundoPlano: false };
 }
 
+export async function revisarPermisosUbicacion(): Promise<PermisosUbicacion> {
+  const { granted } = await Location.getForegroundPermissionsAsync();
+  return { primerPlano: granted, segundoPlano: false };
+}
+
 export async function escucharUbicacion(alRecibir: (l: LecturaGps) => void): Promise<() => Promise<void>> {
   const sub = await Location.watchPositionAsync(
     { accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 0 },

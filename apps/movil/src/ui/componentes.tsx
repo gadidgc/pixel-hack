@@ -302,11 +302,11 @@ export function Pantalla({ children, scroll = true, style, sinMargen = false }: 
   );
 }
 
-/** Encabezado de los pasos de bienvenida: volver + "2 / 4" en monoespaciada. */
+/** Encabezado de los pasos de bienvenida: volver + una barra de progreso por segmentos. */
 export function Pasos({ paso, total, onVolver, titulo }: { paso: number; total: number; onVolver?: () => void; titulo?: string }) {
   const c = useTema();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 48 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 48 }}>
       {onVolver ? (
         <Pressable onPress={onVolver} accessibilityRole="button" accessibilityLabel="Volver" style={{ width: 48, height: 48, marginLeft: -12, alignItems: 'center', justifyContent: 'center' }}>
           <Icono nombre="volver" color={c.texto} />
@@ -317,11 +317,13 @@ export function Pasos({ paso, total, onVolver, titulo }: { paso: number; total: 
           <Text style={{ fontFamily: FUENTES.titular, fontSize: 17, color: c.texto }}>{titulo ?? 'Alerta Arrebato'}</Text>
         </View>
       )}
-      {/* Un "1 / 1" no dice nada: en pantallas sueltas solo queda el botón de volver. */}
+      {/* En pantallas sueltas (total 1) solo queda el botón de volver. */}
       {total > 1 && (
-        <Text style={[TIPO.hora, { color: c.textoSuave }]}>
-          {paso} / {total}
-        </Text>
+        <View accessible accessibilityLabel={`Paso ${paso} de ${total}`} style={{ flex: 1, flexDirection: 'row', gap: 6, marginLeft: onVolver ? 0 : 16 }}>
+          {Array.from({ length: total }, (_, i) => (
+            <View key={i} style={{ flex: 1, height: 4, borderRadius: RADIO.total, backgroundColor: i < paso ? c.protegido : c.linea }} />
+          ))}
+        </View>
       )}
     </View>
   );
