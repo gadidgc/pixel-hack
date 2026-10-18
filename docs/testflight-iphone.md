@@ -79,3 +79,25 @@ Todo desde `apps/movil`.
   pantalla apagada y que la ubicación solo se envía si se detecta un robo.
 - **Sin enlace público todavía**: se puede invitar por correo a testers **internos** (miembros del equipo en App Store
   Connect, hasta 100) sin esperar la revisión.
+
+## Sin TestFlight: instalar en los iPhone del equipo (distribución interna)
+
+Si App Store Connect bloquea crear la app (por ejemplo, "App Store Connect has agreement updates that must be
+resolved" aunque el acuerdo figure aceptado en developer.apple.com), se puede instalar igual en hasta 100 iPhone
+registrados, sin App Store Connect ni revisión de Apple. Usa el perfil `interno` de `eas.json` (firma ad hoc).
+
+1. **Registrar cada iPhone** (una vez por celular). Desde `apps/movil`:
+   ```bash
+   npx eas-cli device:create
+   ```
+   Elegir "Website", compartir el enlace o QR con cada integrante, abrirlo **en Safari del iPhone** e instalar el
+   perfil (Ajustes → Perfil descargado → Instalar).
+2. **Compilar** (después de registrar todos los celulares; un celular nuevo exige compilar otra vez):
+   ```bash
+   npx eas-cli build -p ios --profile interno
+   ```
+3. **Instalar:** abrir en el iPhone el enlace o QR que da EAS al terminar y tocar "Install".
+4. **Activar el Modo de desarrollador** (iOS 16 o más, una vez): tocar el ícono de la app, aceptar la alerta y
+   luego Ajustes → Privacidad y seguridad → Modo de desarrollador → activar y reiniciar.
+
+Como en TestFlight, este build no lleva el permiso de Tiempo de uso (`SIN_TIEMPO_DE_USO=1`).
