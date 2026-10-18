@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Linking, Pressable, ScrollView, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
+import { EJEMPLO_KIT, KitBloqueo, type Kit } from '../componentes/KitBloqueo';
 import { Boton, Hoja, Insignia, LineaDeTiempo, Onda, T, type Paso } from '../ui/componentes';
 import { Icono } from '../ui/iconos';
 import { MapaFondo, useEscalaX } from '../ui/mapa';
@@ -19,10 +20,14 @@ export interface DatosContacto {
   /** La ruta real (la primera lectura es la más antigua). Sin ruta se dibuja la de ejemplo. */
   ruta?: Coordenada[];
   jalon?: Coordenada | null;
-  /** `cancelada`: el dueño confirmó con su PIN que fue falsa alarma. */
-  estado?: 'en_espera' | 'avisada' | 'cancelada';
+  /** `cancelada`: el dueño confirmó con su PIN que fue falsa alarma. `robo_confirmado`: alguien de la red confirmó el robo. */
+  estado?: 'en_espera' | 'avisada' | 'robo_confirmado' | 'cancelada';
   /** Quién de la red dijo "Yo me encargo". */
   encargado?: string | null;
+  /** Quién confirmó el robo. */
+  roboConfirmadoPor?: string | null;
+  /** Kit de bloqueo: solo existe después de confirmar el robo. */
+  kit?: Kit | null;
 }
 
 /** Ruta de ejemplo en coordenadas del diseño (390 de ancho), sobre el mapa estilizado. */
@@ -62,6 +67,10 @@ interface Props {
   onCerrar?: () => void;
   /** En una alerta real: avisa al resto de la red que esta persona se encarga. */
   onEncargarme?: () => Promise<boolean>;
+  /** "Sí, fue un robo": devuelve `null` si salió bien o el motivo si no. */
+  onConfirmarRobo?: () => Promise<string | null>;
+  /** Marca un paso del kit de bloqueo para toda la red. */
+  onMarcarPaso?: (paso: string, hecho: boolean) => Promise<boolean>;
 }
 
 export function WebContacto(props: Props) {
@@ -72,13 +81,34 @@ export function WebContacto(props: Props) {
   );
 }
 
-function Contenido({ datos, ejemplo, onCerrar, onEncargarme }: Props) {
+function Contenido({ datos, ejemplo, onCerrar, onEncargarme, onConfirmarRobo, onMarcarPaso }: Props) {
   const c = useTema();
   const ins = useSafeAreaInsets();
   const ex = useEscalaX();
   const [yoMeEncargo, setYoMeEncargo] = useState(false);
   const encargado = yoMeEncargo || Boolean(datos.encargado);
   const cancelada = datos.estado === 'cancelada';
+  // Confirmar el robo: primero se pregunta "¿seguro?" en la misma hoja (sin diálogos del sistema).
+  const [preguntando, setPreguntando] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+  const [errorRobo, setErrorRobo] = useState('');
+  // En la vista de ejemplo se puede probar el flujo completo sin backend.
+  const [ejemploConfirmado, setEjemploConfirmado] = useState(false);
+  const [kitEjemplo, setKitEjemplo] = useState(EJEMPLO_KIT);
+  const kit = ejemplo ? (ejemploConfirmado ? kitEjemplo : null) : (datos.kit ?? null);
+  // En la vista de ejemplo no hay backend: las marcas se guardan aquí.
+  const marcarEjemplo = async (paso: string, hecho: boolean) => {
+    setKitEjemplo((k) => ({ ...k, pasos: k.pasos.map((p) => (p.paso === paso ? { ...p, hecho, quien: null, hechoEn: null } : p)) }));
+    return true;
+  };
+  const robo = Boolean(kit) || datos.estado === 'robo_confirmado';
+  const puedeConfirmar = !cancelada && !robo && (ejemplo || datos.estado === 'avisada');
+  // Al aparecer el kit, la hoja vuelve arriba: si no, se queda donde estaba el "¿Confirmas?" y no se ve el primer paso.
+  const hoja = useRef<ComponentRef<typeof ScrollView>>(null);
+  const conKit = Boolean(kit);
+  useEffect(() => {
+    if (conKit) hoja.current?.scrollTo({ y: 0, animated: false });
+  }, [conKit]);
 
   // Medidas reales: el lienzo entero y el hueco entre la cabecera y la hoja (ahí va la ruta).
   const ventana = useWindowDimensions();
@@ -105,6 +135,18 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme }: Props) {
   const fin = puntos[puntos.length - 1];
   const trazo = puntos.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
   const ultima = datos.ruta?.[datos.ruta.length - 1];
+
+  const confirmarRobo = async () => {
+    if (ejemplo || !onConfirmarRobo) {
+      setEjemploConfirmado(true);
+      return setPreguntando(false);
+    }
+    setConfirmando(true);
+    const motivo = await onConfirmarRobo();
+    setConfirmando(false);
+    setErrorRobo(motivo ?? '');
+    if (!motivo) setPreguntando(false);
+  };
 
   const encargarme = async () => {
     if (!onEncargarme) return setYoMeEncargo(true);
@@ -137,7 +179,13 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme }: Props) {
 
       <View style={{ paddingTop: ins.top + 12, paddingHorizontal: 16, paddingBottom: 14, backgroundColor: c.superficie, borderBottomWidth: 1, borderBottomColor: c.linea, gap: 6 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {cancelada ? <Insignia tipo="protegido" texto="FALSA ALARMA" /> : <Insignia tipo="alerta" texto="EN VIVO" punto parpadeo />}
+          {cancelada ? (
+            <Insignia tipo="protegido" texto="FALSA ALARMA" />
+          ) : robo ? (
+            <Insignia tipo="alerta" texto="ROBO CONFIRMADO" />
+          ) : (
+            <Insignia tipo="alerta" texto="EN VIVO" punto parpadeo />
+          )}
           <T v="hora" suave>
             {datos.haceTexto}
           </T>
@@ -154,16 +202,21 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme }: Props) {
         <T v="cuerpo15" suave>
           {cancelada
             ? `${datos.nombre} confirmó con su PIN que fue una falsa alarma. No tienes que hacer nada.`
-            : `${datos.nombre} probablemente está bien. Esta es la ruta de su celular.`}
+            : robo
+              ? `${ejemplo ? 'Confirmaste' : `${datos.roboConfirmadoPor ?? 'Alguien de su red'} confirmó`} el robo. Sigue estos pasos para bloquear sus cuentas.`
+              : `${datos.nombre} probablemente está bien. Esta es la ruta de su celular.`}
         </T>
         {ejemplo && <Insignia tipo="aviso" texto="VISTA DE EJEMPLO" />}
       </View>
 
       <View style={{ flex: 1 }} onLayout={medirHueco} />
-      <Hoja style={{ paddingTop: 18, paddingHorizontal: 16, paddingBottom: ins.bottom + 24 }}>
-        <ScrollView contentContainerStyle={{ gap: 12 }}>
+      <Hoja style={{ paddingTop: 18, paddingHorizontal: 16, paddingBottom: ins.bottom + 24, maxHeight: kit || preguntando ? '64%' : undefined }}>
+        {/* Con el kit, el 105 va primero (sigue siendo la acción de emergencia) y la hoja deja ver parte del mapa. */}
+        <ScrollView ref={hoja} contentContainerStyle={{ gap: 12 }} showsVerticalScrollIndicator={false}>
+          {kit && !cancelada && <Boton texto="Llamar a la Policía (105)" variante="emergencia" icono="telefono" onPress={() => void Linking.openURL('tel:105')} />}
+          {kit && <KitBloqueo kit={kit} nombre={datos.nombre} horaJalon={datos.horaJalon} onMarcar={ejemplo || !onMarcarPaso ? marcarEjemplo : onMarcarPaso} />}
           <LineaDeTiempo pasos={datos.pasos} enTarjeta={false} />
-          {!cancelada && <Boton texto="Llamar a la Policía (105)" variante="emergencia" icono="telefono" onPress={() => void Linking.openURL('tel:105')} />}
+          {!cancelada && !kit && <Boton texto="Llamar a la Policía (105)" variante="emergencia" icono="telefono" onPress={() => void Linking.openURL('tel:105')} />}
           {ultima && (
             <Boton
               texto="Ver la calle exacta en Google Maps"
@@ -173,6 +226,27 @@ function Contenido({ datos, ejemplo, onCerrar, onEncargarme }: Props) {
               onPress={() => void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${ultima.lat},${ultima.lon}`)}
             />
           )}
+          {puedeConfirmar &&
+            (preguntando ? (
+              <View style={{ borderRadius: RADIO.s, borderWidth: 1, borderColor: c.linea, padding: 14, gap: 10 }}>
+                <T v="cuerpo15Fuerte">¿Confirmas que le robaron el celular a {datos.nombre}?</T>
+                <T v="apoyo" suave>
+                  No llames a su celular: lo tiene el ladrón. Si {datos.nombre} está contigo o te escribe desde otro número, pregúntale primero. Al confirmar, verás los números para bloquear sus bancos y su línea.
+                </T>
+                <T v="apoyo" suave>
+                  Si fue una falsa alarma, {datos.nombre} puede anularlo con su PIN.
+                </T>
+                {!!errorRobo && (
+                  <T v="apoyo" color={c.alerta}>
+                    {errorRobo}
+                  </T>
+                )}
+                <Boton texto={confirmando ? 'Confirmando…' : 'Sí, fue un robo'} icono="check" variante="secundario" deshabilitado={confirmando} onPress={() => void confirmarRobo()} />
+                <Boton texto="Volver" variante="terciario" onPress={() => setPreguntando(false)} />
+              </View>
+            ) : (
+              <Boton texto="Fue un robo: ver cómo bloquear" variante="secundario" principal={false} onPress={() => setPreguntando(true)} />
+            ))}
           {cancelada ? null : !encargado ? (
             <Boton texto="Yo me encargo (avisa al resto)" variante="secundario" principal={false} onPress={() => void encargarme()} />
           ) : (

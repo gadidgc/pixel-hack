@@ -11,6 +11,37 @@ export interface Contacto {
   telefono: string;
 }
 
+/** Bancos y billeteras que se pueden marcar (los mismos ids que apps/api/src/bloqueo.ts). */
+export const ENTIDADES = [
+  { id: 'yape', nombre: 'Yape' },
+  { id: 'plin', nombre: 'Plin' },
+  { id: 'bcp', nombre: 'BCP' },
+  { id: 'interbank', nombre: 'Interbank' },
+  { id: 'bbva', nombre: 'BBVA' },
+  { id: 'scotiabank', nombre: 'Scotiabank' },
+  { id: 'otro_banco', nombre: 'Otro banco o caja' },
+] as const;
+
+export const OPERADORES = [
+  { id: 'movistar', nombre: 'Movistar' },
+  { id: 'claro', nombre: 'Claro' },
+  { id: 'entel', nombre: 'Entel' },
+  { id: 'bitel', nombre: 'Bitel' },
+] as const;
+
+/**
+ * Lo que necesita tu red para bloquear tus cuentas si confirma el robo. Viaja con la alerta y solo se le
+ * muestra a tu red DESPUÉS de que alguien confirme el robo; el backend lo borra a las 24 h. Nunca claves ni
+ * números de tarjeta. El DNI es opcional: vacío = no se guarda ni se envía.
+ */
+export interface PerfilBloqueo {
+  entidades: string[];
+  operador: string | null;
+  linea: string;
+  imei: string;
+  dni: string;
+}
+
 export interface Preferencias {
   bienvenidaHecha: boolean;
   nombre: string;
@@ -19,6 +50,7 @@ export interface Preferencias {
   esperaFamiliaS: number;
   /** La protección estaba encendida: si el sistema reabre la app (o se reinicia), vuelve a encenderla sola. */
   proteccionActiva: boolean;
+  bloqueo: PerfilBloqueo;
   /**
    * iPhone: el número de la propia dueña. Al confirmar un arrebato le mandamos un SMS con la palabra de
    * bloqueo y su automatización de Atajos bloquea la pantalla. Vacío = no lo configuró.
@@ -26,8 +58,22 @@ export interface Preferencias {
   numeroPropio: string;
 }
 
+export const PERFIL_VACIO: PerfilBloqueo = { entidades: [], operador: null, linea: '', imei: '', dni: '' };
+
+/** Lo que se manda al backend: solo lo que la persona llenó (sin el DNI si lo dejó vacío). `undefined` si no llenó nada. */
+export function perfilParaEnviar(p: PerfilBloqueo): Partial<PerfilBloqueo> | undefined {
+  const limpio = (t: string) => t.replace(/\s/g, '');
+  const envio: Partial<PerfilBloqueo> = {};
+  if (p.entidades.length) envio.entidades = p.entidades;
+  if (p.operador) envio.operador = p.operador;
+  if (limpio(p.linea)) envio.linea = limpio(p.linea);
+  if (limpio(p.imei)) envio.imei = limpio(p.imei);
+  if (limpio(p.dni)) envio.dni = limpio(p.dni);
+  return Object.keys(envio).length ? envio : undefined;
+}
+
 const CLAVE = 'alerta-arrebato-preferencias';
-const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false, numeroPropio: '' };
+const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false, bloqueo: PERFIL_VACIO, numeroPropio: '' };
 
 let actuales: Preferencias = INICIAL;
 let cargadas = false;
@@ -60,7 +106,10 @@ export async function cargarPreferencias(): Promise<Preferencias> {
   if (cargadas) return actuales;
   try {
     const texto = await leer();
-    if (texto) actuales = { ...INICIAL, ...(JSON.parse(texto) as Partial<Preferencias>) };
+    if (texto) {
+      const guardadas = JSON.parse(texto) as Partial<Preferencias>;
+      actuales = { ...INICIAL, ...guardadas, bloqueo: { ...PERFIL_VACIO, ...guardadas.bloqueo } };
+    }
   } catch {
     actuales = INICIAL;
   }

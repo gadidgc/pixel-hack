@@ -5,8 +5,10 @@ Cloudflare Workers + D1 (SQLite). Una sola URL pública con HTTPS sirve la web d
 | Ruta | Qué hace |
 |---|---|
 | `POST /api/eventos` | Lo que manda la app (contrato en [docs/PLAN.md §6.1](../../docs/PLAN.md)). `alerta` devuelve el `enlace`; `notificar_familia` devuelve cuántos contactos se avisaron (`avisados` de `total`). |
-| `GET /api/alertas/:id` | Lo que ve el contacto en `/a/:id`: nombre, estado, jalón y ruta. **Nunca** devuelve teléfonos. |
+| `GET /api/alertas/:id` | Lo que ve el contacto en `/a/:id`: nombre, estado, jalón y ruta. **Nunca** devuelve los teléfonos de la red; la línea de la dueña solo aparece en `kit`, después de confirmar el robo. |
 | `POST /api/alertas/:id/encargado` | "Yo me encargo": avisa al resto de la red. |
+| `POST /api/alertas/:id/robo` | `{contacto}`. El contacto confirma que SÍ fue un robo (solo si la alerta ya se avisó a la red). Desde ahí `GET /api/alertas/:id` trae `kit`: los pasos para bloquear (1820, operadora, denuncia, Checa tu IMEI) y los datos que guardó la dueña (línea, IMEI y DNI si quiso). Si la dueña pone su PIN después, vuelve a falsa alarma y se borra todo. |
+| `POST /api/alertas/:id/bloqueo` | `{paso, hecho, contacto}`. Marca un paso del kit; lo ve toda la red con el nombre de quien lo hizo. |
 | `GET /api/reportes?lat=&lon=&radioKm=` | "Cerca de ti": reportes de los últimos 30 días dentro de la caja (radio por defecto 1 km, máximo 10), lo más nuevo primero. Sin `dispositivo`. |
 | `POST /api/reportes` | Un reporte de la comunidad: `{dispositivo, tipo, lat, lon, nota?}`. `tipo`: `arrebato_moto`, `arrebato_a_pie`, `intento`, `robo`, `sospechoso` o `zona_oscura`. La ubicación se redondea a ~100 m y la nota tiene máximo 140 caracteres. Máximo 5 por hora por celular (429). |
 | `POST /api/evidencias` | Sube un video o audio (el cuerpo es el archivo; `Content-Type` video/* o audio/*, hasta 50 MB, cabecera `X-Dispositivo`, y `X-Lat`/`X-Lon` opcionales). Se guarda en R2 y devuelve `{id, enlace}`. Si el celular tiene una alerta abierta, queda unida a ella y aparece en `GET /api/alertas/:id` como `evidencias`. |

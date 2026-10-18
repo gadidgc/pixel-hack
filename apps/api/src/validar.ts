@@ -1,3 +1,5 @@
+import { validarPerfil, type PerfilBloqueo } from './bloqueo';
+
 /**
  * Validación del contrato de docs/PLAN.md §6.1 (lo que manda la app). El endpoint es público: todo lo que
  * llega se revisa antes de tocar la base de datos, y lo que no cumple se rechaza con un motivo claro.
@@ -35,8 +37,9 @@ export type Mensaje =
       esperaS: number;
       /** iPhone: número del propio dueño, para mandarle el SMS que dispara su automatización de Atajos. */
       numeroPropio: string | null;
+      bloqueo: PerfilBloqueo | null;
     }
-  | { tipo: 'notificar_familia'; dispositivo: string; evento: EventoAlerta; nombre: string; contactos: Contacto[] }
+  | { tipo: 'notificar_familia'; dispositivo: string; evento: EventoAlerta; nombre: string; contactos: Contacto[]; bloqueo: PerfilBloqueo | null }
   | { tipo: 'cancelada'; dispositivo: string }
   | { tipo: 'ubicacion'; dispositivo: string; lectura: Punto }
   | { tipo: 'prueba'; dispositivo: string; nombre: string; contactos: Contacto[] }
@@ -123,10 +126,11 @@ export function validarMensaje(cuerpo: unknown): Mensaje {
       const esperaS = o.esperaS === undefined ? 10 : Math.round(numero(o.esperaS, 'esperaS', 5, 60));
       // Opcional: un número inválido no frena la alerta, solo se queda sin el SMS de bloqueo.
       const numeroPropio = typeof o.numeroPropio === 'string' ? normalizarTelefono(o.numeroPropio.slice(0, 30)) : null;
-      return { tipo: 'alerta', dispositivo, evento: evento(o.evento), ruta, nombre: nombre(), contactos: contactos(o.contactos), esperaS, numeroPropio };
+      // `bloqueo` (kit de bloqueo) es opcional y nunca rechaza la alerta: si viene mal, se ignora.
+      return { tipo: 'alerta', dispositivo, evento: evento(o.evento), ruta, nombre: nombre(), contactos: contactos(o.contactos), esperaS, numeroPropio, bloqueo: validarPerfil(o.bloqueo) };
     }
     case 'notificar_familia':
-      return { tipo: 'notificar_familia', dispositivo, evento: evento(o.evento), nombre: nombre(), contactos: contactos(o.contactos) };
+      return { tipo: 'notificar_familia', dispositivo, evento: evento(o.evento), nombre: nombre(), contactos: contactos(o.contactos), bloqueo: validarPerfil(o.bloqueo) };
     case 'cancelada':
       return { tipo: 'cancelada', dispositivo };
     case 'ubicacion':

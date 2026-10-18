@@ -1,6 +1,6 @@
 import type { EventoDetector, LecturaGps } from '@pixel-hack/detector';
 import { Platform } from 'react-native';
-import type { Contacto } from './preferencias';
+import type { Contacto, PerfilBloqueo } from './preferencias';
 
 /**
  * Envío de alertas al backend (apps/api: Cloudflare Workers + D1, ver docs/PLAN.md §6).
@@ -35,10 +35,11 @@ export function urlBackend(): string {
  * - `prueba`: la prueba guiada; el backend manda a la red un mensaje marcado como PRUEBA.
  * - `motivo_falsa_alarma`: opcional, para mejorar el detector.
  * `contactos` viaja solo en una alerta o prueba, para que el backend sepa a quién escribir.
+ * `bloqueo` (bancos, operadora, línea, IMEI, DNI opcional) viaja con la alerta para el kit de bloqueo.
  */
 export type MensajeAlerta =
-  | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[]; nombre: string; contactos: Contacto[]; esperaS: number; numeroPropio?: string }
-  | { tipo: 'notificar_familia'; evento: EventoDetector; nombre: string; contactos: Contacto[] }
+  | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[]; nombre: string; contactos: Contacto[]; esperaS: number; bloqueo?: Partial<PerfilBloqueo>; numeroPropio?: string }
+  | { tipo: 'notificar_familia'; evento: EventoDetector; nombre: string; contactos: Contacto[]; bloqueo?: Partial<PerfilBloqueo> }
   | { tipo: 'cancelada'; evento: EventoDetector }
   | { tipo: 'ubicacion'; lectura: LecturaGps }
   | { tipo: 'prueba'; nombre: string; contactos: Contacto[] }

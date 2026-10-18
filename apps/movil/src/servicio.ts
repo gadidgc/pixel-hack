@@ -16,7 +16,7 @@ import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, quitarBlo
 import { Grabadora, type Etiqueta } from './grabadora';
 import { avisarTodoBien, pedirPermisoNotificaciones, quitarAviso } from './notificaciones';
 import { hayPin, verificarPin } from './pin';
-import { guardarPreferencias, preferencias, type Contacto } from './preferencias';
+import { guardarPreferencias, perfilParaEnviar, preferencias, type Contacto } from './preferencias';
 import { escucharSensores, pedirPermisoSensores } from './sensores';
 import { escucharUbicacion, pedirPermisosUbicacion } from './ubicacion';
 
@@ -409,7 +409,7 @@ class ServicioProteccion {
     if (!sobreBloqueo) void avisarTodoBien(espera).then((id) => (this.idNotificacion = id));
 
     // 1) Al panel, al instante y en silencio, con la ruta de los últimos segundos.
-    const { nombre, contactos } = preferencias();
+    const { nombre, contactos, bloqueo: perfil } = preferencias();
     // Con `numeroPropio`, el backend le manda al instante el SMS que bloquea el iPhone (Atajos), sin esperar la cuenta.
     this.envioAlerta = enviar({
       tipo: 'alerta',
@@ -418,6 +418,7 @@ class ServicioProteccion {
       nombre,
       contactos,
       esperaS: espera,
+      bloqueo: perfilParaEnviar(perfil),
       ...(numeroPropio ? { numeroPropio } : {}),
     });
     if (numeroPropio) this.registrar('iPhone: pedimos el SMS que bloquea la pantalla con tu automatización de Atajos.');
@@ -448,7 +449,7 @@ class ServicioProteccion {
     this.detenerCuentaFamilia();
     const { evento, nombre, contactos } = p;
     this.cambiar({ alerta: { ...a, segundosParaFamilia: 0, familia: 'enviando' } });
-    void enviar({ tipo: 'notificar_familia', evento, nombre, contactos }).then((r) => {
+    void enviar({ tipo: 'notificar_familia', evento, nombre, contactos, bloqueo: perfilParaEnviar(preferencias().bloqueo) }).then((r) => {
       const actual = this.estado.alerta;
       if (actual?.evento !== evento) return;
       const quienes = contactos.map((c) => c.nombre).join(', ') || 'tu red';
