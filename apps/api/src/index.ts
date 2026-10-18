@@ -1,4 +1,4 @@
-import { TEXTOS, hayProveedor, horaLima, mandarMensaje, type EnvMensajes } from './mensajes';
+import { MENSAJES, mandarMensaje, proveedores, type EnvMensajes, type Mensaje as MensajeWhatsApp } from './mensajes';
 import {
   MAX_EVIDENCIA_BYTES,
   MAX_EVIDENCIAS_POR_HORA,
@@ -110,10 +110,10 @@ async function avisar(
   env: Env,
   alertaId: string,
   tipo: string,
-  destinos: Array<{ contacto: Contacto; texto: string; plantilla?: Record<string, string> }>,
+  destinos: Array<{ contacto: Contacto; mensaje: MensajeWhatsApp }>,
 ): Promise<{ avisados: number; detalle: string }> {
   const resultados = await Promise.all(
-    destinos.map((d, i) => mandarMensaje(env, { telefono: d.contacto.telefono, texto: d.texto, plantilla: d.plantilla, idempotencia: `${alertaId}-${tipo}-${i}` })),
+    destinos.map((d, i) => mandarMensaje(env, { telefono: d.contacto.telefono, mensaje: d.mensaje, idempotencia: `${alertaId}-${tipo}-${i}` })),
   );
   const ahora = Date.now();
   if (destinos.length > 0) {
@@ -165,8 +165,7 @@ async function avisarFamilia(env: Env, fila: FilaAlerta, origen: string): Promis
     'alerta',
     contactos.map((c, i) => ({
       contacto: c,
-      texto: TEXTOS.alerta(fila.nombre, tJalon, enlace(origen, fila.id, i)),
-      plantilla: { '1': fila.nombre, '2': horaLima(tJalon), '3': enlace(origen, fila.id, i) },
+      mensaje: MENSAJES.alerta(fila.nombre, tJalon, enlace(origen, fila.id, i)),
     })),
   );
   return { avisados: r.avisados, total: contactos.length, detalle: r.detalle };
@@ -257,7 +256,7 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
       // Si la red ya había sido avisada, le decimos que está bien. Después borramos sus teléfonos.
       const r =
         fila.estado === 'avisada'
-          ? await avisar(env, fila.id, 'esta_bien', contactosDe(fila).map((c) => ({ contacto: c, texto: TEXTOS.estaBien(fila.nombre) })))
+          ? await avisar(env, fila.id, 'esta_bien', contactosDe(fila).map((c) => ({ contacto: c, mensaje: MENSAJES.estaBien(fila.nombre) })))
           : { avisados: 0, detalle: 'la red no había sido avisada' };
       await env.DB.batch([
         env.DB.prepare(`UPDATE alertas SET estado = 'cancelada', cancelada = ?, contactos_json = NULL, actualizada = ? WHERE id = ?`).bind(ahora, ahora, fila.id),
@@ -272,7 +271,7 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
       await env.DB.prepare(`INSERT INTO alertas (id, dispositivo, nombre, estado, prueba, creada, actualizada) VALUES (?, ?, ?, 'cancelada', 1, ?, ?)`)
         .bind(id, m.dispositivo, m.nombre, ahora, ahora)
         .run();
-      const r = await avisar(env, id, 'prueba', m.contactos.map((c) => ({ contacto: c, texto: TEXTOS.prueba(m.nombre, `${origen}/a/ejemplo`) })));
+      const r = await avisar(env, id, 'prueba', m.contactos.map((c) => ({ contacto: c, mensaje: MENSAJES.prueba(m.nombre, `${origen}/a/ejemplo`) })));
       return json({ ok: r.avisados > 0 || m.contactos.length === 0, avisados: r.avisados, total: m.contactos.length, detalle: r.detalle });
     }
     case 'motivo_falsa_alarma':
@@ -319,7 +318,7 @@ async function marcarEncargado(env: Env, id: string, peticion: Request, origen: 
   const quien = contactos[indice]?.nombre ?? 'Alguien de tu red';
   await env.DB.prepare('UPDATE alertas SET encargado = ?, actualizada = ? WHERE id = ?').bind(quien, Date.now(), id).run();
   const resto = contactos.map((c, i) => ({ c, i })).filter((x) => x.i !== indice);
-  const r = await avisar(env, id, 'encargado', resto.map((x) => ({ contacto: x.c, texto: TEXTOS.encargado(quien, fila.nombre, enlace(origen, id, x.i)) })));
+  const r = await avisar(env, id, 'encargado', resto.map((x) => ({ contacto: x.c, mensaje: MENSAJES.encargado(quien, fila.nombre, enlace(origen, id, x.i)) })));
   return json({ ok: true, encargado: quien, avisados: r.avisados, detalle: r.detalle });
 }
 
@@ -420,7 +419,7 @@ async function salud(env: Env): Promise<Response> {
     .first<{ n: number }>()
     .then(() => true)
     .catch(() => false);
-  return json({ ok: base, base, mensajes: hayProveedor(env) ? 'zavu' : 'sin proveedor (falta ZAVU_API_KEY)' }, base ? 200 : 503);
+  return json({ ok: base, base, mensajes: proveedores(env) ?? 'sin proveedor' }, base ? 200 : 503);
 }
 
 export default {

@@ -120,8 +120,8 @@ export function Tu({ onPestana, onRed, onHerramientas, onMeRobaron }: { onPestan
                 : !salud?.base
                   ? 'Sin conexión: las alertas no salen del celular'
                   : salud.mensajes
-                    ? 'Conectado, con WhatsApp y SMS'
-                    : 'Conectado, pero sin WhatsApp ni SMS todavía (falta Zavu)'
+                    ? 'Conectado, con WhatsApp'
+                    : 'Conectado, pero sin WhatsApp todavía'
             }
             ultima
             derecha={

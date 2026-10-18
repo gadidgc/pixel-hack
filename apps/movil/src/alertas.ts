@@ -95,7 +95,7 @@ export async function enviar(mensaje: MensajeAlerta): Promise<ResultadoEnvio> {
 
 export interface SaludBackend {
   base: boolean;
-  /** `true` si el backend tiene con qué mandar WhatsApp/SMS (Zavu). */
+  /** `true` si el backend tiene con qué mandar WhatsApp (Meta o Zavu). */
   mensajes: boolean;
 }
 
@@ -105,7 +105,7 @@ export async function revisarBackend(): Promise<SaludBackend | null> {
   try {
     const r = await fetch(`${urlBackend()}/api/salud`, { signal: AbortSignal.timeout(5000) });
     const d = (await r.json()) as { base?: boolean; mensajes?: string };
-    return { base: Boolean(d.base), mensajes: d.mensajes === 'zavu' };
+    return { base: Boolean(d.base), mensajes: Boolean(d.mensajes && d.mensajes !== 'sin proveedor') };
   } catch {
     return null;
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TEXTOS } from '../src/mensajes';
+import { MENSAJES } from '../src/mensajes';
 import { ErrorDeDatos, enmascarar, normalizarTelefono, validarMensaje } from '../src/validar';
 
 const evento = { tJalon: 1760740000000, via: 'velocidad_gps', confianza: 'alta', velocidadMs: 9.1, posicionJalon: { lat: -12.1, lon: -77.03, precision: 8, t: 1760740000000 } };
@@ -43,7 +43,8 @@ describe('teléfonos y textos', () => {
 
   it('el SMS de alerta va sin tildes (GSM-7, 160 caracteres por parte) y con la hora de Lima', () => {
     const t = Date.UTC(2026, 9, 18, 0, 42); // 19:42 en Lima (UTC-5)
-    const texto = TEXTOS.alerta('Lucia', t, 'https://alerta-arrebato.workers.dev/a/abcdefghijkmnpqr?c=0');
+    const { texto, plantilla } = MENSAJES.alerta('Lucia', t, 'https://alerta-arrebato.workers.dev/a/abcdefghijkmnpqr?c=0');
+    expect(plantilla.variables).toEqual(['Lucia', '19:42', 'https://alerta-arrebato.workers.dev/a/abcdefghijkmnpqr?c=0']);
     expect(texto).toContain('19:42');
     expect(/[áéíóúñ¿¡]/i.test(texto)).toBe(false);
   });
