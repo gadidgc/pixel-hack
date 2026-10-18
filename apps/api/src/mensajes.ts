@@ -45,7 +45,9 @@ export async function mandarMensaje(
   a: { telefono: string; texto: string; idempotencia: string; plantilla?: Record<string, string> },
 ): Promise<ResultadoMensaje> {
   if (!env.ZAVU_API_KEY) return { ok: false, canal: null, detalle: 'falta configurar Zavu, el servicio de WhatsApp y SMS' };
-  const sandbox = env.ZAVU_API_KEY.startsWith('zv_test_');
+  // Al pegar la clave a veces se cuela un espacio o un salto de línea.
+  const clave = env.ZAVU_API_KEY.trim();
+  const sandbox = clave.startsWith('zv_test_');
   const cuerpo =
     sandbox
       ? { to: a.telefono, channel: 'whatsapp', text: a.texto }
@@ -55,7 +57,7 @@ export async function mandarMensaje(
   try {
     const r = await fetch('https://api.zavu.dev/v1/messages', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${env.ZAVU_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${clave}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...cuerpo, fallbackEnabled: !sandbox, idempotencyKey: a.idempotencia }),
       signal: AbortSignal.timeout(8000),
     });
