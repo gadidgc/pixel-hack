@@ -57,7 +57,8 @@
   .progreso span.hecho { border-color: var(--texto-suave); }
   .progreso span.ahora { border-color: var(--protegido); color: var(--protegido); }
 
-  p, li, td, .tarjeta p, .paso p { text-wrap: balance; }
+  p, li, td, .paso p { text-wrap: balance; }
+  .tarjeta p { text-wrap: pretty; }
   h1, h2 { font-family: var(--titular); font-weight: 700; letter-spacing: -0.03em; margin: 0; line-height: 1.02; }
   h1 { font-size: 150px; }
   h2 { font-size: 84px; }
@@ -105,7 +106,7 @@
   .qr-pie { text-align: center; font-family: var(--datos); font-size: 16px; color: var(--texto-suave); margin-top: 14px; letter-spacing: .1em; }
   .en-vivo { display: inline-flex; align-items: center; gap: 12px; font-family: var(--datos); font-size: 22px; letter-spacing: .16em; color: var(--alerta); margin-bottom: 28px; }
   .en-vivo::before { content: ""; width: 16px; height: 16px; border-radius: 50%; background: var(--alerta); animation: latido 1.2s infinite; }
-  @keyframes latido { 50% { opacity: .25; } }
+  @keyframes latido { 50% { opacity: .6; } }
 
   /* Arquitectura */
   .flujo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 64px; margin-top: 88px; }
@@ -133,11 +134,12 @@
   table { width: 100%; border-collapse: collapse; margin-top: 52px; font-size: 32px; }
   td { white-space: nowrap; }
   th { text-align: left; font-family: var(--datos); font-weight: 500; font-size: 18px; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-suave); padding: 0 20px 14px 0; border-bottom: 1px solid var(--linea); }
-  td { padding: 24px 20px 24px 0; border-bottom: 1px solid var(--linea); vertical-align: top; line-height: 1.3; color: var(--texto-medio); }
+  td { padding: 24px 40px 24px 0; border-bottom: 1px solid var(--linea); vertical-align: top; line-height: 1.3; color: var(--texto-medio); }
   td:first-child { color: var(--texto); font-family: var(--titular); font-weight: 600; }
   .fuera { margin-top: 30px; font-size: 24px; color: var(--texto-suave); }
   .fuera b { color: var(--texto-medio); }
-  .fuera.grande { font-size: 34px; margin-top: 56px; }
+  .fuera.grande { font-family: var(--titular); font-size: 52px; letter-spacing: -0.02em; margin-top: 80px; }
+  .grandes .tarjeta p { font-size: 36px; }
   .fuera.grande b { color: var(--texto); }
 
   /* Preguntas */
@@ -152,8 +154,7 @@
 
   /* Respaldo */
   .respaldo .bloque b { color: var(--falta); }
-  .lamina.centrada.activa, .vp-mini .lamina.centrada,
-  .lamina.respaldo.activa, .vp-mini .lamina.respaldo { display: flex; flex-direction: column; justify-content: center; padding-top: 110px; }
+  .lamina.centrada.activa, .vp-mini .lamina.centrada { display: flex; flex-direction: column; justify-content: center; padding-top: 110px; }
   .lista { margin: 40px 0 0; padding: 0; list-style: none; font-size: 32px; line-height: 1.35; }
   .lista li { white-space: nowrap; padding: 18px 0; border-bottom: 1px solid var(--linea); color: var(--texto-medio); }
   .lista li b { color: var(--texto); }
@@ -294,7 +295,7 @@
 
 <!-- ================= 3 · CÓMO ESTÁ HECHO (2:30 a 3:00) ================= -->
 
-<section class="lamina centrada" data-bloque="3" data-titulo="Arquitectura" data-meta="2:40">
+<section class="lamina" data-bloque="3" data-titulo="Arquitectura" data-meta="2:40">
   <h2>Cómo está hecho</h2>
   <div class="flujo">
     <div class="paso"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M12 18h.01"/></svg><h3>Celular</h3><p>Sensores y GPS</p><code>Kotlin · Swift</code></div>
@@ -310,7 +311,7 @@
   </aside>
 </section>
 
-<section class="lamina centrada" data-bloque="3" data-titulo="Datos reales" data-meta="2:50">
+<section class="lamina" data-bloque="3" data-titulo="Datos reales" data-meta="2:50">
   <h2>Probado con datos reales</h2>
   <div class="numeros">
     <div class="numero"><strong>23/24</strong><span>jalones detectados en robos escenificados reales</span></div>
@@ -318,7 +319,7 @@
     <div class="numero"><strong>~5 s</strong><span>del arrebato al aviso<br>(4,5 a 6 s)</span></div>
   </div>
   <p class="auditoria">Una auditoría independiente dijo que éramos optimistas. <b>Corregimos el detector.</b></p>
-  <p class="fuente" style="margin-top:20px">Datasets públicos de terceros: SHL (93 h) y SPU (24 robos). Más 167 pruebas automáticas en el repo.</p>
+  <p class="fuente" style="margin-top:20px">Datasets públicos SHL y SPU · 167 pruebas en el repo</p>
   <aside class="notas">
     <p><span class="t">2:40</span><q>No nos quedamos con nuestro simulador: lo probamos con datos reales de terceros. 23 de 24 jalones, una falsa alarma cada 10 horas, y el aviso sale en unos 5 segundos.</q></p>
     <p>Si preguntan por las falsas alarmas: la familia solo se entera a los 10 s y el dueño cancela con su PIN (lámina de respaldo A).</p>
@@ -326,7 +327,7 @@
   </aside>
 </section>
 
-<section class="lamina centrada" data-bloque="3" data-titulo="Decisiones" data-meta="3:00">
+<section class="lamina" data-bloque="3" data-titulo="Decisiones" data-meta="3:00">
   <h2>Decisiones</h2>
   <table>
     <thead><tr><th>Decidimos</th><th>Por qué</th><th>Lo que cuesta</th></tr></thead>
@@ -389,9 +390,9 @@
 
 <section class="lamina respaldo" data-bloque="4" data-respaldo="B" data-titulo="B · ¿Y Google?">
   <h2>¿Google no hace esto ya?</h2>
-  <div class="dos" style="margin-top:56px">
+  <div class="dos grandes" style="margin-top:56px">
     <div class="tarjeta"><small>Google · Bloqueo por detección de robo</small><p>Detecta el arrebato y <b>solo bloquea la pantalla</b>. Nadie se entera.</p></div>
-    <div class="tarjeta"><small>Alerta Arrebato</small><p>Detecta y <b class="menta">avisa sola a tu red</b>, con la ruta en vivo.</p></div>
+    <div class="tarjeta"><small>Alerta Arrebato</small><p>Detecta y <b class="menta" style="white-space:nowrap">avisa sola a tu red</b>, con la ruta en vivo.</p></div>
   </div>
   <p class="fuera grande"><b>No competimos con Google: lo sumamos.</b></p>
   <aside class="notas"><p>Su bloqueo protege tus datos; nosotros avisamos a tu familia. Además no funciona con la pantalla bloqueada. Las apps de SOS piden apretar un botón, y en un arrebato no hay tiempo.</p><p>Detalle y fuentes: docs/limites-google-y-apps-parecidas.md. Un integrante lo tenía activado en su Galaxy sin saberlo.</p></aside>
@@ -399,7 +400,7 @@
 
 <section class="lamina respaldo" data-bloque="4" data-respaldo="C" data-titulo="C · ¿Bloquea el banco?">
   <h2>¿La app bloquea el banco sola?</h2>
-  <p class="bajada ancha">No hay API: el banco verifica al titular. Ponemos <b class="menta" style="white-space:nowrap">el número correcto frente a la persona correcta</b>.</p>
+  <p class="bajada ancha">No hay API: el banco verifica al titular.<br>Ponemos <b class="menta" style="white-space:nowrap">el número correcto frente a la persona correcta</b>.</p>
   <ul class="lista">
     <li><b>1820 (ASBANC)</b>: conecta con el área de bloqueo de 17 bancos</li>
     <li><b>La operadora</b>: suspende la línea y bloquea el IMEI</li>
