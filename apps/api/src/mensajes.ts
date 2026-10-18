@@ -90,7 +90,7 @@ async function porMeta(env: EnvMensajes, telefono: string, m: Mensaje): Promise<
     });
     const datos = (await r.json().catch(() => ({}))) as { error?: { code?: number; message?: string } };
     if (r.ok) return { ok: true, canal: 'whatsapp (meta)', detalle: 'enviado' };
-    return { ok: false, canal: null, detalle: `Meta ${r.status} ${datos.error?.code ?? ''}`.trim() };
+    return { ok: false, canal: null, detalle: `Meta ${r.status} ${datos.error?.code ?? ''} ${datos.error?.message?.slice(0, 120) ?? ''}`.trim() };
   } catch (e) {
     return { ok: false, canal: null, detalle: e instanceof Error ? `Meta: ${e.message}` : 'Meta: error de red' };
   }
@@ -112,7 +112,9 @@ export async function mandarMensaje(
   }
   if (resultados.length === 0) return { ok: false, canal: null, detalle: 'falta configurar WhatsApp (Meta o Zavu)' };
   const buenos = resultados.filter((r) => r.ok);
-  if (buenos.length) return { ok: true, canal: buenos.map((r) => r.canal).join(' + '), detalle: 'enviado' };
+  const fallidos = resultados.filter((r) => !r.ok).map((r) => r.detalle);
+  // Si un camino falló y otro no, lo dejamos anotado (en el registro de envíos) para saber por qué.
+  if (buenos.length) return { ok: true, canal: buenos.map((r) => r.canal).join(' + '), detalle: fallidos.length ? `enviado (falló: ${fallidos.join('; ')})` : 'enviado' };
   return { ok: false, canal: null, detalle: resultados.map((r) => r.detalle).join('; ') };
 }
 
