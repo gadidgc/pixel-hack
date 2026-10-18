@@ -12,7 +12,7 @@ import {
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Platform } from 'react-native';
 import { enviar, hayBackend, type ResultadoEnvio } from './alertas';
-import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, type ResultadoBloqueo } from './bloqueo';
+import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, quitarBloqueoApps, type ResultadoBloqueo } from './bloqueo';
 import { Grabadora, type Etiqueta } from './grabadora';
 import { avisarTodoBien, pedirPermisoNotificaciones, quitarAviso } from './notificaciones';
 import { hayPin, verificarPin } from './pin';
@@ -315,6 +315,8 @@ class ServicioProteccion {
     this.detenerCuentaFamilia();
     void quitarAviso(this.idNotificacion);
     this.detector.cancelar();
+    // iPhone: fue falsa alarma, las demás apps vuelven (en Android no hace nada: lo quita la clave del sistema).
+    quitarBloqueoApps();
     // El backend cuenta por su lado y avisa a la red si no le llega "cancelada". Se manda SIEMPRE que haya
     // backend (también en un ensayo, donde el detector no tiene alerta, y aunque el envío de la alerta siga
     // en camino): esperamos a que llegue la alerta para que "cancelada" no llegue antes que ella.
@@ -328,6 +330,25 @@ class ServicioProteccion {
         ? 'Falsa alarma: cancelada con tu PIN. Tu red ya había sido avisada; le mandamos que estás bien.'
         : 'Falsa alarma: cancelada con tu PIN antes de avisar a tu red.',
     );
+    return true;
+  }
+
+  /**
+   * iPhone: destapa las demás apps cuando ya no hay alerta (recuperaste el celular, o tras "Probar bloqueo").
+   * Exige el PIN: el ladrón no debe poder quitarlo.
+   */
+  async desbloquearApps(pin: string): Promise<boolean> {
+    if (this.mensajePin()) return false;
+    if (!(await verificarPin(pin))) {
+      this.pinFallidos++;
+      if (this.pinFallidos >= INTENTOS_PIN) this.pinEsperarHasta = Date.now() + ESPERA_PIN_MS * (this.pinFallidos - INTENTOS_PIN + 1);
+      this.registrar('PIN incorrecto: las apps siguen bloqueadas.', 'error');
+      return false;
+    }
+    this.pinFallidos = 0;
+    this.pinEsperarHasta = 0;
+    quitarBloqueoApps();
+    this.registrar('Apps del iPhone desbloqueadas con tu PIN.');
     return true;
   }
 
@@ -358,7 +379,9 @@ class ServicioProteccion {
     const sobreBloqueo = bloqueo.estado === 'solicitado' && mostrarSobreBloqueo(elegida);
     // Respaldo: si Android no deja la pregunta sobre el bloqueo, el dueño tiene que desbloquear Android
     // antes de escribir el PIN. Le damos 15 s más para que una falsa alarma no avise a su familia.
-    const extra = bloqueo.estado === 'solicitado' && !sobreBloqueo ? SEGUNDOS_EXTRA_DESBLOQUEO : 0;
+    // iPhone con el SMS de Atajos: la pantalla se bloquea en segundos y también hay que desbloquear para cancelar.
+    const numeroPropio = Platform.OS === 'ios' && hayBackend() ? preferencias().numeroPropio : '';
+    const extra = (bloqueo.estado === 'solicitado' && !sobreBloqueo) || numeroPropio ? SEGUNDOS_EXTRA_DESBLOQUEO : 0;
     const espera = elegida + extra;
 
     this.cambiar({
@@ -380,14 +403,25 @@ class ServicioProteccion {
     });
     this.registrar(`Bloqueo de pantalla: ${bloqueo.detalle}`, bloqueo.estado === 'solicitado' ? 'info' : 'aviso');
     if (bloqueo.estado === 'solicitado' && !sobreBloqueo) {
-      this.registrar(`Android no deja mostrar el "¿Todo bien?" sobre la pantalla de bloqueo: para cancelar hay que desbloquear. Esperamos ${extra} s más antes de avisar.`, 'aviso');
+      this.registrar(`${Platform.OS === 'ios' ? 'iPhone' : 'Android'} no deja mostrar el "¿Todo bien?" sobre la pantalla de bloqueo: para cancelar hay que desbloquear. Esperamos ${extra} s más antes de avisar.`, 'aviso');
     }
     // Sobre la pantalla de bloqueo ya va nuestro aviso de pantalla completa; no repetimos la notificación.
     if (!sobreBloqueo) void avisarTodoBien(espera).then((id) => (this.idNotificacion = id));
 
     // 1) Al panel, al instante y en silencio, con la ruta de los últimos segundos.
     const { nombre, contactos, bloqueo: perfil } = preferencias();
-    this.envioAlerta = enviar({ tipo: 'alerta', evento, ruta: [...this.ruta], nombre, contactos, esperaS: espera, bloqueo: perfilParaEnviar(perfil) });
+    // Con `numeroPropio`, el backend le manda al instante el SMS que bloquea el iPhone (Atajos), sin esperar la cuenta.
+    this.envioAlerta = enviar({
+      tipo: 'alerta',
+      evento,
+      ruta: [...this.ruta],
+      nombre,
+      contactos,
+      esperaS: espera,
+      bloqueo: perfilParaEnviar(perfil),
+      ...(numeroPropio ? { numeroPropio } : {}),
+    });
+    if (numeroPropio) this.registrar('iPhone: pedimos el SMS que bloquea la pantalla con tu automatización de Atajos.');
     void this.envioAlerta.then((panel) => {
       if (this.estado.alerta?.evento !== evento) return;
       this.cambiar({ alerta: { ...this.estado.alerta, panel, enlace: panel.enlace ?? this.estado.alerta.enlace } });
@@ -466,6 +500,20 @@ class ServicioProteccion {
       huidaS: r.alerta ? (r.alerta.t - base) / 1000 : null,
       envio,
     };
+  }
+
+  /**
+   * Guía de Atajos (iPhone): manda ya el SMS de bloqueo a tu número, para comprobar que la automatización
+   * bloquea la pantalla. Guarda el número si llegó el SMS.
+   */
+  async probarBloqueoPorMensaje(numeroPropio: string): Promise<ResultadoEnvio> {
+    const envio = await enviar({ tipo: 'probar_bloqueo', numeroPropio });
+    if (envio.enviado) await guardarPreferencias({ numeroPropio });
+    this.registrar(
+      envio.enviado ? 'SMS de bloqueo enviado a tu número: tu iPhone debería bloquearse en unos segundos.' : `No se pudo mandar el SMS de bloqueo: ${envio.detalle}`,
+      envio.enviado ? 'info' : 'aviso',
+    );
+    return envio;
   }
 
   /**

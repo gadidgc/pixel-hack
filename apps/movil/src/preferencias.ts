@@ -51,6 +51,11 @@ export interface Preferencias {
   /** La protección estaba encendida: si el sistema reabre la app (o se reinicia), vuelve a encenderla sola. */
   proteccionActiva: boolean;
   bloqueo: PerfilBloqueo;
+  /**
+   * iPhone: el número de la propia dueña. Al confirmar un arrebato le mandamos un SMS con la palabra de
+   * bloqueo y su automatización de Atajos bloquea la pantalla. Vacío = no lo configuró.
+   */
+  numeroPropio: string;
 }
 
 export const PERFIL_VACIO: PerfilBloqueo = { entidades: [], operador: null, linea: '', imei: '', dni: '' };
@@ -68,7 +73,7 @@ export function perfilParaEnviar(p: PerfilBloqueo): Partial<PerfilBloqueo> | und
 }
 
 const CLAVE = 'alerta-arrebato-preferencias';
-const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false, bloqueo: PERFIL_VACIO };
+const INICIAL: Preferencias = { bienvenidaHecha: false, nombre: '', contactos: [], esperaFamiliaS: 10, proteccionActiva: false, bloqueo: PERFIL_VACIO, numeroPropio: '' };
 
 let actuales: Preferencias = INICIAL;
 let cargadas = false;

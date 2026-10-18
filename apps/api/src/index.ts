@@ -1,5 +1,5 @@
 import { armarKit, leerPerfil, validarMarca } from './bloqueo';
-import { MENSAJES, mandarMensaje, proveedores, type EnvMensajes, type Mensaje as MensajeWhatsApp } from './mensajes';
+import { MENSAJES, mandarMensaje, mandarSmsBloqueo, proveedores, type EnvMensajes, type Mensaje as MensajeWhatsApp } from './mensajes';
 import {
   JUNTAR_GRABACIONES_GRADOS,
   JUNTAR_GRABACIONES_MS,
@@ -233,8 +233,13 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
   const ahora = Date.now();
   switch (m.tipo) {
     case 'alerta': {
-      // Al panel, en silencio: la red todavía NO se avisa (el dueño tiene unos segundos para cancelar).
+      // iPhone: lo PRIMERO es el SMS a la propia dueña, que dispara "Bloquear pantalla" en Atajos. No espera
+      // a la base de datos ni a la cuenta: si el ladrón lo tiene desbloqueado en la mano, cada segundo cuenta.
       const id = nuevoId();
+      const smsBloqueo = m.numeroPropio ? mandarSmsBloqueo(env, m.numeroPropio, `${id}-bloqueo`) : null;
+      // Que el Worker no lo corte aunque falle lo de abajo.
+      if (smsBloqueo) ctx.waitUntil(smsBloqueo);
+      // Al panel, en silencio: la red todavía NO se avisa (el dueño tiene unos segundos para cancelar).
       const p = m.evento.posicionJalon ?? m.ruta[m.ruta.length - 1] ?? null;
       await env.DB.batch([
         env.DB.prepare(
@@ -259,6 +264,16 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
         ),
         ...guardarPuntos(env, id, m.ruta),
       ]);
+      if (smsBloqueo && m.numeroPropio) {
+        const numero = m.numeroPropio;
+        ctx.waitUntil(
+          smsBloqueo.then((r) =>
+            env.DB.prepare('INSERT INTO envios (alerta_id, tipo, destino, canal, ok, detalle, creado) VALUES (?, ?, ?, ?, ?, ?, ?)')
+              .bind(id, 'bloqueo_iphone', enmascarar(numero), r.canal, r.ok ? 1 : 0, r.detalle, Date.now())
+              .run(),
+          ),
+        );
+      }
       // La cuenta del servidor: si el celular se apaga o se queda sin señal, igual se avisa a la red.
       ctx.waitUntil(
         new Promise((listo) => setTimeout(listo, m.esperaS * 1000 + MARGEN_SERVIDOR_MS)).then(() => avisarVencidas(env)),
@@ -333,6 +348,11 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
         .run();
       const r = await avisar(env, id, 'prueba', m.contactos.map((c) => ({ contacto: c, mensaje: MENSAJES.prueba(m.nombre, `${origen}/a/ejemplo`) })));
       return json({ ok: r.avisados > 0 || m.contactos.length === 0, avisados: r.avisados, total: m.contactos.length, detalle: r.detalle });
+    }
+    case 'probar_bloqueo': {
+      // Botón "Probar" de la guía de Atajos: el mismo SMS, para comprobar que el iPhone se bloquea.
+      const r = await mandarSmsBloqueo(env, m.numeroPropio, `prueba-bloqueo-${m.dispositivo}-${ahora}`);
+      return json({ ok: r.ok, detalle: r.ok ? 'SMS enviado' : r.detalle }, r.ok ? 200 : 502);
     }
     case 'motivo_falsa_alarma':
       await env.DB.prepare('INSERT INTO motivos (dispositivo, motivo, creado) VALUES (?, ?, ?)').bind(m.dispositivo, m.motivo, ahora).run();

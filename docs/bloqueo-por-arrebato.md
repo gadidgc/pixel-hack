@@ -24,9 +24,10 @@ Bloquear más tarde quita el costo de la falsa alarma, pero también el valor. P
    desbloquear. Tras **5 PIN incorrectos** hay que esperar 30 s (más 30 s por cada intento extra):
    sobre la pantalla de bloqueo cualquiera puede probar PINs.
 5. **Primer uso:** el bloqueo se ofrece en la pantalla de permisos como recomendado (no obligatorio).
-6. **iPhone:** no podemos bloquearlo. En vez de solo decir "no disponible", guiamos a activar la
-   [Protección en caso de robo de Apple](https://support.apple.com/120340) en «Siempre» y el
-   bloqueo automático en 30 s.
+6. **iPhone:** no podemos bloquear la pantalla (ver abajo). Lo más cercano: **tapamos las demás
+   apps con Tiempo de uso** al instante (WhatsApp, banca, también la que esté abierta). Además
+   guiamos a activar la [Protección en caso de robo de Apple](https://support.apple.com/120340) en
+   «Siempre» y el bloqueo automático en 30 s.
 
 ### Qué hace la competencia
 
@@ -62,10 +63,65 @@ ese modo solo cambia los umbrales del detector.
 
 iPhone: no hay una API pública equivalente para una app de consumo. Apple ofrece
 DeviceLock mediante MDM, que exige enrolar el dispositivo y disponer de un servidor
-de gestión. Este PR no incorpora MDM, APIs privadas ni una pantalla que simule un
-bloqueo del sistema. La interfaz dice que el bloqueo no está disponible; el detector
-y el envío de alertas continúan. Por ello el requisito de bloquear también un iPhone
-personal queda **sin cumplir** y necesita otra decisión de arquitectura.
+de gestión. No usamos MDM, APIs privadas ni una pantalla que simule un bloqueo del sistema.
+
+### iPhone: bloqueo de verdad con Atajos (SMS a la propia dueña)
+
+Una app no puede bloquear el iPhone, pero la app **Atajos** sí (acción «Bloquear pantalla», iOS 16.4+), y
+una automatización «Mensaje» puede correr sola sin preguntar («Ejecutar inmediatamente», iOS 17+).
+La dueña la crea una vez, guiada en el primer uso y en Tú:
+
+1. Atajos › Automatización › + › «Mensaje» › «El mensaje contiene» `AA-BLOQUEO`.
+2. «Ejecutar inmediatamente» › «Nuevo atajo en blanco» › acción «Bloquear pantalla».
+3. Escribe su número en la app y toca **Probar**: le llega el SMS y el iPhone se bloquea.
+
+Al confirmar un arrebato, la app manda su número con la `alerta` y el backend le envía **al instante** el
+SMS con la palabra (Zavu, solo SMS). El iPhone se bloquea y el ladrón necesita el código, igual que en Android.
+
+- **Necesita señal** y tarda unos segundos (lo que tarde el SMS). Por eso se mantiene también el escudo de
+  Tiempo de uso, que es instantáneo y sin señal.
+- **Falsa alarma:** la dueña desbloquea con Face ID y cancela con el PIN. Se dan los 15 s extra.
+- Apple siempre muestra un aviso cuando corre una automatización: no se puede ocultar.
+- Cualquiera que mande un SMS con la palabra bloquea el iPhone. Es inofensivo: solo bloquea.
+- La palabra está en `apps/api/src/mensajes.ts` (`PALABRA_BLOQUEO`) y en `apps/movil/src/bloqueo.ts`
+  (`PALABRA_BLOQUEO_ATAJOS`): deben ser iguales.
+
+Fuentes (secundarias): [acción Bloquear pantalla](https://9to5mac.com/2024/05/28/make-iphone-lock-screen-shortcut/),
+[«Ejecutar inmediatamente» en automatizaciones de Mensaje](https://matthewcassinelli.com/automations-run-immediately-shortcuts-notifications),
+[Apple: disparador Mensaje](https://support.apple.com/guide/shortcuts/apdd711f9dff/ios).
+
+**No probado todavía:** que la automatización bloquee con la pantalla apagada y con el iPhone en uso por otra
+persona, y cuánto tarda el SMS en llegar.
+
+### iPhone: tapar las apps con Tiempo de uso (no es un bloqueo)
+
+Lo más cercano que Apple permite es **Tiempo de uso** (frameworks FamilyControls y
+ManagedSettings, iOS 16+), el mismo que usan las apps de control parental. Con la autorización
+del dueño (diálogo de Apple, se confirma con Face ID o el código), al confirmar un arrebato el
+módulo `modules/bloqueo-pantalla/ios` pone un **escudo sobre todas las demás apps y sitios web**
+(`shield.applicationCategories = .all()`), incluida la que esté abierta, y prohíbe borrar
+Alerta Arrebato para que la ruta siga llegando.
+
+- **No es un bloqueo de pantalla:** el ladrón ve el inicio. Apple no deja tapar Teléfono,
+  Ajustes ni las apps de "Siempre permitidas"
+  ([foro de Apple](https://developer.apple.com/forums/thread/793613)). Nuestra app no se tapa
+  ([documentación](https://developer.apple.com/documentation/managedsettings/shieldsettings/applicationcategories-swift.property)).
+- **Falsa alarma:** iPhone no deja abrir la pregunta sobre el bloqueo, así que la dueña
+  desbloquea el iPhone, abre la notificación y escribe el PIN: las apps vuelven solas. Por eso
+  también se dan los **15 s más** antes de avisar a la red.
+- **Robo de verdad:** las apps siguen tapadas hasta que la dueña escriba el PIN en
+  **Tú › Bloqueo antirrobo › Desbloquear mis apps** (o lo quite en Ajustes › Tiempo de uso).
+- Sin código en el iPhone no se aplica (`sin_clave`): el ladrón lo quitaría en Ajustes.
+- **Permiso de Apple (entitlement):** `com.apple.developer.family-controls` en `app.json`. Para
+  compilar e instalar desde Xcode basta la versión de desarrollo (cuenta de pago de Apple
+  Developer). Para TestFlight o App Store hay que pedir la de distribución a Apple
+  ([formulario](https://developer.apple.com/contact/request/family-controls-distribution)),
+  que tarda días o semanas: **pendiente**. Mientras tanto el build de TestFlight sale sin este
+  permiso (ver [testflight-iphone.md](testflight-iphone.md)).
+
+**No probado todavía en un iPhone físico:** compila para el simulador, pero falta comprobar
+que el escudo se pone con la app en segundo plano (pantalla apagada o en otra app), que tapa
+la app abierta al instante y que el PIN lo quita.
 
 Web y Expo Go: sin bloqueo del sistema. Android necesita recompilar la app con el
 módulo local `modules/bloqueo-pantalla`.
@@ -155,7 +211,10 @@ La ejecución del workflow no sustituye las siguientes pruebas manuales:
   correcto cancela sin desbloquear Android. El incorrecto no; 5 incorrectos hacen esperar 30 s.
 - Sin permiso de pantalla completa: comprobar la notificación normal y los 15 s extra.
 - Caída descartada y prueba guiada: comprobar que no bloquean.
-- iPhone y web: comprobar el aviso de función no disponible, sin orden nativa de bloqueo.
+- Web: comprobar el aviso de función no disponible, sin orden nativa de bloqueo.
+- iPhone físico: autorizar Tiempo de uso, ensayar con la app en segundo plano y comprobar que
+  WhatsApp y Safari quedan tapados, que cancelar con el PIN los destapa y que, sin cancelar,
+  siguen tapados hasta "Desbloquear mis apps".
 
 **Pendiente de validación física.** No afirmar que funciona en un Android real ni en ambos
 sistemas hasta registrar esas pruebas. El PR debe permanecer en borrador mientras falte

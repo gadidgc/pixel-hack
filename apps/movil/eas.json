@@ -9,6 +9,9 @@
       "autoIncrement": true,
       "ios": {
         "resourceClass": "default"
+      },
+      "env": {
+        "SIN_TIEMPO_DE_USO": "1"
       }
     }
   },

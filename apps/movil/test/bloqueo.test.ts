@@ -12,6 +12,8 @@ const entorno = vi.hoisted(() => ({
     abrirPermisoPantallaCompleta: vi.fn(),
     mostrarSobreBloqueo: vi.fn(),
     ocultarSobreBloqueo: vi.fn(),
+    appsBloqueadas: vi.fn(),
+    quitarBloqueoApps: vi.fn(),
   },
 }));
 vi.mock('react-native', () => ({
@@ -53,7 +55,7 @@ beforeEach(() => {
   entorno.modulo.abrirBloqueoSeguro.mockReset().mockResolvedValue(true);
 });
 describe('bloqueo por plataforma', () => {
-  it.each(['ios', 'web'])(
+  it.each(['web'])(
     '%s no carga el módulo ni finge un bloqueo',
     async (plataforma) => {
       entorno.plataforma = plataforma;
@@ -123,7 +125,7 @@ describe('"¿Todo bien?" sobre la pantalla de bloqueo', () => {
       expect.stringContaining('0:15'),
     );
   });
-  it.each(['ios', 'web'])('%s no intenta mostrarse sobre el bloqueo', async (plataforma) => {
+  it.each(['web'])('%s no intenta mostrarse sobre el bloqueo', async (plataforma) => {
     entorno.plataforma = plataforma;
     const b = await import('../src/bloqueo');
     expect(b.mostrarSobreBloqueo(10)).toBe(false);
@@ -185,5 +187,57 @@ describe('qué falta para bloquear (aviso en Inicio y en el ensayo)', () => {
   it('iPhone o web: nada que arreglar aquí', async () => {
     const b = await import('../src/bloqueo');
     expect(b.faltaParaBloqueo({ ...listo, disponible: false })).toBeNull();
+  });
+});
+
+describe('iPhone: tapar las apps con Tiempo de uso', () => {
+  const estadoIphone = { disponible: true, administradorActivo: true, bloqueoSeguro: true, bloqueado: false, pantallaCompleta: false };
+  beforeEach(() => {
+    entorno.plataforma = 'ios';
+    entorno.modulo.consultarEstado.mockReturnValue(estadoIphone);
+  });
+  it('carga el módulo y pide tapar las apps al confirmar un arrebato', async () => {
+    const b = await import('../src/bloqueo');
+    expect(entorno.cargar).toHaveBeenCalledWith('BloqueoPantalla');
+    expect(b.bloquearAlDetectar().estado).toBe('solicitado');
+    expect(entorno.modulo.bloquearAhora).toHaveBeenCalledTimes(1);
+  });
+  it('no dice que bloquea la pantalla: dice que tapa las apps', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.consultarBloqueo().detalle).toContain('taparemos las demás apps');
+  });
+  it('sin pantalla completa no es algo que falte: iPhone nunca lo deja', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.faltaParaBloqueo({ ...estadoIphone, detalle: '' }, '+51987654321')).toBeNull();
+  });
+  it('sin autorizar Tiempo de uso, Inicio lo avisa', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.faltaParaBloqueo({ ...estadoIphone, administradorActivo: false, detalle: '' }, '+51987654321')).toContain('Tiempo de uso');
+  });
+  it('sin código en el iPhone, lo pide primero', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.faltaParaBloqueo({ ...estadoIphone, bloqueoSeguro: false, administradorActivo: false, detalle: '' }, '+51987654321')).toContain('código');
+  });
+  it('sin número propio, lo primero que pide es el bloqueo con Atajos (también sin el módulo)', async () => {
+    const b = await import('../src/bloqueo');
+    expect(b.faltaParaBloqueo({ ...estadoIphone, detalle: '' })).toContain('Atajos');
+    expect(b.faltaParaBloqueo({ ...estadoIphone, disponible: false, detalle: '' })).toContain('Atajos');
+  });
+  it('lee y quita el escudo; un fallo nativo no rompe nada', async () => {
+    entorno.modulo.appsBloqueadas.mockReturnValue(true);
+    const b = await import('../src/bloqueo');
+    expect(b.appsBloqueadas()).toBe(true);
+    b.quitarBloqueoApps();
+    expect(entorno.modulo.quitarBloqueoApps).toHaveBeenCalledTimes(1);
+    entorno.modulo.quitarBloqueoApps.mockImplementation(() => {
+      throw new Error('Sin autorización');
+    });
+    expect(() => b.quitarBloqueoApps()).not.toThrow();
+  });
+  it('en Expo Go explica que hay que recompilar', async () => {
+    entorno.cargado = false;
+    const b = await import('../src/bloqueo');
+    expect(b.consultarBloqueo().detalle).toContain('Expo Go');
+    expect(b.appsBloqueadas()).toBe(false);
   });
 });

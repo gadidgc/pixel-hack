@@ -23,6 +23,12 @@ Requisito: iOS reciente (el que pida TestFlight). La beta dura 90 días.
 - `apps/movil/app.json`: `ios.config.usesNonExemptEncryption: false`. Solo usamos el cifrado estándar de iOS (HTTPS),
   así que Apple no pregunta por "export compliance" en cada build.
 - El módulo nativo `modules/sensores-fondo` se compila solo con EAS (por eso no sirve Expo Go).
+- **Sin Tiempo de uso en TestFlight:** el permiso `com.apple.developer.family-controls` (bloquear las demás apps,
+  ver [bloqueo-por-arrebato.md](bloqueo-por-arrebato.md)) solo se puede distribuir cuando Apple aprueba un
+  formulario aparte, que tarda días. Por eso el perfil `production` pone `SIN_TIEMPO_DE_USO=1` y
+  `apps/movil/app.config.js` lo quita del build. En la beta el bloqueo de apps responde "sin autorización";
+  la detección, los avisos y el bloqueo con Atajos funcionan igual. Al llegar la aprobación de Apple se borra
+  esa variable de `eas.json`.
 
 ## Paso a paso (Gabriel)
 
