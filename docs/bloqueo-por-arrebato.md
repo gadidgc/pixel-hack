@@ -117,9 +117,21 @@ app en segundo plano (en el inicio de Android):
 - Encontrado y corregido: con la app en segundo plano los temporizadores de JS se congelan; el
   ensayo ahora se revisa con cada lote de sensores, como la cuenta para la familia.
 
-**No probado todavía:** un celular físico, el GPS con pantalla bloqueada y el respaldo sin
-permiso de pantalla completa en el emulador (sí está cubierto por pruebas automáticas). Un
-emulador no es un celular real: no presentarlo como validación física.
+## Probado en un celular físico — 18 de octubre
+
+Samsung Galaxy A17 4G (SM-A175F, Android 16), build release con el backend real, ensayo de
+Herramientas con la app en segundo plano:
+
+- Primera vez: faltaba autorizar a la app como administrador y **no se bloqueó**, sin aviso claro.
+  Por eso Inicio ahora avisa "Tu celular no se bloqueará si te lo roban" con lo que falta (#39).
+  En Samsung, además, el **Bloqueador automático** impide la depuración por USB: hay que apagarlo
+  para instalar por cable (y volver a encenderlo después).
+- Con todo autorizado: el celular **se bloqueó**, el "¿Todo bien?" apareció **encima del
+  bloqueo**, y al cancelar con el PIN **no llegó ningún mensaje** a la red.
+
+**No probado todavía:** que la ruta GPS siga enviándose con el celular bloqueado (en la calle, sin
+cancelar), y el respaldo sin permiso de pantalla completa en un celular (sí cubierto por pruebas
+automáticas). Un solo modelo de celular: otros fabricantes pueden comportarse distinto.
 
 ## Verificación antes de aprobar
 
