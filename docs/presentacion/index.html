@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vigía · Presentación</title>
+<link rel="icon" href="img/marca/icono.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Lexend:wght@500;600;700&display=swap">
+<!--
+  Presentación para la demo de Hack the Andes (3 min + 2 min de preguntas).
+  Cada lámina es un <section class="lamina">. Lo que dice quien presenta va en <aside class="notas">.
+  Teclas: ← → (o el clicker) para avanzar · P abre la vista de presentador · F pantalla completa
+          B pantalla negra · I índice (láminas de respaldo) · S empieza/pausa el cronómetro · R lo reinicia
+-->
+<style>
+  :root {
+    --fondo: #0d0c0b;
+    --superficie: #171513;
+    --superficie-alta: #211e1b;
+    --linea: #302b26;
+    --texto: #f2ece3;
+    --texto-suave: #b8b0a4;
+    --texto-medio: #c9c1b6;
+    --protegido: #8ee3c0;
+    --protegido-fondo: #14271f;
+    --alerta: #ff8a65;
+    --alerta-fondo: #2b1711;
+    --falta: #ffd36b;
+    --titular: "Lexend", "Figtree", system-ui, sans-serif;
+    --cuerpo: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --datos: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #000; color: var(--texto); font-family: var(--cuerpo); overflow: hidden; }
+
+  /* ---------- Escenario 16:9 (1600 × 900, se escala a la ventana) ---------- */
+  .escenario { position: fixed; inset: 0; overflow: hidden; }
+  .lienzo { width: 1600px; height: 900px; position: absolute; left: 50%; top: 50%; transform-origin: center center; }
+  .lamina {
+    position: absolute; inset: 0; display: none; overflow: hidden;
+    background: var(--fondo); padding: 96px 112px 120px;
+  }
+  .lamina.activa { display: block; animation: entrar .35s ease-out; }
+  @keyframes entrar { from { opacity: 0; } to { opacity: 1; } }
+  .lamina aside.notas { display: none; }
+
+  /* Encabezado del bloque oficial y barra de progreso de los 4 bloques */
+  .bloque {
+    position: absolute; top: 40px; left: 112px; right: 112px; display: flex; justify-content: space-between;
+    font-family: var(--datos); font-size: 19px; letter-spacing: .18em; text-transform: uppercase; color: var(--texto-suave);
+  }
+  .bloque b { color: var(--texto); font-weight: 600; }
+  .progreso { position: absolute; left: 112px; right: 112px; bottom: 44px; display: grid; grid-template-columns: 30fr 120fr 30fr 120fr; gap: 8px; }
+  .progreso span { font-family: var(--datos); font-size: 16px; letter-spacing: .14em; color: var(--texto-suave); border-top: 3px solid var(--linea); padding-top: 8px; text-transform: uppercase; white-space: nowrap; }
+  .progreso span.hecho { border-color: var(--texto-suave); }
+  .progreso span.ahora { border-color: var(--protegido); color: var(--protegido); }
+
+  p, li, td, .paso p { text-wrap: balance; }
+  .tarjeta p { text-wrap: pretty; }
+  h1, h2 { font-family: var(--titular); font-weight: 700; letter-spacing: -0.03em; margin: 0; line-height: 1.02; }
+  h1 { font-size: 150px; }
+  h2 { font-size: 84px; }
+  .bajada { font-size: 38px; line-height: 1.3; color: var(--texto-medio); margin: 28px 0 0; max-width: 22em; }
+  .bajada.ancha { max-width: none; font-size: 36px; }
+  .mono { font-family: var(--datos); }
+  .suave { color: var(--texto-suave); }
+  .menta { color: var(--protegido); }
+  .naranja { color: var(--alerta); }
+  .fuente { font-family: var(--datos); font-size: 20px; color: var(--texto-suave); letter-spacing: .04em; }
+  .generada { position: absolute; right: 112px; bottom: 92px; font-family: var(--datos); font-size: 15px; color: var(--texto-suave); opacity: .7; }
+
+  /* Láminas con foto de fondo */
+  .con-foto { background-size: cover; background-position: right center; }
+  .con-foto::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(13,12,11,.96) 0%, rgba(13,12,11,.75) 38%, rgba(13,12,11,0) 70%); }
+  .con-foto.oscuro::before { background: linear-gradient(90deg, rgba(13,12,11,.97) 0%, rgba(13,12,11,.85) 45%, rgba(13,12,11,.35) 100%); }
+  .con-foto > * { position: relative; }
+  .con-foto > .bloque, .con-foto > .progreso, .con-foto > .generada { position: absolute; }
+  .centrado-v { height: 100%; display: flex; flex-direction: column; justify-content: center; padding-bottom: 60px; }
+
+  .logos { display: flex; gap: 16px; margin-top: 44px; }
+  .logo { width: 124px; height: 80px; border-radius: 18px; background: #fff; display: grid; place-items: center; padding: 14px 18px; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+  .logo img { width: 100%; height: 100%; object-fit: contain; display: block; min-height: 0; }
+  .logo.yape { background: #742284; padding: 0; overflow: hidden; }
+  .logo.yape img { object-fit: cover; }
+  .cifra { margin-top: 56px; display: flex; align-items: flex-end; gap: 24px; }
+  .cifra strong { font-family: var(--titular); font-size: 96px; letter-spacing: -0.03em; }
+  .cifra span { font-size: 30px; color: var(--texto-medio); line-height: 1.3; }
+
+  /* Usuario real */
+  .caso-etq { font-family: var(--datos); font-size: 20px; letter-spacing: .16em; text-transform: uppercase; color: var(--alerta); margin: 0 0 24px; }
+  .cita { font-family: var(--titular); font-weight: 500; font-size: 60px; line-height: 1.18; letter-spacing: -0.02em; margin: 0; max-width: 23em; }
+  .quien { margin-top: 28px; font-family: var(--datos); font-size: 22px; color: var(--texto-suave); letter-spacing: .06em; }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 80px; }
+  .tarjeta { background: var(--superficie); border: 1px solid var(--linea); border-radius: 24px; padding: 32px 36px; }
+  .tarjeta small { display: block; font-family: var(--datos); font-size: 18px; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-suave); margin-bottom: 12px; }
+  .tarjeta p { margin: 0; font-size: 32px; line-height: 1.3; }
+
+  /* Demo */
+  .demo { display: grid; grid-template-columns: 1fr auto; gap: 80px; align-items: center; height: 100%; }
+  .demo h1 { font-size: 168px; }
+  .url { margin-top: 36px; font-family: var(--datos); font-size: 34px; color: var(--protegido); white-space: nowrap; }
+  .qr { width: 340px; height: 340px; border-radius: 20px; background: var(--fondo); border: 1px solid var(--linea); padding: 18px; }
+  .qr img { width: 100%; height: 100%; display: block; }
+  .qr-pie { text-align: center; font-family: var(--datos); font-size: 16px; color: var(--texto-suave); margin-top: 14px; letter-spacing: .1em; }
+  .en-vivo { display: inline-flex; align-items: center; gap: 12px; font-family: var(--datos); font-size: 22px; letter-spacing: .16em; color: var(--alerta); margin-bottom: 28px; }
+  .en-vivo::before { content: ""; width: 16px; height: 16px; border-radius: 50%; background: var(--alerta); animation: latido 1.2s infinite; }
+  @keyframes latido { 50% { opacity: .6; } }
+
+  /* Arquitectura */
+  .flujo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 64px; margin-top: 88px; }
+  .paso { position: relative; background: var(--superficie); border: 1px solid var(--linea); border-radius: 28px; padding: 40px 32px 36px; text-align: center; }
+  .paso:not(:last-child)::after { content: "→"; position: absolute; right: -50px; top: 50%; transform: translateY(-50%); font-size: 40px; color: var(--texto-suave); }
+  .paso .icono { display: block; width: 60px; height: 60px; margin: 0 auto; color: var(--texto-medio); }
+  .paso.clave .icono { color: var(--protegido); }
+  .paso h3 { font-family: var(--titular); font-size: 44px; margin: 24px 0 12px; letter-spacing: -0.02em; }
+  .paso p { margin: 0; font-size: 26px; line-height: 1.3; color: var(--texto-medio); min-height: 2.6em; }
+  .paso code { display: inline-block; margin-top: 22px; font-family: var(--datos); font-size: 20px; color: var(--texto-suave); border: 1px solid var(--linea); border-radius: 8px; padding: 6px 12px; }
+  .paso.clave { border-color: #2b5745; background: var(--protegido-fondo); }
+  .paso.clave h3 { color: var(--protegido); }
+  .pie-flujo { margin-top: 64px; font-size: 30px; color: var(--texto-medio); text-align: center; }
+  .pie-flujo b { color: var(--texto); }
+
+  /* Números grandes */
+  .numeros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 64px; }
+  .numero { border-top: 3px solid var(--protegido); padding-top: 24px; }
+  .numero strong { display: block; white-space: nowrap; font-family: var(--titular); font-size: 104px; letter-spacing: -0.04em; line-height: 1; }
+  .numero span { display: block; font-size: 28px; line-height: 1.3; color: var(--texto-medio); margin-top: 16px; }
+  .auditoria { margin-top: 56px; font-size: 30px; line-height: 1.35; color: var(--texto-medio); border-left: 4px solid var(--alerta); padding-left: 24px; }
+  .auditoria b { color: var(--texto); }
+
+  /* Tablas */
+  table { width: 100%; border-collapse: collapse; margin-top: 52px; font-size: 32px; }
+  td { white-space: nowrap; }
+  th { text-align: left; font-family: var(--datos); font-weight: 500; font-size: 18px; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-suave); padding: 0 20px 14px 0; border-bottom: 1px solid var(--linea); }
+  td { padding: 24px 40px 24px 0; border-bottom: 1px solid var(--linea); vertical-align: top; line-height: 1.3; color: var(--texto-medio); }
+  td:first-child { color: var(--texto); font-family: var(--titular); font-weight: 600; }
+  .fuera { margin-top: 30px; font-size: 24px; color: var(--texto-suave); }
+  .fuera b { color: var(--texto-medio); }
+  .fuera.grande { font-family: var(--titular); font-size: 52px; letter-spacing: -0.02em; margin-top: 80px; }
+  .grandes .tarjeta p { font-size: 36px; }
+  .fuera.grande b { color: var(--texto); }
+
+  /* Preguntas */
+  .cierre .qr { width: 300px; height: 300px; }
+  .cierre { display: grid; grid-template-columns: 1fr auto; gap: 48px; align-items: center; height: 100%; }
+  .cierre h1 { font-size: 140px; }
+  .equipo { margin-top: 32px; font-size: 30px; color: var(--texto-medio); }
+  .calidad { margin-top: 40px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .calidad span { font-family: var(--datos); font-size: 22px; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--linea); color: var(--texto-medio); }
+  .marca { display: flex; align-items: center; gap: 16px; font-family: var(--titular); font-weight: 600; font-size: 30px; margin-bottom: 40px; }
+  .marca img { width: 56px; height: 56px; }
+
+  /* Respaldo */
+  .respaldo .bloque b { color: var(--falta); }
+  .lamina.centrada.activa, .vp-mini .lamina.centrada { display: flex; flex-direction: column; justify-content: center; padding-top: 110px; }
+  .lista { margin: 40px 0 0; padding: 0; list-style: none; font-size: 32px; line-height: 1.35; }
+  .lista li { white-space: nowrap; padding: 18px 0; border-bottom: 1px solid var(--linea); color: var(--texto-medio); }
+  .lista li b { color: var(--texto); }
+
+  /* Pantalla negra (tecla B) e índice (tecla I) */
+  .negro { position: fixed; inset: 0; background: #000; z-index: 20; display: none; }
+  body.en-negro .negro { display: block; }
+  .indice { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.88); display: none; overflow: auto; padding: 48px; }
+  body.con-indice .indice { display: block; }
+  .indice h3 { font-family: var(--datos); letter-spacing: .16em; font-size: 14px; color: var(--texto-suave); margin: 0 0 16px; text-transform: uppercase; }
+  .indice ol { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+  .indice button { width: 100%; text-align: left; background: var(--superficie); color: var(--texto); border: 1px solid var(--linea); border-radius: 12px; padding: 14px 16px; font: 500 16px var(--cuerpo); cursor: pointer; }
+  .indice button:hover, .indice button.actual { border-color: var(--protegido); }
+  .indice button em { display: block; font: 12px var(--datos); color: var(--texto-suave); font-style: normal; letter-spacing: .1em; margin-bottom: 4px; }
+
+  .ayuda { position: fixed; left: 16px; bottom: 12px; font: 12px var(--datos); color: #5c554d; z-index: 5; transition: opacity .5s; }
+  body.quieto .ayuda, body.captura .ayuda { opacity: 0; }
+  body.captura .lamina.activa { animation: none; }
+  body.quieto { cursor: none; }
+
+  /* ---------- Vista de presentador (?presentador) ---------- */
+  body.presentador { overflow: auto; background: var(--fondo); }
+  body.presentador .escenario, body.presentador .ayuda { display: none; }
+  .vp { display: none; }
+  body.presentador .vp { display: grid; grid-template-columns: 1.35fr 1fr; grid-template-rows: auto 1fr; gap: 20px; padding: 20px; min-height: 100vh; }
+  .vp-reloj { grid-column: 1 / -1; display: flex; align-items: center; gap: 28px; background: var(--superficie); border: 1px solid var(--linea); border-radius: 16px; padding: 14px 22px; }
+  .vp-tiempo { font: 600 56px var(--datos); letter-spacing: -0.02em; min-width: 4.2em; }
+  .vp-tiempo.tarde { color: var(--alerta); }
+  .vp-tiempo.ok { color: var(--protegido); }
+  .vp-meta { flex: 1; }
+  .vp-meta b { display: block; font: 600 22px var(--titular); }
+  .vp-meta span { font: 14px var(--datos); color: var(--texto-suave); letter-spacing: .06em; }
+  .vp-linea { position: relative; height: 10px; border-radius: 6px; background: var(--linea); margin-top: 10px; overflow: hidden; }
+  .vp-linea i { position: absolute; top: 0; bottom: 0; left: 0; background: var(--protegido); }
+  .vp-linea u { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--texto-suave); }
+  .vp button { background: var(--superficie-alta); color: var(--texto); border: 1px solid var(--linea); border-radius: 10px; padding: 10px 16px; font: 600 15px var(--cuerpo); cursor: pointer; }
+  .vp-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .vp-etq { font: 12px var(--datos); letter-spacing: .16em; color: var(--texto-suave); text-transform: uppercase; }
+  .vp-mini { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; border: 1px solid var(--linea); background: #000; }
+  .vp-mini .lienzo { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+  .vp-mini .lamina { display: block; animation: none; }
+  .vp-siguiente { max-width: 70%; }
+  .vp-notas { background: var(--superficie); border: 1px solid var(--linea); border-radius: 16px; padding: 22px 26px; font-size: 24px; line-height: 1.45; overflow: auto; flex: 1; }
+  .vp-notas p { margin: 0 0 14px; }
+  .vp-notas ol, .vp-notas ul { margin: 0 0 14px; padding-left: 1.2em; }
+  .vp-notas li { margin-bottom: 8px; }
+  .vp-notas .t { font: 600 16px var(--datos); color: var(--protegido); margin-right: 8px; }
+  .vp-notas .ojo { color: var(--falta); }
+  .vp-notas q { color: var(--texto); }
+  .vp-notas { color: var(--texto-medio); }
+  .vp-pos { font: 600 18px var(--datos); }
+</style>
+</head>
+<body>
+
+<div class="escenario"><div class="lienzo" id="lienzo">
+
+<!-- ================= 1 · PROBLEMA (0:00 a 0:30) ================= -->
+
+<section class="lamina con-foto" data-bloque="1" data-titulo="5 segundos" data-meta="0:10"
+  style="background-image:url(img/arrebato.jpg)">
+  <div class="centrado-v">
+    <h1>5 segundos.</h1>
+    <p class="bajada">Te arranchan el celular desde una moto.</p>
+  </div>
+  <span class="generada">Imagen generada con Gemini</span>
+  <aside class="notas">
+    <p><span class="t">0:00</span><q>Estás en la vereda, con el celular en la mano. Pasa una moto y en 5 segundos ya no lo tienes.</q></p>
+    <p>Una sola frase. No leas la lámina. Avanza enseguida.</p>
+  </aside>
+</section>
+
+<section class="lamina con-foto oscuro" data-bloque="1" data-titulo="Lo peor viene después" data-meta="0:20"
+  style="background-image:url(img/despues.jpg)">
+  <div class="centrado-v">
+    <h2>Lo peor viene<br>después.</h2>
+    <div class="logos">
+      <span class="logo yape"><img src="img/logos/yape.svg" alt="Yape"></span>
+      <span class="logo"><img src="img/logos/bcp.svg" alt="BCP"></span>
+      <span class="logo"><img src="img/logos/interbank.svg" alt="Interbank"></span>
+      <span class="logo"><img src="img/logos/bbva.svg" alt="BBVA"></span>
+      <span class="logo"><img src="img/logos/whatsapp.svg" alt="WhatsApp"></span>
+    </div>
+    <div class="cifra"><strong>728 493</strong><span>celulares reportados como robados<br>en el 1.<sup>er</sup> semestre de 2025</span></div>
+    <p class="fuente">Fuente: RENTESEG / OSIPTEL · sin separar por tipo de robo</p>
+  </div>
+  <span class="generada">Imagen generada con Gemini</span>
+  <aside class="notas">
+    <p><span class="t">0:10</span><q>Y lo peor viene después: con tu celular entran a tu Yape, a tu banco, a tu WhatsApp.</q></p>
+    <p><q>Y tú, sin celular, no puedes bloquear nada: el código de verificación llega… al celular robado.</q></p>
+    <p>Si preguntan por la cifra: es de RENTESEG/OSIPTEL y <b>no separa</b> arrebatos en moto del resto. No digas "728 mil arrebatos".</p>
+  </aside>
+</section>
+
+<section class="lamina centrada" data-bloque="1" data-titulo="Un caso real" data-meta="0:30">
+  <p class="caso-etq">Un caso real · Jesús María, Lima</p>
+  <p class="cita">“De mi Yape habían pasado 4 plines de 500… me robaron 2000 soles.”</p>
+  <p class="quien">Fuente: Trome, abril de 2026</p>
+  <div class="dos">
+    <div class="tarjeta"><small>Para quién</small><p>Quien camina en Lima con el celular en la mano.</p></div>
+    <div class="tarjeta"><small>Qué resolvemos</small><p>El celular <b class="menta">avisa solo</b>, y tu red <b class="menta">bloquea tus cuentas</b> por ti.</p></div>
+  </div>
+  <aside class="notas">
+    <p><span class="t">0:20</span><q>Esto le pasó a una vecina de Jesús María: le arrancharon el celular desde una moto con Yape abierto y en minutos le sacaron 2000 soles.</q></p>
+    <p><q>Para quién: cualquiera que camina en Lima con el celular en la mano. Qué resolvemos: el celular se da cuenta solo del arrebato, avisa a tu familia con la ruta del ladrón, y ellos bloquean tus cuentas por ti.</q></p>
+    <p>Es un caso de prensa (Trome, av. Brasil, abril de 2026), no una entrevista nuestra: si preguntan, dilo así. El monto lo dice la víctima; la nota no lo confirma por su cuenta.</p>
+  </aside>
+</section>
+
+<!-- ================= 2 · DEMO EN VIVO (0:30 a 2:30) ================= -->
+
+<section class="lamina" data-bloque="2" data-titulo="Demo en vivo" data-meta="2:30">
+  <div class="demo">
+    <div>
+      <div class="en-vivo">EN VIVO · DESDE LA URL PÚBLICA</div>
+      <h1>Demo.</h1>
+      <p class="url">alerta-arrebato.gabrieldgc1999.workers.dev</p>
+    </div>
+    <div>
+      <div class="qr"><img src="img/qr-app.svg" alt="Código QR de la URL pública"></div>
+      <p class="qr-pie">ESCANEA Y PRUÉBALA</p>
+    </div>
+  </div>
+  <aside class="notas">
+    <p><span class="t">0:30</span><q>Esto corre en vivo desde nuestra URL pública. [Nombre] lleva el celular; [nombre] es el ladrón.</q> Pulsa <b>B</b> si cambias de pantalla al celular.</p>
+    <ol>
+      <li><span class="t">0:40</span><b>Arrebato.</b> Celular en la mano, protección activa (modo demo). El "ladrón" lo arrancha y se va corriendo. Di: <q>En la demo usamos el umbral de alguien corriendo; en la calle es el de una moto, a más de 15 km/h.</q></li>
+      <li><span class="t">0:55</span><b>Se bloquea.</b> Android al instante; iPhone con Atajos (le llega un SMS y se bloquea solo).</li>
+      <li><span class="t">1:05</span><b>"¿Todo bien?"</b> en silencio: 10 s para cancelar con el PIN. No lo canceles.</li>
+      <li><span class="t">1:20</span><b>Llega el aviso</b> por WhatsApp y SMS al celular del contacto. Muéstralo.</li>
+      <li><span class="t">1:35</span><b>Página del contacto</b> en la laptop, desde la URL pública: ruta en vivo, hacia dónde va y a qué velocidad.</li>
+      <li><span class="t">1:55</span><b>"Fue un robo: bloquear sus cuentas".</b> Aparece la lista: 1820 (bancos), operadora (línea e IMEI), denuncia PNP. Marca uno: <q>toda la red ve quién ya lo hizo.</q></li>
+      <li><span class="t">2:20</span>Cierre: <q>Mientras tú no tienes celular, tu red ya está bloqueando tus cuentas.</q></li>
+    </ol>
+    <p class="ojo">Si el arrebato no dispara en 15 s: Tú → Herramientas → Ensayo. Dilo en voz alta: <q>lo disparamos a mano para no perder tiempo</q>. No finjas.</p>
+  </aside>
+</section>
+
+<!-- ================= 3 · CÓMO ESTÁ HECHO (2:30 a 3:00) ================= -->
+
+<section class="lamina" data-bloque="3" data-titulo="Arquitectura" data-meta="2:40">
+  <h2>Cómo está hecho</h2>
+  <div class="flujo">
+    <div class="paso"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M12 18h.01"/></svg><h3>Celular</h3><p>Sensores y GPS</p><code>Kotlin · Swift</code></div>
+    <div class="paso clave"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><h3>Detector</h3><p>Decide ahí mismo, sin internet</p><code>TypeScript propio</code></div>
+    <div class="paso"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg><h3>Nube</h3><p>Guarda la ruta en vivo</p><code>Cloudflare</code></div>
+    <div class="paso"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>Tu red</h3><p>Recibe el aviso con la ruta</p><code>WhatsApp · SMS</code></div>
+  </div>
+  <p class="pie-flujo">Al confirmar, el celular <b>se bloquea</b>: Android al instante, iPhone con Atajos.</p>
+  <aside class="notas">
+    <p><span class="t">2:30</span><q>El celular lee sus sensores; nuestro detector decide ahí mismo, sin internet, buscando 3 señales: el jalón, que no íbamos en un vehículo y la huida. El mismo código corre en iPhone, Android y web.</q></p>
+    <p><q>El backend en Cloudflare guarda la ruta en vivo y avisa por WhatsApp y SMS a la vez. En iPhone, como Apple no deja bloquear la pantalla, mandamos un SMS que dispara Atajos.</q></p>
+    <p>Complejidad técnica vale 30% y es el desempate: señala la lámina, no la leas.</p>
+  </aside>
+</section>
+
+<section class="lamina" data-bloque="3" data-titulo="Datos reales" data-meta="2:50">
+  <h2>Probado con datos reales</h2>
+  <div class="numeros">
+    <div class="numero"><strong>23/24</strong><span>jalones detectados en robos escenificados reales</span></div>
+    <div class="numero"><strong>1/10&nbsp;h</strong><span>falsas alarmas: 9 en 93 horas reales de 3 personas</span></div>
+    <div class="numero"><strong>~5 s</strong><span>del arrebato al aviso<br>(4,5 a 6 s)</span></div>
+  </div>
+  <p class="auditoria">Una auditoría independiente dijo que éramos optimistas. <b>Corregimos el detector.</b></p>
+  <p class="fuente" style="margin-top:20px">Datasets públicos SHL y SPU · 167 pruebas en el repo</p>
+  <aside class="notas">
+    <p><span class="t">2:40</span><q>No nos quedamos con nuestro simulador: lo probamos con datos reales de terceros. 23 de 24 jalones, una falsa alarma cada 10 horas, y el aviso sale en unos 5 segundos.</q></p>
+    <p>Si preguntan por las falsas alarmas: la familia solo se entera a los 10 s y el dueño cancela con su PIN (lámina de respaldo A).</p>
+    <p>No digas que son "pruebas en la calle": son datasets públicos y empalmes semi-reales.</p>
+  </aside>
+</section>
+
+<section class="lamina" data-bloque="3" data-titulo="Decisiones" data-meta="3:00">
+  <h2>Decisiones</h2>
+  <table>
+    <thead><tr><th>Decidimos</th><th>Por qué</th><th>Lo que cuesta</th></tr></thead>
+    <tbody>
+      <tr><td>Alerta silenciosa</td><td>Sonar provoca violencia</td><td>Se entera tu red, no tú</td></tr>
+      <tr><td>Solo moto</td><td>Firma física clara</td><td>No detecta lanzas</td></tr>
+      <tr><td>iPhone con Atajos</td><td>Apple no deja bloquear</td><td>Tarda unos segundos</td></tr>
+      <tr><td>Tu red bloquea el banco</td><td>No hay API bancaria</td><td>Alguien llama al 1820</td></tr>
+    </tbody>
+  </table>
+  <aside class="notas">
+    <p><span class="t">2:50</span><q>Tres decisiones: la alerta es silenciosa para no provocar violencia; solo detectamos la moto porque deja una firma clara; y como no hay API de los bancos, le damos a tu red el número y los datos listos.</q></p>
+    <p>A las 3:00 se corta: si vas tarde, salta esta lámina y deja que el jurado la vea.</p>
+  </aside>
+</section>
+
+<!-- ================= 4 · PREGUNTAS (3:00 a 5:00) ================= -->
+
+<section class="lamina" data-bloque="4" data-titulo="Preguntas" data-meta="5:00">
+  <div class="cierre">
+    <div>
+      <div class="marca"><img src="img/marca/logo.svg" alt="">Vigía</div>
+      <h1>¿Preguntas?</h1>
+      <p class="equipo">Gabriel · Cesar · Mauricio · Piero</p>
+      <div class="calidad"><span>167 pruebas automáticas</span><span>Sin claves en el repo</span><span>Todo por Pull Request</span></div>
+    </div>
+    <div>
+      <div class="qr"><img src="img/qr-app.svg" alt="QR de la app"></div>
+      <p class="qr-pie">LA APP</p>
+    </div>
+  </div>
+  <aside class="notas">
+    <p><span class="t">3:00</span>Deja esta lámina mientras preguntan. Usa <b>I</b> para saltar a una lámina de respaldo y vuelve aquí al terminar.</p>
+    <ul>
+      <li>¿Falsas alarmas? → A</li>
+      <li>¿Google ya lo hace? → B</li>
+      <li>¿La app bloquea el banco? → C</li>
+      <li>¿Y en la demo, por qué corriendo? → D</li>
+      <li>¿Qué falta? → E</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ================= Respaldo (solo si preguntan) ================= -->
+
+<section class="lamina respaldo" data-bloque="4" data-respaldo="A" data-titulo="A · Falsas alarmas">
+  <h2>¿Y las falsas alarmas?</h2>
+  <table>
+    <thead><tr><th>Situación</th><th>Cómo la descartamos</th></tr></thead>
+    <tbody>
+      <tr><td>Se te cae el celular</td><td>Queda quieto y el GPS no se mueve</td></tr>
+      <tr><td>Bache en la moto, frenazo en la combi</td><td>Ya ibas en un vehículo antes del golpe (GPS)</td></tr>
+      <tr><td>Auto parado que arranca en el semáforo</td><td>Historial de 2 min y la velocidad sube de a poco</td></tr>
+      <tr><td>Sacas el celular del bolsillo</td><td>Después sigues caminando: no hay huida</td></tr>
+    </tbody>
+  </table>
+  <p class="fuera">Y si igual se equivoca: <b>10 segundos en silencio para cancelar con tu PIN</b> antes de avisar a tu red.</p>
+  <aside class="notas"><p>Dato real: 9 falsas alarmas en 93 h (SHL), con el celular en la mano. Sin GPS no alertamos solos (daba 18 falsas alarmas en 3,3 h).</p></aside>
+</section>
+
+<section class="lamina respaldo" data-bloque="4" data-respaldo="B" data-titulo="B · ¿Y Google?">
+  <h2>¿Google no hace esto ya?</h2>
+  <div class="dos grandes" style="margin-top:56px">
+    <div class="tarjeta"><small>Google · Bloqueo por detección de robo</small><p>Detecta el arrebato y <b>solo bloquea la pantalla</b>. Nadie se entera.</p></div>
+    <div class="tarjeta"><small>Vigía</small><p>Detecta y <b class="menta" style="white-space:nowrap">avisa sola a tu red</b>, con la ruta en vivo.</p></div>
+  </div>
+  <p class="fuera grande"><b>No competimos con Google: lo sumamos.</b></p>
+  <aside class="notas"><p>Su bloqueo protege tus datos; nosotros avisamos a tu familia. Además no funciona con la pantalla bloqueada. Las apps de SOS piden apretar un botón, y en un arrebato no hay tiempo.</p><p>Detalle y fuentes: docs/limites-google-y-apps-parecidas.md. Un integrante lo tenía activado en su Galaxy sin saberlo.</p></aside>
+</section>
+
+<section class="lamina respaldo" data-bloque="4" data-respaldo="C" data-titulo="C · ¿Bloquea el banco?">
+  <h2>¿La app bloquea el banco sola?</h2>
+  <p class="bajada ancha">No hay API: el banco verifica al titular.<br>Ponemos <b class="menta" style="white-space:nowrap">el número correcto frente a la persona correcta</b>.</p>
+  <ul class="lista">
+    <li><b>1820 (ASBANC)</b>: conecta con el área de bloqueo de 17 bancos</li>
+    <li><b>La operadora</b>: suspende la línea y bloquea el IMEI</li>
+    <li><b>Denuncia digital de la PNP</b> y "Checa tu IMEI"</li>
+  </ul>
+  <p class="fuera">Los datos solo se ven cuando alguien confirma el robo, y se borran al cancelar o a las 24 h.</p>
+  <aside class="notas"><p>Los números son fijos y con fuente (apps/api/src/bloqueo.ts): nunca se buscan en internet durante un robo. Para Plin, el 1820 es deducción nuestra (Plin va sobre esos bancos).</p></aside>
+</section>
+
+<section class="lamina respaldo" data-bloque="4" data-respaldo="D" data-titulo="D · Demo vs. calle">
+  <h2>Demo vs. calle</h2>
+  <table>
+    <thead><tr><th>Umbral</th><th>En la calle</th><th>En la demo</th></tr></thead>
+    <tbody>
+      <tr><td>Velocidad de huida</td><td>≥ 15 km/h, 2 lecturas seguidas</td><td>≥ 7 km/h (alguien corriendo)</td></tr>
+      <tr><td>Jalón</td><td>≥ 1,5 g y giro ≥ 4 rad/s</td><td>≥ 1,2 g y giro ≥ 4 rad/s</td></tr>
+      <tr><td>Sin GPS</td><td>No alerta solo</td><td>Sí (para la demo bajo techo)</td></tr>
+    </tbody>
+  </table>
+  <p class="fuera"><b>Nadie se pone delante de una moto:</b> los arrebatos de prueba se hacen a pie o en bici, en un lugar vacío.</p>
+  <aside class="notas"><p>Los umbrales viven en packages/detector/src/config.ts.</p></aside>
+</section>
+
+<section class="lamina respaldo" data-bloque="4" data-respaldo="E" data-titulo="E · Lo que falta">
+  <h2>Lo que todavía falta</h2>
+  <ul class="lista">
+    <li><b>Grabar arrebatos en bici con GPS</b> (no hay datos públicos)</li>
+    <li><b>WhatsApp a cualquiera:</b> Meta revisa las plantillas</li>
+    <li><b>Si cierras la app deslizándola,</b> la protección se apaga</li>
+    <li><b>Mapa con calles reales</b> en la página del contacto</li>
+  </ul>
+  <aside class="notas"><p>El SMS ya llega a cualquiera. Hoy el mapa del contacto es esquemático, con un botón a Google Maps. La lista completa está en el README, sección "Ideas pendientes". El evento pide separar lo que funciona de lo que falta.</p></aside>
+</section>
+
+</div></div>
+
+<div class="negro"></div>
+<nav class="indice" id="indice"><h3>Índice · Esc para cerrar</h3><ol id="indice-lista"></ol></nav>
+<div class="ayuda">← → avanzar · P presentador · F pantalla completa · B negro · I índice</div>
+
+<!-- Vista de presentador -->
+<div class="vp" id="vp">
+  <div class="vp-reloj">
+    <div class="vp-tiempo" id="vp-tiempo">0:00</div>
+    <div class="vp-meta">
+      <b id="vp-bloque">—</b>
+      <span id="vp-objetivo">—</span>
+      <div class="vp-linea" id="vp-linea"><i id="vp-avance"></i></div>
+    </div>
+    <div class="vp-pos" id="vp-pos">1 / 1</div>
+    <button id="vp-empezar">Empezar (S)</button>
+    <button id="vp-reiniciar">Reiniciar (R)</button>
+  </div>
+  <div class="vp-col">
+    <span class="vp-etq">Ahora</span>
+    <div class="vp-mini" id="vp-actual"></div>
+    <span class="vp-etq">Siguiente</span>
+    <div class="vp-mini vp-siguiente" id="vp-siguiente"></div>
+  </div>
+  <div class="vp-col">
+    <span class="vp-etq">Qué decir</span>
+    <div class="vp-notas" id="vp-notas"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // Bloques oficiales del evento: inicio y fin en segundos
+  const BLOQUES = [
+    { n: 1, nombre: "Problema", corto: "Problema", desde: 0, hasta: 30 },
+    { n: 2, nombre: "Demo en vivo", corto: "Demo en vivo", desde: 30, hasta: 150 },
+    { n: 3, nombre: "Cómo está hecho", corto: "Cómo", desde: 150, hasta: 180 },
+    { n: 4, nombre: "Preguntas", corto: "Preguntas", desde: 180, hasta: 300 },
+  ];
+  const CORTE = 180;     // a los 3:00 se corta la demo
+  const AVISO = 165;     // a los 2:45 el reloj se pone naranja
+  const CANAL = "alerta-arrebato-presentacion";
+
+  const esPresentador = new URLSearchParams(location.search).has("presentador");
+  const lienzo = document.getElementById("lienzo");
+  const laminas = [...lienzo.querySelectorAll(".lamina")];
+  let actual = 0;
+
+  const formato = (s) => {
+    const signo = s < 0 ? "-" : "";
+    s = Math.abs(Math.floor(s));
+    return `${signo}${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  };
+  const bloqueDe = (lamina) => BLOQUES[Number(lamina.dataset.bloque) - 1];
+
+  // Encabezado y barra de progreso en cada lámina
+  laminas.forEach((lamina) => {
+    const b = bloqueDe(lamina);
+    const encabezado = document.createElement("div");
+    encabezado.className = "bloque";
+    const rango = lamina.dataset.respaldo ? `Respaldo ${lamina.dataset.respaldo}` : `${formato(b.desde)} a ${formato(b.hasta)}`;
+    encabezado.innerHTML = `<span><b>${b.n} · ${b.nombre}</b></span><span>${rango}</span>`;
+    lamina.prepend(encabezado);
+    const barra = document.createElement("div");
+    barra.className = "progreso";
+    barra.innerHTML = BLOQUES.map((x) =>
+      `<span class="${x.n < b.n ? "hecho" : x.n === b.n ? "ahora" : ""}">${x.corto}</span>`).join("");
+    lamina.append(barra);
+  });
+
+  // ---------- Sincronía entre la vista principal y la del presentador ----------
+  // BroadcastChannel cuando hay servidor; postMessage entre ventanas cuando se abre como archivo local
+  let canal = null;
+  try { canal = new BroadcastChannel(CANAL); } catch { canal = null; }
+  let otraVentana = esPresentador ? window.opener : null;
+  const enviar = (mensaje) => {
+    const datos = { canal: CANAL, ...mensaje };
+    try { canal && canal.postMessage(datos); } catch {}
+    try { otraVentana && !otraVentana.closed && otraVentana.postMessage(datos, "*"); } catch {}
+  };
+  const recibir = (datos) => {
+    if (!datos || datos.canal !== CANAL) return;
+    if (datos.tipo === "ir" && datos.indice !== actual) ir(datos.indice, false);
+    if (datos.tipo === "reloj") { reloj = datos.reloj; pintarReloj(); }
+    if (datos.tipo === "hola" && !esPresentador) enviar({ tipo: "ir", indice: actual });
+  };
+  if (canal) canal.onmessage = (e) => recibir(e.data);
+  window.addEventListener("message", (e) => recibir(e.data));
+
+  // ---------- Navegación ----------
+  function ir(indice, avisar = true) {
+    actual = Math.max(0, Math.min(laminas.length - 1, indice));
+    laminas.forEach((l, i) => l.classList.toggle("activa", i === actual));
+    history.replaceState(null, "", `${location.search}#${actual + 1}`);
+    marcarIndice();
+    if (esPresentador) pintarPresentador();
+    if (avisar) enviar({ tipo: "ir", indice: actual });
+  }
+  const avanzar = () => ir(actual + 1);
+  const retroceder = () => ir(actual - 1);
+
+  // Índice (para saltar a las láminas de respaldo)
+  const listaIndice = document.getElementById("indice-lista");
+  laminas.forEach((l, i) => {
+    const b = bloqueDe(l);
+    const li = document.createElement("li");
+    li.innerHTML = `<button><em>${l.dataset.respaldo ? "RESPALDO" : `${b.n} · ${b.nombre.toUpperCase()}`}</em>${l.dataset.titulo}</button>`;
+    li.firstChild.onclick = () => { document.body.classList.remove("con-indice"); ir(i); };
+    listaIndice.append(li);
+  });
+  function marcarIndice() {
+    [...listaIndice.querySelectorAll("button")].forEach((b, i) => b.classList.toggle("actual", i === actual));
+  }
+
+  // ---------- Cronómetro (vive en las dos ventanas) ----------
+  let reloj = { inicio: null, acumulado: 0 };   // inicio: Date.now() cuando corre
+  const transcurrido = () => reloj.acumulado + (reloj.inicio ? (Date.now() - reloj.inicio) / 1000 : 0);
+  function alternarReloj() {
+    reloj = reloj.inicio
+      ? { inicio: null, acumulado: transcurrido() }
+      : { inicio: Date.now(), acumulado: reloj.acumulado };
+    enviar({ tipo: "reloj", reloj }); pintarReloj();
+  }
+  function reiniciarReloj() { reloj = { inicio: null, acumulado: 0 }; enviar({ tipo: "reloj", reloj }); pintarReloj(); }
+
+  // ---------- Vista de presentador ----------
+  const $ = (id) => document.getElementById(id);
+  function miniatura(contenedor, indice) {
+    contenedor.innerHTML = "";
+    if (indice >= laminas.length) { contenedor.innerHTML = '<div style="display:grid;place-items:center;height:100%;color:#5c554d;font:14px var(--datos)">FIN</div>'; return; }
+    const copia = document.createElement("div");
+    copia.className = "lienzo";
+    const lamina = laminas[indice].cloneNode(true);
+    lamina.classList.add("activa");
+    copia.append(lamina);
+    contenedor.append(copia);
+    copia.style.transform = `scale(${contenedor.clientWidth / 1600})`;
+  }
+  function pintarPresentador() {
+    const l = laminas[actual];
+    const b = bloqueDe(l);
+    miniatura($("vp-actual"), actual);
+    miniatura($("vp-siguiente"), actual + 1);
+    $("vp-notas").innerHTML = l.querySelector("aside.notas")?.innerHTML || "<p>Sin notas.</p>";
+    $("vp-pos").textContent = `${actual + 1} / ${laminas.length}`;
+    $("vp-bloque").textContent = l.dataset.respaldo ? `Respaldo · ${l.dataset.titulo}` : `${b.n} · ${b.nombre} (${formato(b.desde)} a ${formato(b.hasta)})`;
+    pintarReloj();
+  }
+  function pintarReloj() {
+    if (!esPresentador) return;
+    const t = transcurrido();
+    const tiempo = $("vp-tiempo");
+    tiempo.textContent = formato(t);
+    tiempo.className = "vp-tiempo " + (t >= AVISO && t < CORTE + 120 ? "tarde" : reloj.inicio ? "ok" : "");
+    const l = laminas[actual];
+    const meta = l.dataset.meta;
+    const bloqueAhora = BLOQUES.find((x) => t >= x.desde && t < x.hasta) || BLOQUES[3];
+    const restaCorte = CORTE - t;
+    $("vp-objetivo").textContent =
+      (meta ? `Termina esta lámina a las ${meta} · ` : "") +
+      (restaCorte > 0 ? `Corte en ${formato(restaCorte)} · ahora deberías estar en: ${bloqueAhora.nombre}` : `Preguntas: quedan ${formato(300 - t)}`);
+    $("vp-avance").style.width = `${Math.min(100, (t / 300) * 100)}%`;
+    $("vp-empezar").textContent = reloj.inicio ? "Pausar (S)" : t > 0 ? "Seguir (S)" : "Empezar (S)";
+  }
+  if (esPresentador) {
+    document.body.classList.add("presentador");
+    document.title = "Presentador · Vigía";
+    BLOQUES.slice(1).forEach((b) => {
+      const marca = document.createElement("u");
+      marca.style.left = `${(b.desde / 300) * 100}%`;
+      $("vp-linea").append(marca);
+    });
+    $("vp-empezar").onclick = alternarReloj;
+    $("vp-reiniciar").onclick = reiniciarReloj;
+    setInterval(pintarReloj, 250);
+    window.addEventListener("resize", pintarPresentador);
+  }
+
+  // ---------- Escala del lienzo a la ventana ----------
+  function escalar() {
+    const s = Math.min(innerWidth / 1600, innerHeight / 900);
+    lienzo.style.transform = `translate(-50%, -50%) scale(${s})`;
+  }
+  window.addEventListener("resize", escalar);
+  escalar();
+
+  // ---------- Teclado, clicker y toques ----------
+  document.addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const tecla = e.key;
+    if (document.body.classList.contains("con-indice")) {
+      if (tecla === "Escape" || tecla.toLowerCase() === "i") document.body.classList.remove("con-indice");
+      return;
+    }
+    if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(tecla)) { e.preventDefault(); avanzar(); }
+    else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(tecla)) { e.preventDefault(); retroceder(); }
+    else if (tecla === "Home") ir(0);
+    else if (tecla === "End") ir(laminas.findIndex((l) => l.dataset.respaldo) - 1);
+    else switch (tecla.toLowerCase()) {
+      case "p":
+        if (!esPresentador) {
+          const url = `${location.pathname}?presentador#${actual + 1}`;
+          otraVentana = window.open(url, "presentador", "width=1280,height=800");
+        }
+        break;
+      case "f":
+        if (document.fullscreenElement) document.exitFullscreen();
+        else document.documentElement.requestFullscreen?.().catch(() => {});
+        break;
+      case "b": case ".": document.body.classList.toggle("en-negro"); break;
+      case "i": document.body.classList.add("con-indice"); break;
+      case "s": alternarReloj(); break;
+      case "r": reiniciarReloj(); break;
+    }
+  });
+  if (!esPresentador) {
+    document.querySelector(".escenario").addEventListener("click", (e) => {
+      (e.clientX < innerWidth / 4 ? retroceder : avanzar)();
+    });
+    let quieto;
+    document.addEventListener("mousemove", () => {
+      document.body.classList.remove("quieto");
+      clearTimeout(quieto);
+      quieto = setTimeout(() => document.body.classList.add("quieto"), 2500);
+    });
+  }
+
+  const desdeHash = () => Math.max(0, (parseInt(location.hash.slice(1), 10) || 1) - 1);
+  window.addEventListener("hashchange", () => { if (desdeHash() !== actual) ir(desdeHash()); });
+  ir(desdeHash(), false);
+  if (esPresentador) enviar({ tipo: "hola" });
+  // ?captura: sin animación ni ayuda, para sacar capturas de cada lámina
+  if (new URLSearchParams(location.search).has("captura")) document.body.classList.add("captura");
+})();
+</script>
+</body>
+</html>

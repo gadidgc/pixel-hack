@@ -1,4 +1,4 @@
-# Plan de construcción: Alerta Arrebato
+# Plan de construcción: Vigía
 
 > Sábado 17 de octubre de 2026, ~17:30 (hora de Lima) · Preparado por Claude a pedido de Gabriel.
 > **Entrega: domingo 18, 09:00.** Quedan unas 15 horas.
@@ -291,7 +291,7 @@ Solo los nombramos si de verdad los usamos.
 ## 7. Interfaz
 
 **Propuesta de funcionalidades (Cesar):** [funcionalidades-app.md](funcionalidades-app.md), flujos F1 a F8. El detector de este plan es su funcionalidad ⭐.
-**Diseño:** sistema de diseño "Alerta Arrebato" v2 "Negro cálido" ([artifact](https://claude.ai/artifact/HW9kceGpSuZaAxxFtccVMj)) y 14 pantallas diseñadas ([artifact](https://claude.ai/artifact/3kUXLiWYpeJsixzCv4dpZp)). Ya están implementadas en `apps/movil`.
+**Diseño:** sistema de diseño "Vigía" v2 "Negro cálido" ([artifact](https://claude.ai/artifact/HW9kceGpSuZaAxxFtccVMj)) y 14 pantallas diseñadas ([artifact](https://claude.ai/artifact/3kUXLiWYpeJsixzCv4dpZp)). Ya están implementadas en `apps/movil`.
 
 **Base visual** ([src/ui/](../apps/movil/src/ui)): colores y medidas en `tema.ts` (tema **noche** por defecto; tema **día** para las páginas del contacto y "Me robaron"), íconos propios, componentes (botón, insignia, lecturas, tarjeta, hoja, línea de tiempo, barra de pestañas y animaciones que respetan "reducir movimiento"), un mapa estilizado y las fuentes Lexend, Figtree e IBM Plex Mono.
 

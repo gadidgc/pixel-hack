@@ -1,4 +1,7 @@
-# Alerta Arrebato · pixel-hack · Hack the Andes 2026 (track Seguridad)
+# Vigía · pixel-hack · Hack the Andes 2026 (track Seguridad)
+
+> **Vigía** se llamaba antes *Alerta Arrebato*. Cambiamos solo el nombre visible: la URL (`alerta-arrebato…workers.dev`),
+> la base de datos, el bundle ID y las plantillas de WhatsApp siguen con el nombre anterior para no romper nada.
 
 App para iPhone, Android y web que, con los sensores del celular (acelerómetro, giroscopio y GPS),
 **detecta cuando un ladrón en moto te arrancha el celular y avisa al instante** con la ubicación
@@ -12,6 +15,7 @@ Lima, 17 y 18 de octubre de 2026 · Equipo: Gabriel, Cesar, Mauricio, Piero.
 - ¿Y Google? Límites de su bloqueo y apps parecidas: [docs/limites-google-y-apps-parecidas.md](docs/limites-google-y-apps-parecidas.md)
 - Resultados del banco de pruebas: [packages/detector/reportes/evaluacion.md](packages/detector/reportes/evaluacion.md)
 - Rúbrica y contexto del evento: [CONTEXT.md](CONTEXT.md)
+- **Presentación de la demo** (láminas + vista de presentador con guion y cronómetro): publicada en **https://vigia.gadidgc.com** (se abre desde cualquier computadora del evento, sin conectar una laptop nuestra). Código en [docs/presentacion/](docs/presentacion/index.html); para verla en local, `python3 -m http.server` en la raíz y entra a `/docs/presentacion/`. Tecla **P** = vista de presentador. Para volver a publicarla: `npm run publicar:presentacion`.
 
 ## Cómo funciona (en 20 segundos)
 1. **Jalón:** pico de aceleración (≥ 1,5 g sin gravedad) y giro brusco (≥ 4 rad/s) en menos de medio segundo.

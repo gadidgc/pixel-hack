@@ -90,27 +90,27 @@ export function leerCodigo(texto: string): { prefijo: string; indice: number } |
 export const MENSAJES = {
   alerta: (nombre: string, t: number, enlace: string, codigo: string, web: string): Mensaje => ({
     texto: `ALERTA: posible robo del celular de ${nombre} a las ${horaLima(t)}. Probablemente ${nombre} esta bien. Ruta en vivo: ${enlace}`,
-    sms: `Alerta Arrebato: ${nombre} te tiene como contacto de emergencia y su celular envio un aviso a las ${horaLima(t)}. Mira su ubicacion en vivo en ${web} con el codigo ${codigo}. Y llamale.`,
-    smsRespaldo: `Alerta Arrebato: ${nombre} te tiene como contacto de emergencia y su celular envio un aviso a las ${horaLima(t)}. Tu codigo para ver su ubicacion en vivo es ${codigo}; te llamamos para decirte donde usarlo. Y llamale.`,
+    sms: `Vigia: ${nombre} te tiene como contacto de emergencia y su celular envio un aviso a las ${horaLima(t)}. Mira su ubicacion en vivo en ${web} con el codigo ${codigo}. Y llamale.`,
+    smsRespaldo: `Vigia: ${nombre} te tiene como contacto de emergencia y su celular envio un aviso a las ${horaLima(t)}. Tu codigo para ver su ubicacion en vivo es ${codigo}; te llamamos para decirte donde usarlo. Y llamale.`,
     web,
     plantilla: { nombre: 'alerta_arrebato', variables: [nombre, horaLima(t), enlace] },
   }),
   estaBien: (nombre: string): Mensaje => ({
     texto: `${nombre} confirmo con su PIN que esta bien: fue falsa alarma. Gracias por estar atento.`,
-    sms: `Alerta Arrebato: ${nombre} confirmo que esta bien, fue una falsa alarma. No tienes que hacer nada.`,
+    sms: `Vigia: ${nombre} confirmo que esta bien, fue una falsa alarma. No tienes que hacer nada.`,
     plantilla: { nombre: 'alerta_arrebato_bien', variables: [nombre] },
   }),
   encargado: (quien: string, nombre: string, enlace: string, codigo: string, web: string): Mensaje => ({
     texto: `${quien} dijo que se encarga del robo del celular de ${nombre}. Ruta: ${enlace}`,
-    sms: `Alerta Arrebato: ${quien} se esta encargando de lo que le paso a ${nombre}. Sigue su ubicacion en ${web} con tu codigo ${codigo}.`,
-    smsRespaldo: `Alerta Arrebato: ${quien} se esta encargando de lo que le paso a ${nombre}. Puedes seguir su ubicacion con tu codigo ${codigo}.`,
+    sms: `Vigia: ${quien} se esta encargando de lo que le paso a ${nombre}. Sigue su ubicacion en ${web} con tu codigo ${codigo}.`,
+    smsRespaldo: `Vigia: ${quien} se esta encargando de lo que le paso a ${nombre}. Puedes seguir su ubicacion con tu codigo ${codigo}.`,
     web,
     plantilla: { nombre: 'alerta_arrebato_encargado', variables: [quien, nombre, enlace] },
   }),
   prueba: (nombre: string, enlace: string, web: string): Mensaje => ({
-    texto: `PRUEBA de Alerta Arrebato: ${nombre} te eligio como contacto de confianza. Si le arranchan el celular te llegara un mensaje asi, con su ruta: ${enlace}`,
-    sms: `Alerta Arrebato: ${nombre} te agrego como contacto de confianza. Si algun dia te avisa, veras su ubicacion en ${web} con el codigo que te llegue. Para ver como se ve, usa el codigo ${CODIGO_EJEMPLO}.`,
-    smsRespaldo: `Alerta Arrebato: ${nombre} te agrego como contacto de confianza en la app. Si algun dia le roban el celular, te avisaremos por aqui. No tienes que hacer nada.`,
+    texto: `PRUEBA de Vigia: ${nombre} te eligio como contacto de confianza. Si le arranchan el celular te llegara un mensaje asi, con su ruta: ${enlace}`,
+    sms: `Vigia: ${nombre} te agrego como contacto de confianza. Si algun dia te avisa, veras su ubicacion en ${web} con el codigo que te llegue. Para ver como se ve, usa el codigo ${CODIGO_EJEMPLO}.`,
+    smsRespaldo: `Vigia: ${nombre} te agrego como contacto de confianza en la app. Si algun dia le roban el celular, te avisaremos por aqui. No tienes que hacer nada.`,
     web,
     plantilla: { nombre: 'alerta_arrebato_prueba', variables: [nombre, enlace] },
   }),
@@ -122,7 +122,7 @@ export const MENSAJES = {
  * Sin enlace y sin "robo" (el filtro de Zavu). Si cambias la palabra, cambia también la guía de la app.
  */
 export const PALABRA_BLOQUEO = 'AA-BLOQUEO';
-export const SMS_BLOQUEO = `Alerta Arrebato ${PALABRA_BLOQUEO}. Si no fuiste tu, ignora este mensaje.`;
+export const SMS_BLOQUEO = `Vigia ${PALABRA_BLOQUEO}. Si no fuiste tu, ignora este mensaje.`;
 
 /**
  * El SMS que bloquea el iPhone de la dueña. Solo SMS: un WhatsApp no dispara la automatización de Mensajes.
@@ -200,7 +200,7 @@ export function saludoLlamada(nombre: string, codigo: string, web: string): stri
   // Letra por letra, con pausas: "2, 8, K, A, A, K, 1". La web, como se dice: "alerta punto gadidgc punto com, barra aviso".
   const deletreado = codigo.split('').join(', ');
   const dicha = web.replace(/\./g, ' punto ').replace(/\//g, ', barra ');
-  return `Hola, te llama Alerta Arrebato. ${nombre} te tiene como contacto de emergencia y su celular envio un aviso hace un momento. Para ver su ubicacion en vivo, entra a ${dicha}, y escribe este codigo: ${deletreado}. Repito el codigo: ${deletreado}. Tambien te lo mandamos por mensaje de texto. Y llama a ${nombre}.`;
+  return `Hola, te llama Vigia, la aplicacion de alertas. ${nombre} te tiene como contacto de emergencia y su celular envio un aviso hace un momento. Para ver su ubicacion en vivo, entra a ${dicha}, y escribe este codigo: ${deletreado}. Repito el codigo: ${deletreado}. Tambien te lo mandamos por mensaje de texto. Y llama a ${nombre}.`;
 }
 
 /**

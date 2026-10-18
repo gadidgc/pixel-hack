@@ -100,7 +100,7 @@ ManagedSettings, iOS 16+), el mismo que usan las apps de control parental. Con l
 del dueño (diálogo de Apple, se confirma con Face ID o el código), al confirmar un arrebato el
 módulo `modules/bloqueo-pantalla/ios` pone un **escudo sobre todas las demás apps y sitios web**
 (`shield.applicationCategories = .all()`), incluida la que esté abierta, y prohíbe borrar
-Alerta Arrebato para que la ruta siga llegando.
+Vigía para que la ruta siga llegando.
 
 - **No es un bloqueo de pantalla:** el ladrón ve el inicio. Apple no deja tapar Teléfono,
   Ajustes ni las apps de "Siempre permitidas"
@@ -131,7 +131,7 @@ módulo local `modules/bloqueo-pantalla`.
 En **Tú → Bloqueo antirrobo**:
 
 1. Configurar un PIN, patrón o contraseña del sistema Android.
-2. Autorizar a Alerta Arrebato como administrador en el diálogo oficial.
+2. Autorizar a Vigía como administrador en el diálogo oficial.
 3. Usar **Probar bloqueo**, que pide confirmación y recuerda la clave necesaria.
 
 La política solicita únicamente `force-lock`. No solicita borrar datos, cambiar

@@ -42,7 +42,7 @@ function Contenido({ nombre, onCerrar }: { nombre?: string; onCerrar?: () => voi
   return (
     <Pantalla>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
-        <T v="cuerpoFuerte">Alerta Arrebato</T>
+        <T v="cuerpoFuerte">Vigía</T>
         {onCerrar ? (
           <Pressable onPress={onCerrar} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Icono nombre="cerrar" color={c.texto} />

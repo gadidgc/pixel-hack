@@ -89,7 +89,7 @@ Para la lista de apps de seguridad del Perú y de la región (Lima Segura, Reach
    └────────┬─────────┘          └──────────┬───────────┘
             └────────────┬──────────────────┘
                          ▼
-               🟢 ALERTA ARREBATO
+               🟢 VIGÍA
          detecta solo + avisa sola a la familia
 ```
 
@@ -103,7 +103,7 @@ Para la lista de apps de seguridad del Perú y de la región (Lima Segura, Reach
 
 ## 5. Comparación honesta: Google frente a nuestra app (solo el robo)
 
-| | Google | Alerta Arrebato |
+| | Google | Vigía |
 |---|---|---|
 | Qué hace al detectar | Bloquea la pantalla | Manda la alerta con ubicación y ruta de huida |
 | ¿Alguien se entera? | ❌ | ✅ La familia (**cuando exista el servidor y el panel**, ver PLAN) |

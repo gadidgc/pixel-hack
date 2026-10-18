@@ -314,7 +314,7 @@ export function Pasos({ paso, total, onVolver, titulo }: { paso: number; total: 
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           {!titulo && <Marca tam={28} ficha={c.texto} glifo={c.fondo} />}
-          <Text style={{ fontFamily: FUENTES.titular, fontSize: 17, color: c.texto }}>{titulo ?? 'Alerta Arrebato'}</Text>
+          <Text style={{ fontFamily: FUENTES.titular, fontSize: 17, color: c.texto }}>{titulo ?? 'Vigía'}</Text>
         </View>
       )}
       {/* En pantallas sueltas (total 1) solo queda el botón de volver. */}

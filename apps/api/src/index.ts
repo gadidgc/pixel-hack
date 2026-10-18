@@ -17,7 +17,7 @@ import {
 import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, type Punto } from './validar';
 
 /**
- * Backend de Alerta Arrebato en Cloudflare Workers + D1. Una sola URL pública con HTTPS:
+ * Backend de Vigía en Cloudflare Workers + D1. Una sola URL pública con HTTPS:
  * - `POST /api/eventos`: lo que manda la app (contrato en docs/PLAN.md §6.1).
  * - `GET  /api/alertas/:id`: lo que ve el contacto en `/a/:id` (sin teléfonos).
  * - `GET  /api/codigo/:codigo`: el código del SMS/llamada ("Recibí un aviso") → `{ id, contacto }`.

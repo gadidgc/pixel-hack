@@ -1,4 +1,4 @@
-import { CONFIG_DEMO, CONFIG_POR_DEFECTO, reproducir, simular, type EventoDetector } from '@pixel-hack/detector';
+import { reproducir, simular, type ConfigDetector, type EventoDetector } from '@pixel-hack/detector';
 
 /** Escenarios que se pueden probar desde la app sin moverse (útil en la laptop del jurado). */
 export const ESCENARIOS_APP = [
@@ -18,10 +18,10 @@ export interface ResultadoSimulacion {
 }
 
 /** Genera la señal con el simulador y la pasa por el mismo detector que usa la protección real. */
-export function correrSimulacion(nombre: string, titulo: string, modoDemo: boolean): ResultadoSimulacion {
+export function correrSimulacion(nombre: string, titulo: string, config: ConfigDetector): ResultadoSimulacion {
   const semilla = 1 + Math.floor(Math.random() * 1000);
   const sim = simular(nombre, semilla);
-  const r = reproducir(sim.entradas, modoDemo ? CONFIG_DEMO : CONFIG_POR_DEFECTO);
+  const r = reproducir(sim.entradas, config);
   const primera = sim.entradas[0];
   const ultima = sim.entradas[sim.entradas.length - 1];
   const tiempo = (e: typeof primera) => (!e ? 0 : e.tipo === 'imu' ? e.muestra.t : e.lectura.t);

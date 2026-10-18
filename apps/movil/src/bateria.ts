@@ -28,7 +28,7 @@ export function sinOptimizacionBateria(): boolean | null {
 }
 
 /**
- * Muestra el diálogo del sistema "¿Permitir que Alerta Arrebato se ejecute en segundo plano?".
+ * Muestra el diálogo del sistema "¿Permitir que Vigía se ejecute en segundo plano?".
  * Si el celular no lo tiene, abre la lista de "Optimización de batería" para que la persona la busque.
  */
 export async function pedirSinOptimizacionBateria(): Promise<void> {
