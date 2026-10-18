@@ -1,7 +1,7 @@
 import { Platform, View } from 'react-native';
-import { Boton, Pantalla, Pasos, T } from '../ui/componentes';
-import { Marca } from '../ui/iconos';
-import { TIPO, useTema } from '../ui/tema';
+import { Boton, Onda, Pantalla, Pasos, Respira, T } from '../ui/componentes';
+import { MarcaGlifo } from '../ui/iconos';
+import { RADIO, TIPO, useTema } from '../ui/tema';
 
 /** F1 · 1/4 Bienvenida. */
 export function Bienvenida({ onSeguir }: { onSeguir: () => void }) {
@@ -9,8 +9,16 @@ export function Bienvenida({ onSeguir }: { onSeguir: () => void }) {
   return (
     <Pantalla>
       <Pasos paso={1} total={4} />
-      <View style={{ flex: 1, minHeight: 200, alignItems: 'center', justifyContent: 'center' }}>
-        <Marca tam={112} ficha={c.texto} glifo={c.fondo} />
+      <View style={{ flex: 1, minHeight: 260, alignItems: 'center', justifyContent: 'center' }}>
+        <Onda tam={128} color={c.protegido} borde duracionMs={2800} />
+        <Onda tam={128} color={c.protegido} borde duracionMs={2800} retrasoMs={1400} />
+        <View style={{ width: 248, height: 248, borderRadius: RADIO.total, backgroundColor: c.superficie2, alignItems: 'center', justifyContent: 'center' }}>
+          <Respira>
+            <View style={{ width: 128, height: 128, borderRadius: RADIO.total, backgroundColor: c.protegidoFondo, alignItems: 'center', justifyContent: 'center' }}>
+              <MarcaGlifo tam={64} color={c.protegido} />
+            </View>
+          </Respira>
+        </View>
       </View>
       <View style={{ gap: 12 }}>
         <T v="estado" accessibilityRole="header">

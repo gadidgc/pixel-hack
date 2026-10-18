@@ -77,18 +77,35 @@ export const MARCA_GLIFO = {
   centrado: 'translate(-0.3 -0.3)',
 } as const;
 
-/** Logo de Alerta Arrebato: ficha redondeada con el glifo. En noche es crema con glifo negro; en día, al revés. */
-export function Marca({ tam = 32, ficha, glifo }: { tam?: number; ficha: string; glifo: string }) {
+function GlifoMarca({ color }: { color: string }) {
   const g = MARCA_GLIFO;
+  return (
+    <G transform={g.centrado}>
+      <Rect x={g.celular.x} y={g.celular.y} width={g.celular.ancho} height={g.celular.alto} rx={g.celular.radio} transform={g.celular.giro} fill={color} />
+      {g.ondas.map((d) => (
+        <Path key={d} d={d} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      ))}
+    </G>
+  );
+}
+
+/** Logo de Alerta Arrebato: ficha redondeada con el glifo. Para tamaños chicos (encabezados, íconos). */
+export function Marca({ tam = 32, ficha, glifo }: { tam?: number; ficha: string; glifo: string }) {
   return (
     <Svg width={tam} height={tam} viewBox="0 0 24 24" accessibilityLabel="Alerta Arrebato">
       <Rect width={24} height={24} rx={6.75} fill={ficha} />
-      <G transform={`translate(12 12) scale(0.7) translate(-12 -12) ${g.centrado}`}>
-        <Rect x={g.celular.x} y={g.celular.y} width={g.celular.ancho} height={g.celular.alto} rx={g.celular.radio} transform={g.celular.giro} fill={glifo} />
-        {g.ondas.map((d) => (
-          <Path key={d} d={d} fill="none" stroke={glifo} strokeWidth={2} strokeLinecap="round" />
-        ))}
+      <G transform="translate(12 12) scale(0.7) translate(-12 -12)">
+        <GlifoMarca color={glifo} />
       </G>
+    </Svg>
+  );
+}
+
+/** Solo el glifo, sin ficha: para ilustraciones grandes (la bienvenida), donde una ficha clara encandila. */
+export function MarcaGlifo({ tam = 24, color }: { tam?: number; color: string }) {
+  return (
+    <Svg width={tam} height={tam} viewBox="0 0 24 24">
+      <GlifoMarca color={color} />
     </Svg>
   );
 }
