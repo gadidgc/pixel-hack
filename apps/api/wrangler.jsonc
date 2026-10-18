@@ -30,7 +30,11 @@
   // Número de WhatsApp (Meta Cloud API) que manda los avisos. No es secreto; el token sí:
   // `npx wrangler secret put META_WA_TOKEN`.
   // `ZAVU_LLAMADAS`: "si" = además del SMS, Zavu llama a cada contacto (agente "Alerta Arrebato" con voz en el sender).
-  "vars": { "META_WA_NUMERO_ID": "756647020860898", "ZAVU_LLAMADAS": "si" },
+  // `ORIGEN_ENLACES`: dominio de los enlaces de los SMS (Zavu rechaza *.workers.dev).
+  "vars": { "META_WA_NUMERO_ID": "756647020860898", "ZAVU_LLAMADAS": "si", "ORIGEN_ENLACES": "https://alerta.gadidgc.com" },
+  // Dominio propio (de Gabriel) para los enlaces; workers.dev sigue activo porque la app lo usa.
+  "routes": [{ "pattern": "alerta.gadidgc.com", "custom_domain": true }],
+  "workers_dev": true,
   "triggers": { "crons": ["* * * * *"] },
   "observability": { "enabled": true }
 }

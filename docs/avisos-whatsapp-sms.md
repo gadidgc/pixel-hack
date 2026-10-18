@@ -7,6 +7,7 @@
 > - **Zavu llama a cada contacto** (agente "Alerta Arrebato" con voz en español en el sender `pixel`):
 >   "te llama la aplicacion Alerta Arrebato… revisa el mensaje de texto con su ubicacion". Se apaga con
 >   `ZAVU_LLAMADAS` en `apps/api/wrangler.jsonc`. Cada llamada queda en `envios` con tipo `llamada`.
+> - **Los enlaces usan `https://alerta.gadidgc.com`** (dominio de Gabriel, `ORIGEN_ENLACES` en `wrangler.jsonc`): Zavu rechaza los enlaces `*.workers.dev` en SMS aunque la cuenta tenga KYC. La app sigue usando workers.dev.
 > - **Falta probar con un envío real** que el SMS con enlace pase el filtro (ver `envios`: "enviado sin enlace"
 >   quiere decir que lo bloqueó).
 

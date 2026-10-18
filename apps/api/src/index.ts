@@ -37,6 +37,16 @@ export interface Env extends EnvMensajes {
   ASSETS: Fetcher;
   /** Bucket R2 `alerta-arrebato-evidencias`. */
   EVIDENCIAS: R2Bucket;
+  /**
+   * Dominio de los enlaces que mandamos por SMS/WhatsApp (p. ej. https://alerta.gadidgc.com). Zavu rechaza los
+   * enlaces `*.workers.dev` en SMS; la app puede seguir llamando a workers.dev.
+   */
+  ORIGEN_ENLACES?: string;
+}
+
+/** El dominio público de los enlaces de los mensajes; si no está configurado, el de la petición. */
+function origenEnlaces(env: Env, url: URL): string {
+  return env.ORIGEN_ENLACES?.replace(/\/+$/, '') || url.origin;
 }
 
 const MAX_CUERPO = 128 * 1024;
@@ -754,11 +764,11 @@ export default {
         } catch {
           return json({ ok: false, detalle: 'JSON inválido' }, 400);
         }
-        return await procesar(env, ctx, validarMensaje(cuerpo), url.origin);
+        return await procesar(env, ctx, validarMensaje(cuerpo), origenEnlaces(env, url));
       }
       const ver = url.pathname.match(/^\/api\/alertas\/([a-z0-9]{16})(?:\/(encargado|robo|bloqueo))?$/);
       if (ver && !ver[2] && peticion.method === 'GET') return await verAlerta(env, ver[1], url.origin);
-      if (ver && ver[2] === 'encargado' && peticion.method === 'POST') return await marcarEncargado(env, ver[1], peticion, url.origin);
+      if (ver && ver[2] === 'encargado' && peticion.method === 'POST') return await marcarEncargado(env, ver[1], peticion, origenEnlaces(env, url));
       if (ver && ver[2] === 'robo' && peticion.method === 'POST') return await confirmarRobo(env, ver[1], peticion);
       if (ver && ver[2] === 'bloqueo' && peticion.method === 'POST') return await marcarPasoBloqueo(env, ver[1], peticion);
       if (url.pathname === '/api/reportes' && peticion.method === 'GET') return await buscarReportes(env, url.searchParams, url.origin);
