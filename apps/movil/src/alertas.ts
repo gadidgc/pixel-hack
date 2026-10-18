@@ -8,8 +8,16 @@ import { Platform } from 'react-native';
  */
 const URL_ALERTAS = process.env.EXPO_PUBLIC_URL_ALERTAS ?? '';
 
+/**
+ * Lo que la app manda (nada más: un "posible jalón" NO se envía, porque caminando hay cientos por hora).
+ * - `alerta`: al instante, al panel, con la ruta de los últimos segundos.
+ * - `notificar_familia`: 10 s después, si el dueño no la canceló con su PIN.
+ * - `ubicacion`: cada lectura GPS mientras dure la alerta (la ruta de huida).
+ * - `cancelada`: el dueño puso su PIN: era falsa alarma.
+ */
 export type MensajeAlerta =
-  | { tipo: 'posible_jalon' | 'alerta' | 'cancelada'; evento: EventoDetector }
+  | { tipo: 'alerta'; evento: EventoDetector; ruta: LecturaGps[] }
+  | { tipo: 'notificar_familia' | 'cancelada'; evento: EventoDetector }
   | { tipo: 'ubicacion'; lectura: LecturaGps };
 
 export interface ResultadoEnvio {

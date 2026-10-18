@@ -21,8 +21,9 @@ Lima, 17 y 18 de octubre de 2026 · Equipo: Gabriel, Cesar, Mauricio, Piero.
 
 ## Validado con datos reales
 - **23/24** robos escenificados reales: jalón detectado (dataset SPU).
-- **5 falsas alarmas en 93 horas** reales de 3 personas con el celular en la mano; **0 en 24 h de prueba a ciegas** (dataset SHL).
-- **81–87%** de arrebatos completos semi-reales detectados, alerta a los ~4,5 s.
+- **9 falsas alarmas en 93 horas** reales de 3 personas con el celular en la mano (≈ 1 cada 10 h; dataset SHL). La familia solo se entera a los 10 s, y el dueño puede cancelar con su PIN.
+- **85–94%** de arrebatos completos semi-reales detectados (alerta a los ~4,5–6 s); **65–89%** en casos difíciles (ladrón lento, GPS lento, recién bajó del bus).
+- Una **auditoría independiente** encontró que nuestras primeras pruebas eran optimistas; corregimos el detector y la app (ver el documento).
 - Detalle, fuentes y limitaciones: [docs/validacion-datos-reales.md](docs/validacion-datos-reales.md). Todavía faltan grabaciones nuestras de arrebatos en bici.
 
 Todo vive en [`packages/detector`](packages/detector), TypeScript puro sin dependencias, probado con un simulador físico.
@@ -49,13 +50,13 @@ En la web, los sensores solo funcionan con **HTTPS** y abriendo la página direc
 - Detector con máquina de estados, filtro de gravedad con giroscopio, velocidad GPS calculada cuando el celular no la da, modo sin GPS y modo demo.
 - Simulador físico con 26 escenarios (arrebatos y trampas: caídas, mototaxi, bache, frenazo, correr al bus…), recalibrado con datos reales.
 - Validación con datasets reales de terceros (SHL, SPU) y pruebas automáticas (vitest), algunas con datos reales.
-- App Expo: activar protección, lecturas en vivo, alerta con botón de "falsa alarma", modo demo, **modo grabar** (exporta CSV) y **simular** casos sin moverse.
+- App Expo: protección **en segundo plano** en iPhone y Android (módulo nativo propio + GPS en segundo plano; exige ubicación "Permitir siempre"), **PIN** para cancelar o apagar, estado real de la alerta (panel y familia), modo demo, **modo grabar** (exporta CSV) y **simular** casos sin moverse.
 - Reproductor de grabaciones CSV reales en la terminal.
 
 ## Ideas pendientes (todavía no funciona)
 - Backend en tiempo real y panel con mapa de la ruta de huida (el envío ya está listo en la app: `EXPO_PUBLIC_URL_ALERTAS`).
 - Aviso por WhatsApp o SMS a un contacto (Zavu, disponible el domingo 18).
-- Protección con la pantalla apagada / app en segundo plano (requiere módulo nativo; ver PLAN §5).
+- Probar en celulares reales la protección en segundo plano (ya está programada: módulo nativo + GPS en segundo plano; ver PLAN §5).
 - Arrebatos simulados en bici **con GPS**, grabados por nosotros (no existen datos públicos de arrebatos desde moto).
 - Veto por Bluetooth del auto o Wi-Fi conocido (para las falsas alarmas en auto que quedan).
 - Diseño de la interfaz.

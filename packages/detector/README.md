@@ -15,7 +15,7 @@ detector.cancelar(); // falsa alarma
 
 | Comando | Qué hace |
 |---|---|
-| `npm test` | 61 pruebas (unitarias, regresión con el simulador y con datos reales de SHL) |
+| `npm test` | 64 pruebas (unitarias, regresión con el simulador y con datos reales de SHL) |
 | `npm run validar-reales -- --shl dia/ \| --spu archivo.csv` | Pasa datasets reales de terceros por el detector ([docs](../../docs/validacion-datos-reales.md)) |
 | `npm run empalme-real -- --spu ... --shl ...` | Prueba semi-real: caminata real + jalón real + huida real en vehículo |
 | `npm run evaluar` | Banco de pruebas → [reportes/evaluacion.md](reportes/evaluacion.md) |

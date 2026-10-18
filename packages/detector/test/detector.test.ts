@@ -106,6 +106,29 @@ describe('máquina de estados del detector', () => {
     expect(g.tipos()).toEqual(['descartado:ya_en_vehiculo']);
   });
 
+  it('bajó del bus, caminó 15 s y le arranchan: el historial de vehículo se borra → alerta', () => {
+    const g = new Guion()
+      .durante(20, { velocidad: 8, vibracion: 0.05 })
+      .durante(15, { velocidad: 1.3, pasos: true })
+      .jalon()
+      .durante(8, { velocidad: 9, vibracion: 0.15 });
+    expect(g.tipos()).toContain('alerta');
+  });
+
+  it('ladrón lento (11–13 km/h) sin ritmo de pasos → alerta; corriendo a esa velocidad → no', () => {
+    const lento = new Guion().durante(12).jalon().durante(8, { velocidad: 3.4, vibracion: 0.15 });
+    expect(lento.tipos()).toEqual(['posible_jalon', 'alerta']);
+    const corriendo = new Guion().durante(12).jalon().durante(12, { velocidad: 3.4, pasos: true });
+    expect(corriendo.tipos()).not.toContain('alerta');
+  });
+
+  it('segunda oportunidad: no hubo huida en 10 s, pero aparece enseguida → alerta con confianza media', () => {
+    const g = new Guion({ huidaInmediataMs: null }).durante(12).jalon().durante(11, { velocidad: 0, vibracion: 0.1 }).durante(6, { velocidad: 9, vibracion: 0.15 });
+    expect(g.tipos()).toEqual(['posible_jalon', 'descartado:sin_huida', 'alerta']);
+    const alerta = g.eventos.find((e) => e.tipo === 'alerta');
+    expect(alerta && alerta.tipo === 'alerta' && alerta.confianza).toBe('media');
+  });
+
   it('la velocidad sube de a poco (auto que arranca) → descartado (arranque_gradual)', () => {
     const g = new Guion().durante(12).jalon().durante(8, { velocidad: 2, vibracion: 0.1 }).durante(8, { velocidad: 6, vibracion: 0.1 });
     expect(g.tipos()).toEqual(['posible_jalon', 'descartado:arranque_gradual']);

@@ -73,6 +73,11 @@ export class DetectorArrebato {
   /** Última vez que vimos 2 lecturas GPS seguidas con velocidad de vehículo. */
   private tUltimoVehiculo = -Infinity;
   private lecturasVehiculoSeguidas = 0;
+  /** Cuánto llevamos caminando (con ritmo de pasos) desde la última vez en vehículo (ms). */
+  private caminandoDesdeVehiculoMs = 0;
+  private tGpsAnterior: number | null = null;
+  /** Último posible jalón descartado, para la "segunda oportunidad". */
+  private descartado: { jalon: JalonEnCurso; t: number; lecturasRapidas: number } | null = null;
   private telemetria: Telemetria = {
     t: 0,
     estado: 'reposo',
@@ -136,14 +141,21 @@ export class DetectorArrebato {
     const punto: PuntoGps = { lat: l.lat, lon: l.lon, velocidad, precision: l.precision, valida };
     this.gps.agregar(l.t, punto);
     if (valida) this.ultimoGpsValido = { t: l.t, punto };
+    this.telemetria = { ...this.telemetria, velocidadMs: velocidad, precisionGpsM: l.precision };
+    this.revisarTiempo(l.t, eventos);
+
     if (valida && velocidad !== null) {
+      // Segunda oportunidad: antes de que esta velocidad cuente como "ya íbamos en vehículo".
+      if (this.estadoActual === 'reposo') this.revisarSegundaOportunidad(l, velocidad, eventos);
       this.lecturasVehiculoSeguidas = velocidad >= this.config.velocidadVehiculoMs ? this.lecturasVehiculoSeguidas + 1 : 0;
       // Durante un posible jalón no actualizamos el historial: esa velocidad puede ser la del ladrón.
-      if (this.lecturasVehiculoSeguidas >= 2 && this.estadoActual === 'reposo') this.tUltimoVehiculo = l.t;
+      if (this.lecturasVehiculoSeguidas >= 2 && this.estadoActual === 'reposo') {
+        this.tUltimoVehiculo = l.t;
+        this.caminandoDesdeVehiculoMs = 0;
+      }
+      this.revisarSiBajoDelVehiculo(l.t, velocidad);
     }
-    this.telemetria = { ...this.telemetria, velocidadMs: velocidad, precisionGpsM: l.precision };
-
-    this.revisarTiempo(l.t, eventos);
+    if (valida) this.tGpsAnterior = l.t;
 
     const jalon = this.jalon;
     if (this.estadoActual === 'posible_jalon' && jalon && valida && l.t > jalon.t) {
@@ -153,7 +165,7 @@ export class DetectorArrebato {
       if (!jalon.posicion) jalon.posicion = posicion;
 
       if (velocidad !== null) {
-        jalon.lecturasRapidas = velocidad >= this.config.velocidadHuidaMs ? jalon.lecturasRapidas + 1 : 0;
+        jalon.lecturasRapidas = this.esVelocidadDeHuida(l.t, velocidad) ? jalon.lecturasRapidas + 1 : 0;
       }
 
       const desplazamiento = distanciaM(jalon.posicion.lat, jalon.posicion.lon, l.lat, l.lon);
@@ -210,6 +222,9 @@ export class DetectorArrebato {
     this.ultimoGpsValido = null;
     this.tUltimoVehiculo = -Infinity;
     this.lecturasVehiculoSeguidas = 0;
+    this.caminandoDesdeVehiculoMs = 0;
+    this.tGpsAnterior = null;
+    this.descartado = null;
   }
 
   // ---------------------------------------------------------------------------
@@ -231,6 +246,60 @@ export class DetectorArrebato {
       ? maxLineal >= c.umbralJalonG && maxGiro >= c.umbralGiroRadS
       : maxLineal >= c.umbralJalonSinGiroG;
     return hayPico ? { maxLineal, maxGiro: hayGiro ? maxGiro : null } : null;
+  }
+
+  /**
+   * ¿Hay ritmo de pasos en los últimos 3 s? `null` si no hay datos suficientes.
+   * Sirve para separar "alguien corriendo" de "va en un vehículo" a la misma velocidad.
+   */
+  private hayPasos(t: number): boolean | null {
+    // El pico del jalón tapa el ritmo: la ventana empieza 0,5 s después del jalón en curso.
+    const desde = Math.max(t - 3000, this.jalon ? this.jalon.t + this.config.ventanaJalonMs : -Infinity);
+    const muestras = this.magnitudes.entre(desde, t);
+    if (muestras.length < 50) return null;
+    if (desviacion(muestras.map((e) => e.dato)) < 0.08) return false;
+    return this.ritmo(muestras) >= this.config.umbralRitmoPasos;
+  }
+
+  /** Velocidad de huida: rápida, o "lenta" pero sin pasos (el celular va en un vehículo, no corriendo). */
+  private esVelocidadDeHuida(t: number, velocidad: number): boolean {
+    if (velocidad >= this.config.velocidadHuidaMs) return true;
+    const lenta = this.config.velocidadHuidaSinPasosMs;
+    return lenta !== null && velocidad >= lenta && this.hayPasos(t) === false;
+  }
+
+  /** Si después de un vehículo la persona camina un rato, el historial de vehículo se borra. */
+  private revisarSiBajoDelVehiculo(t: number, velocidad: number): void {
+    const limite = this.config.borrarHistorialCaminandoMs;
+    if (limite === null || this.tUltimoVehiculo === -Infinity || this.tGpsAnterior === null) return;
+    if (velocidad < this.config.velocidadVehiculoMs && this.hayPasos(t) === true) {
+      this.caminandoDesdeVehiculoMs += Math.min(t - this.tGpsAnterior, 2000);
+      if (this.caminandoDesdeVehiculoMs >= limite) {
+        this.tUltimoVehiculo = -Infinity;
+        this.caminandoDesdeVehiculoMs = 0;
+      }
+    }
+  }
+
+  /**
+   * Un posible jalón se descartó (por ejemplo, el ladrón arrancó lento) y poco después aparece velocidad
+   * de huida: alertamos igual, con confianza media. Sin esto, la velocidad del propio ladrón marcaba
+   * "ya en vehículo" y bloqueaba la detección por 2 minutos (hallazgo de la auditoría).
+   */
+  private revisarSegundaOportunidad(l: LecturaGps, velocidad: number, eventos: EventoDetector[]): void {
+    const ventana = this.config.segundaOportunidadMs;
+    const d = this.descartado;
+    if (ventana === null || !d) return;
+    if (l.t - d.t > ventana) {
+      this.descartado = null;
+      return;
+    }
+    d.lecturasRapidas = this.esVelocidadDeHuida(l.t, velocidad) ? d.lecturasRapidas + 1 : 0;
+    if (d.lecturasRapidas < this.config.lecturasHuidaMin) return;
+    this.jalon = d.jalon;
+    this.descartado = null;
+    this.estadoActual = 'posible_jalon';
+    this.alertar(l.t, 'velocidad_gps', { t: l.t, lat: l.lat, lon: l.lon, precision: l.precision }, eventos, 'media');
   }
 
   /** Solo el GPS puede decir si ya íbamos en un vehículo (ver comentario en buscarJalon). */
@@ -405,16 +474,18 @@ export class DetectorArrebato {
     via: 'velocidad_gps' | 'desplazamiento_gps' | 'solo_sensores',
     ultimaPosicion: PosicionSimple | null,
     eventos: EventoDetector[],
+    confianza: 'alta' | 'media' = via === 'solo_sensores' ? 'media' : 'alta',
   ): void {
     const jalon = this.jalon;
     if (!jalon) return;
     this.estadoActual = 'alerta';
+    this.descartado = null;
     eventos.push({
       tipo: 'alerta',
       t,
       tJalon: jalon.t,
       via,
-      confianza: via === 'solo_sensores' ? 'media' : 'alta',
+      confianza,
       velocidadMs: jalon.ultimaVelocidad,
       posicionJalon: jalon.posicion,
       ultimaPosicion,
@@ -425,6 +496,9 @@ export class DetectorArrebato {
 
   private descartar(t: number, motivo: MotivoDescarte, eventos: EventoDetector[]): void {
     eventos.push({ tipo: 'descartado', t, motivo, tJalon: this.jalon?.t ?? null });
+    // Guardamos el jalón por si la huida aparece tarde (segunda oportunidad). Un "cancelado" no cuenta.
+    this.descartado =
+      this.jalon && this.config.segundaOportunidades.includes(motivo) ? { jalon: this.jalon, t, lecturasRapidas: 0 } : null;
     this.estadoActual = 'reposo';
     this.jalon = null;
     this.tUltimoDescarte = t;
