@@ -10,7 +10,7 @@ import {
   type Telemetria,
 } from '@pixel-hack/detector';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { Platform } from 'react-native';
+import { Platform, Vibration } from 'react-native';
 import { enviar, hayBackend, type ResultadoEnvio } from './alertas';
 import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, quitarBloqueoApps, type ResultadoBloqueo } from './bloqueo';
 import { Grabadora, type Etiqueta } from './grabadora';
@@ -103,6 +103,11 @@ export const SEGUNDOS_EXTRA_DESBLOQUEO = 15;
 /** PIN incorrectos seguidos antes de hacer esperar, y cuánto (crece con cada intento de más). */
 const INTENTOS_PIN = 5;
 const ESPERA_PIN_MS = 30_000;
+/**
+ * Vibración del "¿Todo bien?": pausa, vibra, pausa (ms), y se repite hasta que el dueño responde o se avisa a la red.
+ * En iPhone la duración de cada vibración la fija el sistema (~0,4 s); solo cuentan las pausas.
+ */
+const PATRON_VIBRACION_TODO_BIEN = [0, 700, 500];
 
 class ServicioProteccion {
   private estado: EstadoProteccion = {
@@ -474,6 +479,10 @@ class ServicioProteccion {
     // pantalla apagada, los setInterval de JS se congelan pero los sensores (servicio en primer plano) siguen.
     // El backend también cuenta por su lado (`esperaS`): si el ladrón apaga el celular, avisa igual.
     this.detenerCuentaFamilia();
+    // El celular vibra (sin sonido) mientras dura la pregunta, para que el dueño se entere aunque lo tenga
+    // en el bolsillo y alcance a cancelar si fue falsa alarma. Va DESPUÉS de `detenerCuentaFamilia`, que
+    // la apaga: así la vibración dura lo mismo que la cuenta.
+    Vibration.vibrate(PATRON_VIBRACION_TODO_BIEN, true);
     this.cuentaPendiente = { evento, nombre, contactos, limite: Date.now() + espera * 1000 };
     this.cuentaFamilia = setInterval(() => this.revisarCuentaFamilia(), 1000);
   }
@@ -512,6 +521,7 @@ class ServicioProteccion {
   }
 
   private detenerCuentaFamilia(): void {
+    Vibration.cancel();
     if (this.cuentaFamilia) clearInterval(this.cuentaFamilia);
     this.cuentaFamilia = null;
     this.cuentaPendiente = null;

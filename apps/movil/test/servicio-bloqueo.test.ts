@@ -17,8 +17,13 @@ const dobles = vi.hoisted(() => ({
   enviar: vi.fn(),
   suscripciones: 0,
   detenerGps: vi.fn(),
+  vibrar: vi.fn(),
+  dejarDeVibrar: vi.fn(),
 }));
-vi.mock('react-native', () => ({ Platform: { OS: 'android' } }));
+vi.mock('react-native', () => ({
+  Platform: { OS: 'android' },
+  Vibration: { vibrate: dobles.vibrar, cancel: dobles.dejarDeVibrar },
+}));
 vi.mock('expo-keep-awake', () => ({
   activateKeepAwakeAsync: vi.fn(),
   deactivateKeepAwake: vi.fn(),
@@ -86,6 +91,8 @@ beforeEach(async () => {
   dobles.mostrar.mockReset().mockReturnValue(true);
   dobles.ocultar.mockReset();
   dobles.quitarApps.mockReset();
+  dobles.vibrar.mockReset();
+  dobles.dejarDeVibrar.mockReset();
   dobles.avisar.mockReset().mockResolvedValue(null);
   dobles.pinOk = true;
   dobles.enviar
@@ -189,6 +196,27 @@ describe('"¿Todo bien?" sobre la pantalla de bloqueo', () => {
     expect(dobles.ocultar).toHaveBeenCalledTimes(1);
     // iPhone: la falsa alarma también destapa las apps.
     expect(dobles.quitarApps).toHaveBeenCalledTimes(1);
+  });
+  it('el celular vibra mientras pregunta y deja de vibrar al cancelar con el PIN', async () => {
+    reproducirCaso('arrebato_moto');
+    expect(dobles.vibrar).toHaveBeenCalledTimes(1);
+    expect(dobles.vibrar).toHaveBeenCalledWith(expect.any(Array), true);
+    // Nada la apaga mientras la pregunta sigue esperando respuesta.
+    const ultimaVibracion = dobles.vibrar.mock.invocationCallOrder[0];
+    expect(dobles.dejarDeVibrar.mock.invocationCallOrder.every((orden) => orden < ultimaVibracion)).toBe(true);
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(servicio.obtener().alerta?.familia).toBe('esperando');
+    expect(dobles.dejarDeVibrar.mock.invocationCallOrder.every((orden) => orden < ultimaVibracion)).toBe(true);
+    dobles.dejarDeVibrar.mockClear();
+    expect(await servicio.cancelarAlerta('1234')).toBe(true);
+    expect(dobles.dejarDeVibrar).toHaveBeenCalled();
+  });
+  it('deja de vibrar cuando se acaba la espera y se avisa a la red', async () => {
+    reproducirCaso('arrebato_moto');
+    dobles.dejarDeVibrar.mockClear();
+    await vi.advanceTimersByTimeAsync(11_000);
+    expect(servicio.obtener().alerta?.familia).not.toBe('esperando');
+    expect(dobles.dejarDeVibrar).toHaveBeenCalled();
   });
   it('un PIN incorrecto deja la alerta y la pregunta encima del bloqueo', async () => {
     dobles.pinOk = false;
