@@ -1,9 +1,13 @@
 import {
-  CONFIG_DEMO,
   CONFIG_POR_DEFECTO,
+  ESPACIOS_DEMO,
+  configDemo,
+  distanciaDemoPorDefecto,
   DetectorArrebato,
   reproducir,
   simular,
+  type ConfigDetector,
+  type EspacioDemo,
   type EventoDetector,
   type LecturaGps,
   type MuestraImu,
@@ -72,6 +76,10 @@ export interface EstadoProteccion {
   /** Permisos que faltaron al activar (modo limitado). */
   permisosFaltantes: string[];
   modoDemo: boolean;
+  /** Dónde se hace la demo: cambia cuánto hay que correr y si se usa el GPS (solo con el modo demo). */
+  espacioDemo: EspacioDemo;
+  /** Cuántos metros hay que correr en la demo (con GPS). Cambia al elegir otro espacio. */
+  distanciaDemoM: number;
   telemetria: Telemetria | null;
   tieneGiroscopio: boolean | null;
   tieneGps: boolean | null;
@@ -117,6 +125,8 @@ class ServicioProteccion {
     pausadaHasta: null,
     permisosFaltantes: [],
     modoDemo: false,
+    espacioDemo: 'calle',
+    distanciaDemoM: distanciaDemoPorDefecto('calle'),
     telemetria: null,
     tieneGiroscopio: null,
     tieneGps: null,
@@ -540,7 +550,7 @@ class ServicioProteccion {
    */
   async probar(): Promise<ResultadoPrueba> {
     const sim = simular('arrebato_moto', 1 + Math.floor(Math.random() * 500));
-    const r = reproducir(sim.entradas, this.estado.modoDemo ? CONFIG_DEMO : CONFIG_POR_DEFECTO);
+    const r = reproducir(sim.entradas, this.configDetector());
     const jalon = r.eventos.find((e) => e.tipo === 'posible_jalon');
     const base = sim.tJalon ?? 0;
     const { nombre, contactos } = preferencias();
@@ -643,11 +653,51 @@ class ServicioProteccion {
 
   // --- Herramientas del equipo -------------------------------------------------------------------------
 
+  /** Los umbrales que usa ahora el detector (normal, o demo según el espacio elegido). */
+  configDetector(): ConfigDetector {
+    return this.estado.modoDemo ? configDemo(this.estado.espacioDemo, this.estado.distanciaDemoM) : CONFIG_POR_DEFECTO;
+  }
+
   cambiarModoDemo(modoDemo: boolean): void {
-    this.detector = new DetectorArrebato(modoDemo ? CONFIG_DEMO : CONFIG_POR_DEFECTO);
-    this.detenerCuentaFamilia();
+    if (this.alertaEnCurso()) return;
     this.cambiar({ modoDemo, alerta: null });
-    this.registrar(modoDemo ? 'Modo demo: la huida corriendo cuenta.' : 'Modo normal: solo huida en vehículo.');
+    this.reiniciarDetector();
+    this.registrar(modoDemo ? `Modo demo: la huida corriendo cuenta (${this.describirEspacioDemo()}).` : 'Modo normal: solo huida en vehículo.');
+  }
+
+  /** "Sala chica, 4 m" o "Solo sensores" (sin GPS la distancia no cuenta). */
+  describirEspacioDemo(): string {
+    const { espacioDemo, distanciaDemoM } = this.estado;
+    return `${ESPACIOS_DEMO[espacioDemo].titulo}${configDemo(espacioDemo).usarGps ? `, ${distanciaDemoM} m` : ''}`;
+  }
+
+  cambiarEspacioDemo(espacioDemo: EspacioDemo): void {
+    if (this.alertaEnCurso()) return;
+    this.cambiar({ espacioDemo, distanciaDemoM: distanciaDemoPorDefecto(espacioDemo) });
+    this.reiniciarDetector();
+    this.registrar(`Espacio de la demo: ${this.describirEspacioDemo()}.`);
+  }
+
+  cambiarDistanciaDemo(distanciaDemoM: number): void {
+    if (distanciaDemoM === this.estado.distanciaDemoM || this.alertaEnCurso()) return;
+    this.cambiar({ distanciaDemoM });
+    this.reiniciarDetector();
+    this.registrar(`Distancia de huida en la demo: ${distanciaDemoM} m.`);
+  }
+
+  /**
+   * Cambiar el ajuste reinicia el detector y corta la cuenta para avisar a la red: mientras esa cuenta
+   * corre, eso dejaría el "¿Todo bien?" colgado y la red sin aviso. Con la alerta ya resuelta sí se puede.
+   */
+  private alertaEnCurso(): boolean {
+    if (!this.cuentaPendiente && this.estado.alerta?.familia !== 'esperando') return false;
+    this.registrar('Hay una alerta en curso: cambia el ajuste de la demo cuando termine.', 'aviso');
+    return true;
+  }
+
+  private reiniciarDetector(): void {
+    this.detector = new DetectorArrebato(this.configDetector());
+    this.detenerCuentaFamilia();
   }
 
   empezarGrabacion(etiqueta: Etiqueta): void {

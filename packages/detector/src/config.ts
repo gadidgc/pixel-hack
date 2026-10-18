@@ -46,6 +46,19 @@ export interface ConfigDetector {
   velocidadHuidaSinPasosMs: number | null;
   /** Distancia desde el punto del jalón que también confirma la huida (m). */
   desplazamientoHuidaM: number;
+  /**
+   * El desplazamiento solo cuenta si supera el error sumado de las dos lecturas GPS. `false` solo para la
+   * demo en un espacio chico: con pocos metros de carrera el error del GPS (10–30 m) lo taparía siempre.
+   */
+  desplazamientoSobreErrorGps: boolean;
+  /**
+   * Si no es `null`, una alerta por GPS también exige que el celular se haya movido como al correr después
+   * del jalón (desviación de la magnitud, en g). Solo demo: bajo techo el GPS salta 5–10 m estando quieto
+   * y, con pocos metros de umbral, ese salto bastaba para alertar.
+   */
+  energiaHuidaGpsMinG: number | null;
+  /** `false`: el detector ignora el GPS y decide solo con los sensores (demo bajo techo). */
+  usarGps: boolean;
   /** Lecturas GPS con peor precisión que esta se ignoran (m). */
   precisionGpsMaxM: number;
   /** Tiempo máximo para confirmar la huida después del jalón (ms). */
@@ -111,6 +124,9 @@ export const CONFIG_POR_DEFECTO: ConfigDetector = {
   lecturasHuidaMin: 2,
   velocidadHuidaSinPasosMs: 2.8,
   desplazamientoHuidaM: 40,
+  desplazamientoSobreErrorGps: true,
+  energiaHuidaGpsMinG: null,
+  usarGps: true,
   precisionGpsMaxM: 35,
   ventanaConfirmacionMs: 10_000,
   huidaInmediataMs: 7000,
@@ -163,6 +179,70 @@ export const CONFIG_DEMO: ConfigDetector = {
   // En la demo el jalón lo hace una persona, no una moto: pedimos un pico menor.
   umbralJalonG: 1.2,
 };
+
+/**
+ * Dónde se hace la demo (Herramientas del equipo). Solo cambia CONFIG_DEMO; nunca el modo normal.
+ * Lo agregamos tras los ensayos del 18/10: en un local chico nadie corre 25 m, el GPS bajo techo
+ * da "ya en vehículo" por ruido, y al correr sin GPS cada pisada reiniciaba la cuenta del jalón.
+ */
+export type EspacioDemo = 'calle' | 'sala' | 'sin_gps';
+
+export const ESPACIOS_DEMO: Record<EspacioDemo, { titulo: string; detalle: string; cambios: Partial<ConfigDetector> }> = {
+  calle: {
+    titulo: 'Calle',
+    detalle: 'Al aire libre, con GPS.',
+    cambios: {},
+  },
+  sala: {
+    titulo: 'Sala chica',
+    detalle: 'Bajo techo, con GPS: el ruido del GPS no cuenta como vehículo.',
+    cambios: {
+      desplazamientoHuidaM: 4,
+      desplazamientoSobreErrorGps: false,
+      // Sin el error del GPS como filtro, pedimos que de verdad haya corrido (no un salto del GPS).
+      energiaHuidaGpsMinG: 0.3,
+      velocidadHuidaMs: 1.5,
+      // Con el ruido del GPS bajo techo, "1,6 m/s antes del jalón" salía aunque estuviéramos parados.
+      velocidadPeatonMaxMs: 3,
+      historialVehiculoMs: 0,
+      // Al correr, cada pisada parece un jalón nuevo y reiniciaba la cuenta: el primero es el que vale.
+      reanclarJalon: false,
+    },
+  },
+  sin_gps: {
+    titulo: 'Solo sensores',
+    detalle: 'Ignora el GPS: alerta si después del jalón la persona corre unos segundos.',
+    cambios: {
+      usarGps: false,
+      historialVehiculoMs: 0,
+      reanclarJalon: false,
+      // Se decide antes: la persona corre 4–8 s y se detiene; con 10 s el promedio se diluía.
+      ventanaConfirmacionMs: 7000,
+    },
+  },
+};
+
+/** Rango de la distancia de huida que el equipo puede elegir en la demo (m). */
+export const DISTANCIA_DEMO_M = { min: 2, max: 40 } as const;
+/**
+ * Por debajo de esta distancia se usa el ajuste de "Sala chica" aunque se haya elegido "Calle": no se exige
+ * superar el error del GPS (10–30 m, lo taparía siempre) y el ruido del GPS no cuenta como vehículo.
+ */
+export const DISTANCIA_CORTA_M = 25;
+
+/** Distancia de huida (m) que usa un espacio si el equipo no la cambió. */
+export function distanciaDemoPorDefecto(espacio: EspacioDemo): number {
+  return crearConfig(ESPACIOS_DEMO[espacio].cambios, CONFIG_DEMO).desplazamientoHuidaM;
+}
+
+/** Config de la demo para un espacio; `distanciaM` (opcional) cambia cuánto hay que correr. */
+export function configDemo(espacio: EspacioDemo, distanciaM?: number): ConfigDetector {
+  const config = crearConfig(ESPACIOS_DEMO[espacio].cambios, CONFIG_DEMO);
+  if (!config.usarGps || distanciaM === undefined || !Number.isFinite(distanciaM)) return config;
+  const d = Math.min(DISTANCIA_DEMO_M.max, Math.max(DISTANCIA_DEMO_M.min, distanciaM));
+  const corta = d < DISTANCIA_CORTA_M ? ESPACIOS_DEMO.sala.cambios : {};
+  return { ...config, ...corta, desplazamientoHuidaM: d };
+}
 
 export function crearConfig(cambios: Partial<ConfigDetector> = {}, base = CONFIG_POR_DEFECTO): ConfigDetector {
   return { ...base, ...cambios };

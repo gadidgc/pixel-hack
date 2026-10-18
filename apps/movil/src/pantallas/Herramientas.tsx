@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Alert, Platform, Pressable, Share, Switch, View } from 'react-native';
+import { DISTANCIA_CORTA_M, DISTANCIA_DEMO_M, ESPACIOS_DEMO, type EspacioDemo } from '@pixel-hack/detector';
 import { hayBackend } from '../alertas';
 import { PedirPin } from '../componentes/PedirPin';
 import { consultarBloqueo, faltaParaBloqueo } from '../bloqueo';
@@ -61,6 +62,24 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
           </View>
           <Switch value={estado.modoDemo} onValueChange={(v) => servicio.cambiarModoDemo(v)} />
         </View>
+        {estado.modoDemo && (
+          <View style={{ gap: 8, paddingHorizontal: 14, paddingBottom: 14 }}>
+            <T v="apoyo13" suave>
+              ¿Dónde es la demo?
+            </T>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {(Object.keys(ESPACIOS_DEMO) as EspacioDemo[]).map((x) => (
+                <Chip key={x} texto={ESPACIOS_DEMO[x].titulo} activo={estado.espacioDemo === x} onPress={() => servicio.cambiarEspacioDemo(x)} />
+              ))}
+            </View>
+            <T v="apoyo13" suave>
+              {ESPACIOS_DEMO[estado.espacioDemo].detalle}
+            </T>
+            {estado.espacioDemo !== 'sin_gps' && (
+              <SelectorDistancia valor={estado.distanciaDemoM} onCambiar={(m) => servicio.cambiarDistanciaDemo(m)} />
+            )}
+          </View>
+        )}
       </Grupo>
 
       <Rotulo>EN VIVO</Rotulo>
@@ -128,7 +147,7 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
       <Rotulo>SIMULAR (SIN MOVERSE)</Rotulo>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {ESCENARIOS_APP.map((x) => (
-          <Chip key={x.nombre} texto={x.titulo} activo={false} onPress={() => setSimulacion(correrSimulacion(x.nombre, x.titulo, estado.modoDemo))} />
+          <Chip key={x.nombre} texto={x.titulo} activo={false} onPress={() => setSimulacion(correrSimulacion(x.nombre, x.titulo, servicio.configDetector()))} />
         ))}
       </View>
       {simulacion && (
@@ -205,7 +224,7 @@ function textoRegistro(estado: EstadoProteccion): string {
   const lineas = [
     'Alerta Arrebato · registro',
     `Celular: ${celular} (${Platform.OS} ${Platform.Version})`,
-    `Protección: ${estado.activa ? 'activa' : 'apagada'} · Modo demo: ${sino(estado.modoDemo)} · Segundo plano: ${sino(estado.segundoPlano)}`,
+    `Protección: ${estado.activa ? 'activa' : 'apagada'} · Modo demo: ${estado.modoDemo ? `sí (${ESPACIOS_DEMO[estado.espacioDemo].titulo})` : 'no'} · Segundo plano: ${sino(estado.segundoPlano)}`,
     `Giroscopio: ${sino(estado.tieneGiroscopio)} · GPS: ${sino(estado.tieneGps)} · Permisos que faltan: ${estado.permisosFaltantes.length ? estado.permisosFaltantes.join(', ') : 'ninguno'}`,
     diag
       ? `Sensores: ${diag.muestras} muestras, última hace ${diag.msDesdeUltimaMuestra} ms, ${diag.reinicios} reinicios, wake lock ${sino(diag.wakeLock)}`
@@ -216,4 +235,85 @@ function textoRegistro(estado: EstadoProteccion): string {
     ...[...estado.registros].reverse().map((r) => `${hora(r.t, true)} [${r.tipo}] ${r.texto}`),
   ];
   return lineas.join('\n');
+}
+
+/**
+ * Cuántos metros hay que correr en la demo: barra que se toca o arrastra, más botones de 1 m.
+ * Hecha con View (sin librería nativa de slider). Solo avisa al soltar, para no reiniciar el detector
+ * con cada movimiento del dedo.
+ */
+function SelectorDistancia({ valor, onCambiar }: { valor: number; onCambiar: (m: number) => void }) {
+  const c = useTema();
+  const [ancho, setAncho] = useState(0);
+  const [arrastre, setArrastre] = useState<number | null>(null);
+  // Borde izquierdo de la barra en la página. Se toma al tocar (ahí locationX sí es de la barra) y después se
+  // usa pageX: si el dedo se sale de la barra, locationX pasa a ser de otra vista y daba un valor cualquiera.
+  const origenX = useRef(0);
+  const { min, max } = DISTANCIA_DEMO_M;
+  const mostrado = arrastre ?? valor;
+  const fraccion = (mostrado - min) / (max - min);
+  const limitar = (m: number) => Math.min(max, Math.max(min, Math.round(m)));
+  const desdeX = (x: number) => limitar(min + (ancho > 0 ? x / ancho : 0) * (max - min));
+  const soltar = (m: number) => {
+    setArrastre(null);
+    onCambiar(m);
+  };
+
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <T v="apoyo13" suave>
+          Distancia de huida
+        </T>
+        <T v="cuerpo15Fuerte">{mostrado} m</T>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Pressable onPress={() => soltar(limitar(valor - 1))} accessibilityRole="button" accessibilityLabel="Un metro menos" style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: c.superficie2 }}>
+          <T v="cuerpo15Fuerte">−</T>
+        </Pressable>
+        <View
+          style={{ flex: 1, height: 44, justifyContent: 'center' }}
+          onLayout={(e) => setAncho(e.nativeEvent.layout.width)}
+          onStartShouldSetResponder={() => true}
+          onMoveShouldSetResponder={() => true}
+          onResponderTerminationRequest={() => false}
+          onResponderGrant={(e) => {
+            origenX.current = e.nativeEvent.pageX - e.nativeEvent.locationX;
+            setArrastre(desdeX(e.nativeEvent.locationX));
+          }}
+          onResponderMove={(e) => setArrastre(desdeX(e.nativeEvent.pageX - origenX.current))}
+          onResponderRelease={(e) => soltar(desdeX(e.nativeEvent.pageX - origenX.current))}
+          // Si el sistema se lleva el gesto (scroll, notificaciones, llamada), se descarta el arrastre.
+          onResponderTerminate={() => setArrastre(null)}
+          accessibilityRole="adjustable"
+          accessibilityLabel="Distancia de huida"
+          accessibilityValue={{ min, max, now: mostrado, text: `${mostrado} metros` }}
+          accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+          onAccessibilityAction={(e) => soltar(limitar(valor + (e.nativeEvent.actionName === 'increment' ? 1 : -1)))}
+        >
+          <View pointerEvents="none" style={{ height: 6, borderRadius: 3, backgroundColor: c.superficie2 }}>
+            <View style={{ width: `${fraccion * 100}%`, height: 6, borderRadius: 3, backgroundColor: c.texto }} />
+          </View>
+          <View
+            pointerEvents="none"
+            style={{ position: 'absolute', left: Math.min(Math.max(0, ancho - 24), Math.max(0, fraccion * ancho - 12)), width: 24, height: 24, borderRadius: 12, backgroundColor: c.texto }}
+          />
+        </View>
+        <Pressable onPress={() => soltar(limitar(valor + 1))} accessibilityRole="button" accessibilityLabel="Un metro más" style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: c.superficie2 }}>
+          <T v="cuerpo15Fuerte">+</T>
+        </Pressable>
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 54 }}>
+        <T v="apoyo13" suave>
+          {min} m
+        </T>
+        <T v="apoyo13" suave>
+          {max} m
+        </T>
+      </View>
+      <T v="apoyo13" suave>
+        Hay que recorrerla trotando. Con menos de {DISTANCIA_CORTA_M} m se usa el ajuste de sala chica (no exige superar el error del GPS): salen más falsas alarmas.
+      </T>
+    </View>
+  );
 }
