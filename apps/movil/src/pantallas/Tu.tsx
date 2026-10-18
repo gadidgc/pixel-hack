@@ -139,7 +139,7 @@ export function Tu({ onPestana, onRed, onHerramientas, onMeRobaron }: { onPestan
 
         <Rotulo>EQUIPO</Rotulo>
         <Grupo>
-          <Fila titulo="Herramientas del equipo" detalle="Modo demo, grabar datos de sensores, simular" onPress={onHerramientas} ultima derecha={<Icono nombre="herramienta" tam={18} color={c.textoSuave} />} />
+          <Fila titulo="Herramientas del equipo" detalle="Modo demo, captura de sensores (CSV), simular" onPress={onHerramientas} ultima derecha={<Icono nombre="herramienta" tam={18} color={c.textoSuave} />} />
         </Grupo>
       </Pantalla>
       <BarraPestanas actual="tu" onCambiar={onPestana} conFondo />

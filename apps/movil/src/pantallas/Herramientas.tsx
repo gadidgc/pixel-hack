@@ -9,7 +9,7 @@ import { Icono } from '../ui/iconos';
 import { useTema } from '../ui/tema';
 
 /**
- * Herramientas del equipo (no son para el usuario final): modo demo, grabar datos de sensores en CSV
+ * Herramientas del equipo (no son para el usuario final): modo demo, capturar datos de sensores en CSV
  * para ajustar el detector (docs/PLAN.md §4.5), simular casos y ver el registro.
  */
 export function Herramientas({ onVolver }: { onVolver: () => void }) {
@@ -52,9 +52,9 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
         Panel: {hayBackend() ? 'configurado' : 'no configurado (EXPO_PUBLIC_URL_ALERTAS)'} · Giroscopio: {estado.tieneGiroscopio === false ? 'no' : estado.tieneGiroscopio ? 'sí' : '—'}
       </T>
 
-      <Rotulo>GRABAR DATOS DE SENSORES (CSV)</Rotulo>
+      <Rotulo>CAPTURA DE SENSORES (CSV)</Rotulo>
       <T v="apoyo" suave>
-        Elige qué vas a hacer, graba y comparte el CSV al equipo (packages/detector/datos/grabaciones).
+        Para ajustar el detector, no es evidencia. Elige qué vas a hacer, captura y comparte el CSV al equipo (packages/detector/datos/grabaciones).
       </T>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {ETIQUETAS.map((x) => (
@@ -62,10 +62,10 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
         ))}
       </View>
       <Boton
-        texto={!estado.activa ? 'Activa la protección para grabar' : estado.grabando ? `Detener y exportar (${estado.filasGrabadas} filas)` : `Grabar "${etiqueta}"`}
+        texto={!estado.activa ? 'Activa la protección para capturar' : estado.grabando ? `Detener y exportar (${estado.filasGrabadas} filas)` : `Capturar "${etiqueta}"`}
         variante="secundario"
         principal={false}
-        icono="grabar"
+        icono="movimiento"
         deshabilitado={!estado.activa}
         onPress={estado.grabando ? () => void servicio.detenerGrabacion() : () => servicio.empezarGrabacion(etiqueta)}
       />
