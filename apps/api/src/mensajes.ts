@@ -162,7 +162,9 @@ export async function mandarMensaje(
   const buenos = resultados.filter((r) => r.ok);
   const fallidos = resultados.filter((r) => !r.ok).map((r) => r.detalle);
   // Si un camino falló y otro no, lo dejamos anotado (en el registro de envíos) para saber por qué.
-  if (buenos.length) return { ok: true, canal: buenos.map((r) => r.canal).join(' + '), detalle: fallidos.length ? `enviado (falló: ${fallidos.join('; ')})` : 'enviado' };
+  // También lo que salió "a medias" (por ejemplo, el SMS sin enlace porque Zavu rechazó el enlace).
+  const notas = [...buenos.filter((r) => r.detalle !== 'enviado').map((r) => r.detalle), ...fallidos.map((r) => `falló: ${r}`)];
+  if (buenos.length) return { ok: true, canal: buenos.map((r) => r.canal).join(' + '), detalle: notas.length ? `enviado (${notas.join('; ')})` : 'enviado' };
   return { ok: false, canal: null, detalle: resultados.map((r) => r.detalle).join('; ') };
 }
 
@@ -193,10 +195,12 @@ export async function llamar(env: EnvMensajes, telefono: string, nombre: string,
   }
 }
 
-/** SMS con enlace; si el filtro de Zavu lo bloquea, el mismo aviso sin enlace (algo tiene que llegar). */
+/** SMS con enlace; si Zavu lo bloquea (por el texto o por el enlace), el mismo aviso sin enlace (algo tiene que llegar). */
 async function porSms(env: EnvMensajes, telefono: string, m: Mensaje, idempotencia: string): Promise<ResultadoMensaje> {
   const conEnlace = await porZavu(env, telefono, m.sms, idempotencia, 'sms');
-  if (conEnlace.ok || !m.smsSinEnlace || !conEnlace.detalle.includes('sms_compliance_blocked')) return conEnlace;
+  // `sms_compliance_blocked`: el filtro leyó el texto. `url_rejected`: la revisión de seguridad rechazó el enlace.
+  const bloqueado = /sms_compliance_blocked|url_rejected|url_pending|malicious/.test(conEnlace.detalle);
+  if (conEnlace.ok || !m.smsSinEnlace || !bloqueado) return conEnlace;
   const sinEnlace = await porZavu(env, telefono, m.smsSinEnlace, `${idempotencia}-sin-enlace`, 'sms');
   return sinEnlace.ok
     ? { ...sinEnlace, detalle: `enviado sin enlace (${conEnlace.detalle})` }
@@ -227,10 +231,18 @@ async function porZavu(env: EnvMensajes, telefono: string, texto: string, idempo
       body: JSON.stringify({ ...cuerpo, fallbackEnabled: false, idempotencyKey: idempotencia }),
       signal: AbortSignal.timeout(8000),
     });
-    const datos = (await r.json().catch(() => ({}))) as { message?: { channel?: string }; error?: { code?: string; message?: string } };
+    const crudo = await r.text().catch(() => '');
+    let datos: { message?: { channel?: string }; error?: { code?: string; message?: string } } = {};
+    try {
+      datos = JSON.parse(crudo);
+    } catch {
+      // Respuesta sin JSON: abajo va el texto tal cual.
+    }
     // 409 = ya se mandó con esta misma clave (un reintento de la app): cuenta como enviado.
     if (r.status === 202 || r.status === 200 || r.status === 409) return { ok: true, canal: datos.message?.channel ?? canal, detalle: 'enviado' };
-    return { ok: false, canal: null, detalle: `Zavu ${r.status} ${datos.error?.code ?? ''} ${datos.error?.message?.slice(0, 160) ?? ''}`.trim() };
+    // Si Zavu no manda `error.code` (pasó con un 403), guardamos el cuerpo para saber por qué.
+    const motivo = datos.error?.code ? `${datos.error.code} ${datos.error.message?.slice(0, 160) ?? ''}` : crudo.slice(0, 200);
+    return { ok: false, canal: null, detalle: `Zavu ${r.status} ${motivo}`.trim() };
   } catch (e) {
     return { ok: false, canal: null, detalle: e instanceof Error ? `Zavu: ${e.message}` : 'Zavu: error de red' };
   }

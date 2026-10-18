@@ -47,14 +47,16 @@ describe('mandarMensaje', () => {
     expect(mensaje.sms).not.toMatch(/robo|alerta:/i);
   });
 
-  it('si Zavu bloquea el SMS con enlace, manda el mismo aviso sin enlace', async () => {
+  it.each(['sms_compliance_blocked', 'url_rejected'])('si Zavu bloquea el SMS con enlace (%s), manda el mismo aviso sin enlace', async (codigo) => {
     const textos: string[] = [];
     vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
       const cuerpo = JSON.parse(String(init.body));
       if (!url.endsWith('/v1/messages')) return new Response('{}', { status: 200 });
       textos.push(cuerpo.text);
       const bloqueado = textos.length === 1;
-      return new Response(JSON.stringify(bloqueado ? { error: { code: 'sms_compliance_blocked' } } : {}), { status: bloqueado ? 422 : 202 });
+      // Zavu manda `url_rejected` sin el objeto `error` (así llegó de verdad, con 403).
+      const cuerpoError = codigo === 'url_rejected' ? { code: codigo, message: 'Message blocked' } : { error: { code: codigo } };
+      return new Response(JSON.stringify(bloqueado ? cuerpoError : {}), { status: bloqueado ? (codigo === 'url_rejected' ? 403 : 422) : 202 });
     });
     const r = await mandarMensaje({ ZAVU_API_KEY: 'zv_live_x' }, { telefono: '+51987654321', mensaje, idempotencia: 'a' });
     expect(r.ok).toBe(true);
