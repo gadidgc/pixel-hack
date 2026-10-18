@@ -9,6 +9,7 @@ import { usePantallaBloqueada } from './src/bloqueo';
 import { guardarPreferencias } from './src/preferencias';
 import { AlertaSobreBloqueo } from './src/pantallas/AlertaSobreBloqueo';
 import { Bienvenida } from './src/pantallas/Bienvenida';
+import { BloqueoCuentas } from './src/pantallas/BloqueoCuentas';
 import { Cerca } from './src/pantallas/Cerca';
 import { Contacto } from './src/pantallas/Contacto';
 import { ContactoEnVivo } from './src/pantallas/ContactoEnVivo';
@@ -28,7 +29,7 @@ import { hora, type Pestana } from './src/ui/componentes';
 import { COLORES, TemaContexto } from './src/ui/tema';
 
 type PasoBienvenida = 'bienvenida' | 'permisos' | 'contacto' | 'prueba';
-type Extra = null | 'red' | 'herramientas' | 'meRobaron' | 'vistaContacto' | 'alerta';
+type Extra = null | 'red' | 'cuentas' | 'herramientas' | 'meRobaron' | 'vistaContacto' | 'alerta';
 
 /**
  * En la web (la URL pública) también servimos las páginas que se abren desde OTRO celular:
@@ -125,7 +126,7 @@ function Navegacion() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listas]);
 
-  if (web?.tipo === 'contacto') return <ContactoEnVivo id={web.id} contacto={web.contacto} />;
+  if (web?.tipo === 'contacto') return <ContactoEnVivo key={web.id} id={web.id} contacto={web.contacto} />;
   if (web?.tipo === 'yo') return <MeRobaron />;
   if (!prefs) return <View style={{ flex: 1, backgroundColor: COLORES.noche.fondo }} />;
 
@@ -155,6 +156,8 @@ function Navegacion() {
     contenido = <FalsaAlarma onVerAviso={() => setExtra('vistaContacto')} onCerrar={() => setExtra(null)} />;
   } else if (extra === 'red') {
     contenido = <Contacto paso={false} onSeguir={() => setExtra(null)} onVolver={() => setExtra(null)} />;
+  } else if (extra === 'cuentas') {
+    contenido = <BloqueoCuentas onVolver={() => setExtra(null)} />;
   } else if (extra === 'herramientas') {
     contenido = <Herramientas onVolver={() => setExtra(null)} />;
   } else if (extra === 'meRobaron') {
@@ -164,7 +167,7 @@ function Navegacion() {
   } else if (pestana === 'grabar') {
     enGrabar = true;
   } else if (pestana === 'tu') {
-    contenido = <Tu onPestana={setPestana} onRed={() => setExtra('red')} onHerramientas={() => setExtra('herramientas')} onMeRobaron={() => setExtra('meRobaron')} />;
+    contenido = <Tu onPestana={setPestana} onRed={() => setExtra('red')} onCuentas={() => setExtra('cuentas')} onHerramientas={() => setExtra('herramientas')} onMeRobaron={() => setExtra('meRobaron')} />;
   } else {
     contenido = <Inicio onPestana={setPestana} onCerca={() => setPestana('cerca')} />;
   }

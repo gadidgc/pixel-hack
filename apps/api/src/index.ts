@@ -1,3 +1,4 @@
+import { armarKit, leerPerfil, validarMarca } from './bloqueo';
 import { MENSAJES, mandarMensaje, proveedores, type EnvMensajes, type Mensaje as MensajeWhatsApp } from './mensajes';
 import {
   JUNTAR_GRABACIONES_GRADOS,
@@ -20,6 +21,8 @@ import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, 
  * - `POST /api/eventos`: lo que manda la app (contrato en docs/PLAN.md §6.1).
  * - `GET  /api/alertas/:id`: lo que ve el contacto en `/a/:id` (sin teléfonos).
  * - `POST /api/alertas/:id/encargado`: "Yo me encargo" (avisa al resto de la red).
+ * - `POST /api/alertas/:id/robo`: el contacto confirma que SÍ fue un robo; la página muestra el kit de bloqueo.
+ * - `POST /api/alertas/:id/bloqueo`: marca un paso del kit como hecho (lo ve toda la red).
  * - `GET  /api/reportes?lat=&lon=&radioKm=` y `POST /api/reportes`: "Cerca de ti" (reportes de la comunidad).
  * - `POST /api/evidencias` y `GET /api/evidencias/:id`: video o audio guardado en R2. Si trae ubicación, se publica
  *   en "Cerca de ti" (cuelga de un reporte del mapa).
@@ -66,7 +69,7 @@ interface FilaAlerta {
   id: string;
   dispositivo: string;
   nombre: string;
-  estado: 'en_espera' | 'avisada' | 'cancelada';
+  estado: 'en_espera' | 'avisada' | 'robo_confirmado' | 'cancelada';
   prueba: number;
   via: string | null;
   confianza: string | null;
@@ -76,6 +79,9 @@ interface FilaAlerta {
   lon_jalon: number | null;
   contactos_json: string | null;
   encargado: string | null;
+  bloqueo_json: string | null;
+  robo_confirmado_por: string | null;
+  robo_confirmado: number | null;
   espera_s: number | null;
   origen: string | null;
   creada: number;
@@ -95,6 +101,19 @@ async function alertaAbierta(env: Env, dispositivo: string, ahora: number): Prom
   return env.DB.prepare(`SELECT * FROM alertas WHERE dispositivo = ? AND prueba = 0 AND estado != 'cancelada' AND creada > ? ORDER BY creada DESC LIMIT 1`)
     .bind(dispositivo, ahora - ALERTA_ABIERTA_MS)
     .first<FilaAlerta>();
+}
+
+/**
+ * Para cancelar con el PIN: la alerta abierta o, si ya pasaron los 30 min, una con el robo confirmado en las
+ * últimas 24 h. Así la dueña siempre puede anular una confirmación (y borrar sus datos del kit) mientras existan.
+ */
+async function alertaParaCancelar(env: Env, dispositivo: string, ahora: number): Promise<FilaAlerta | null> {
+  return (
+    (await alertaAbierta(env, dispositivo, ahora)) ??
+    (await env.DB.prepare(`SELECT * FROM alertas WHERE dispositivo = ? AND prueba = 0 AND estado = 'robo_confirmado' AND creada > ? ORDER BY creada DESC LIMIT 1`)
+      .bind(dispositivo, ahora - RETENCION_CONTACTOS_MS)
+      .first<FilaAlerta>())
+  );
 }
 
 function guardarPuntos(env: Env, alertaId: string, puntos: Punto[]): D1PreparedStatement[] {
@@ -219,9 +238,25 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
       const p = m.evento.posicionJalon ?? m.ruta[m.ruta.length - 1] ?? null;
       await env.DB.batch([
         env.DB.prepare(
-          `INSERT INTO alertas (id, dispositivo, nombre, estado, via, confianza, velocidad_ms, t_jalon, lat_jalon, lon_jalon, contactos_json, espera_s, origen, creada, actualizada)
-           VALUES (?, ?, ?, 'en_espera', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).bind(id, m.dispositivo, m.nombre, m.evento.via, m.evento.confianza, m.evento.velocidadMs, m.evento.tJalon, p?.lat ?? null, p?.lon ?? null, JSON.stringify(m.contactos), m.esperaS, origen, ahora, ahora),
+          `INSERT INTO alertas (id, dispositivo, nombre, estado, via, confianza, velocidad_ms, t_jalon, lat_jalon, lon_jalon, contactos_json, bloqueo_json, espera_s, origen, creada, actualizada)
+           VALUES (?, ?, ?, 'en_espera', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).bind(
+          id,
+          m.dispositivo,
+          m.nombre,
+          m.evento.via,
+          m.evento.confianza,
+          m.evento.velocidadMs,
+          m.evento.tJalon,
+          p?.lat ?? null,
+          p?.lon ?? null,
+          JSON.stringify(m.contactos),
+          m.bloqueo ? JSON.stringify(m.bloqueo) : null,
+          m.esperaS,
+          origen,
+          ahora,
+          ahora,
+        ),
         ...guardarPuntos(env, id, m.ruta),
       ]);
       // La cuenta del servidor: si el celular se apaga o se queda sin señal, igual se avisa a la red.
@@ -237,15 +272,33 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
         const id = nuevoId();
         const p = m.evento.posicionJalon;
         await env.DB.prepare(
-          `INSERT INTO alertas (id, dispositivo, nombre, estado, via, confianza, velocidad_ms, t_jalon, lat_jalon, lon_jalon, contactos_json, creada, actualizada)
-           VALUES (?, ?, ?, 'en_espera', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO alertas (id, dispositivo, nombre, estado, via, confianza, velocidad_ms, t_jalon, lat_jalon, lon_jalon, contactos_json, bloqueo_json, creada, actualizada)
+           VALUES (?, ?, ?, 'en_espera', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
-          .bind(id, m.dispositivo, m.nombre, m.evento.via, m.evento.confianza, m.evento.velocidadMs, m.evento.tJalon, p?.lat ?? null, p?.lon ?? null, JSON.stringify(m.contactos), ahora, ahora)
+          .bind(
+            id,
+            m.dispositivo,
+            m.nombre,
+            m.evento.via,
+            m.evento.confianza,
+            m.evento.velocidadMs,
+            m.evento.tJalon,
+            p?.lat ?? null,
+            p?.lon ?? null,
+            JSON.stringify(m.contactos),
+            m.bloqueo ? JSON.stringify(m.bloqueo) : null,
+            ahora,
+            ahora,
+          )
           .run();
         fila = await env.DB.prepare('SELECT * FROM alertas WHERE id = ?').bind(id).first<FilaAlerta>();
         if (!fila) return json({ ok: false, detalle: 'no se pudo guardar la alerta' }, 500);
       }
       if (m.contactos.length) fila.contactos_json = JSON.stringify(m.contactos);
+      // Si la `alerta` llegó sin el perfil de bloqueo (se perdió ese envío o la dueña lo llenó en esos segundos), lo completamos.
+      if (m.bloqueo && !fila.bloqueo_json) {
+        await env.DB.prepare('UPDATE alertas SET bloqueo_json = ? WHERE id = ?').bind(JSON.stringify(m.bloqueo), fila.id).run();
+      }
       const r = await avisarFamilia(env, fila, origen);
       return json({ ok: true, id: fila.id, enlace: enlace(origen, fila.id), ...r });
     }
@@ -256,15 +309,17 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
       return json({ ok: true, id: fila.id });
     }
     case 'cancelada': {
-      const fila = await alertaAbierta(env, m.dispositivo, ahora);
+      const fila = await alertaParaCancelar(env, m.dispositivo, ahora);
       if (!fila) return json({ ok: true, detalle: 'no había una alerta abierta' });
-      // Si la red ya había sido avisada, le decimos que está bien. Después borramos sus teléfonos.
+      // Si la red ya había sido avisada (o hasta confirmó el robo), le decimos que está bien. Después borramos
+      // sus teléfonos y el perfil de bloqueo.
       const r =
-        fila.estado === 'avisada'
+        fila.estado === 'avisada' || fila.estado === 'robo_confirmado'
           ? await avisar(env, fila.id, 'esta_bien', contactosDe(fila).map((c) => ({ contacto: c, mensaje: MENSAJES.estaBien(fila.nombre) })))
           : { avisados: 0, detalle: 'la red no había sido avisada' };
       await env.DB.batch([
-        env.DB.prepare(`UPDATE alertas SET estado = 'cancelada', cancelada = ?, contactos_json = NULL, actualizada = ? WHERE id = ?`).bind(ahora, ahora, fila.id),
+        env.DB.prepare(`UPDATE alertas SET estado = 'cancelada', cancelada = ?, contactos_json = NULL, bloqueo_json = NULL, actualizada = ? WHERE id = ?`).bind(ahora, ahora, fila.id),
+        env.DB.prepare('DELETE FROM bloqueos WHERE alerta_id = ?').bind(fila.id),
         // Era falsa alarma: sale de "Cerca de ti".
         env.DB.prepare(`DELETE FROM reportes WHERE alerta_id = ? AND origen = 'alerta'`).bind(fila.id),
       ]);
@@ -285,7 +340,7 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
   }
 }
 
-/** Lo que ve el contacto. Nunca devuelve teléfonos. */
+/** Lo que ve el contacto. Nunca devuelve los teléfonos de la red; la línea de la dueña, solo en el kit (tras confirmar el robo). */
 async function verAlerta(env: Env, id: string, origen: string): Promise<Response> {
   const fila = await env.DB.prepare('SELECT * FROM alertas WHERE id = ? AND prueba = 0').bind(id).first<FilaAlerta>();
   if (!fila) return json({ ok: false, detalle: 'no existe esa alerta' }, 404);
@@ -296,6 +351,7 @@ async function verAlerta(env: Env, id: string, origen: string): Promise<Response
     .bind(id)
     .all<{ id: string; tipo: string }>();
   return json({
+    ...(await kitPublico(env, fila)),
     ok: true,
     id: fila.id,
     nombre: fila.nombre,
@@ -307,6 +363,8 @@ async function verAlerta(env: Env, id: string, origen: string): Promise<Response
     ruta: results.reverse(),
     evidencias: evidencias.results.map((e) => ({ id: e.id, tipo: e.tipo, enlace: `${origen}/api/evidencias/${e.id}` })),
     encargado: fila.encargado,
+    roboConfirmadoPor: fila.robo_confirmado_por,
+    roboConfirmado: fila.robo_confirmado,
     avisada: fila.avisada,
     cancelada: fila.cancelada,
     ahora: Date.now(),
@@ -325,6 +383,81 @@ async function marcarEncargado(env: Env, id: string, peticion: Request, origen: 
   const resto = contactos.map((c, i) => ({ c, i })).filter((x) => x.i !== indice);
   const r = await avisar(env, id, 'encargado', resto.map((x) => ({ contacto: x.c, mensaje: MENSAJES.encargado(quien, fila.nombre, enlace(origen, id, x.i)) })));
   return json({ ok: true, encargado: quien, avisados: r.avisados, detalle: r.detalle });
+}
+
+/**
+ * Quién de la red hizo algo, según el `?c=<n>` de su enlace. `null` si el índice no corresponde a ningún
+ * contacto: confirmar el robo y marcar pasos exige venir de un enlace personal (no del enlace reenviado sin `?c=`).
+ */
+function quienEs(fila: FilaAlerta, contacto: unknown): string | null {
+  const indice = typeof contacto === 'number' && Number.isInteger(contacto) ? contacto : -1;
+  return contactosDe(fila)[indice]?.nombre ?? null;
+}
+
+const SIN_CONTACTO = 'abre el enlace que te llegó por WhatsApp o SMS: este enlace no dice quién eres';
+
+/**
+ * El kit de bloqueo con los datos de la dueña (línea, IMEI, DNI). Solo existe DESPUÉS de que un contacto
+ * confirmó el robo: antes, la página no muestra ningún dato personal.
+ */
+async function kitPublico(env: Env, fila: FilaAlerta): Promise<{ kit: unknown }> {
+  if (fila.estado !== 'robo_confirmado') return { kit: null };
+  const perfil = leerPerfil(fila.bloqueo_json);
+  const { results } = await env.DB.prepare('SELECT paso, quien, hecho, actualizado FROM bloqueos WHERE alerta_id = ?')
+    .bind(fila.id)
+    .all<{ paso: string; quien: string; hecho: number; actualizado: number }>();
+  const marcas = new Map(results.map((r) => [r.paso, r]));
+  return {
+    kit: {
+      pasos: armarKit(perfil, fila.nombre).map((p) => {
+        const m = marcas.get(p.paso);
+        return { ...p, hecho: Boolean(m?.hecho), quien: m?.hecho ? m.quien : null, hechoEn: m?.hecho ? m.actualizado : null };
+      }),
+      // Pasadas las 24 h el backend borró el perfil: lo decimos (`null`) en vez de mostrar campos vacíos.
+      datos: Date.now() - fila.creada > RETENCION_CONTACTOS_MS ? null : { linea: perfil?.linea ?? null, imei: perfil?.imei ?? null, dni: perfil?.dni ?? null },
+    },
+  };
+}
+
+/** "Sí, fue un robo": solo desde una alerta ya avisada a la red. Si la dueña mete su PIN después, vuelve a falsa alarma. */
+async function confirmarRobo(env: Env, id: string, peticion: Request): Promise<Response> {
+  const fila = await env.DB.prepare('SELECT * FROM alertas WHERE id = ? AND prueba = 0').bind(id).first<FilaAlerta>();
+  if (!fila) return json({ ok: false, detalle: 'no existe esa alerta' }, 404);
+  if (fila.estado === 'robo_confirmado') return json({ ok: true, roboConfirmadoPor: fila.robo_confirmado_por, detalle: 'ya estaba confirmado' });
+  if (fila.estado !== 'avisada') {
+    return json({ ok: false, detalle: fila.estado === 'cancelada' ? `${fila.nombre} confirmó que fue falsa alarma` : 'la alerta todavía no se avisó a la red' }, 409);
+  }
+  const cuerpo = (await peticion.json().catch(() => ({}))) as { contacto?: unknown };
+  const quien = quienEs(fila, cuerpo.contacto);
+  if (!quien) return json({ ok: false, detalle: SIN_CONTACTO }, 403);
+  const ahora = Date.now();
+  // La condición en el UPDATE evita pisar una cancelación que llegó al mismo tiempo.
+  const r = await env.DB.prepare(`UPDATE alertas SET estado = 'robo_confirmado', robo_confirmado_por = ?, robo_confirmado = ?, actualizada = ? WHERE id = ? AND estado = 'avisada'`)
+    .bind(quien, ahora, ahora, id)
+    .run();
+  if (!r.meta.changes) return json({ ok: false, detalle: 'la alerta cambió mientras confirmabas; recarga la página' }, 409);
+  return json({ ok: true, roboConfirmadoPor: quien });
+}
+
+/** Marca (o desmarca) un paso del kit. Lo ve toda la red en la misma página. */
+async function marcarPasoBloqueo(env: Env, id: string, peticion: Request): Promise<Response> {
+  const fila = await env.DB.prepare('SELECT * FROM alertas WHERE id = ? AND prueba = 0').bind(id).first<FilaAlerta>();
+  if (!fila) return json({ ok: false, detalle: 'no existe esa alerta' }, 404);
+  if (fila.estado !== 'robo_confirmado') return json({ ok: false, detalle: 'primero hay que confirmar el robo' }, 409);
+  const marca = validarMarca(await peticion.json().catch(() => null));
+  if (!marca) return json({ ok: false, detalle: 'paso desconocido' }, 400);
+  const quien = quienEs(fila, marca.contacto);
+  if (!quien) return json({ ok: false, detalle: SIN_CONTACTO }, 403);
+  // Solo si la alerta SIGUE confirmada: si la dueña canceló en este instante, no queda una fila suelta.
+  const r = await env.DB.prepare(
+    `INSERT INTO bloqueos (alerta_id, paso, quien, hecho, actualizado)
+     SELECT ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM alertas WHERE id = ? AND estado = 'robo_confirmado')
+     ON CONFLICT (alerta_id, paso) DO UPDATE SET quien = excluded.quien, hecho = excluded.hecho, actualizado = excluded.actualizado`,
+  )
+    .bind(id, marca.paso, quien, marca.hecho ? 1 : 0, Date.now(), id)
+    .run();
+  if (!r.meta.changes) return json({ ok: false, detalle: 'la alerta cambió; recarga la página' }, 409);
+  return json({ ok: true, paso: marca.paso, hecho: marca.hecho, quien });
 }
 
 interface FilaReporte {
@@ -526,9 +659,11 @@ export default {
         }
         return await procesar(env, ctx, validarMensaje(cuerpo), url.origin);
       }
-      const ver = url.pathname.match(/^\/api\/alertas\/([a-z0-9]{16})(\/encargado)?$/);
+      const ver = url.pathname.match(/^\/api\/alertas\/([a-z0-9]{16})(?:\/(encargado|robo|bloqueo))?$/);
       if (ver && !ver[2] && peticion.method === 'GET') return await verAlerta(env, ver[1], url.origin);
-      if (ver && ver[2] && peticion.method === 'POST') return await marcarEncargado(env, ver[1], peticion, url.origin);
+      if (ver && ver[2] === 'encargado' && peticion.method === 'POST') return await marcarEncargado(env, ver[1], peticion, url.origin);
+      if (ver && ver[2] === 'robo' && peticion.method === 'POST') return await confirmarRobo(env, ver[1], peticion);
+      if (ver && ver[2] === 'bloqueo' && peticion.method === 'POST') return await marcarPasoBloqueo(env, ver[1], peticion);
       if (url.pathname === '/api/reportes' && peticion.method === 'GET') return await buscarReportes(env, url.searchParams, url.origin);
       if (url.pathname === '/api/reportes' && peticion.method === 'POST') return await crearReporte(env, peticion);
       if (url.pathname === '/api/evidencias' && peticion.method === 'POST') return await subirEvidencia(env, peticion, url.origin);
@@ -545,11 +680,14 @@ export default {
     }
   },
 
-  /** Cada minuto: respaldo de la cuenta del servidor, y borra los teléfonos de las alertas con más de 24 h. */
+  /** Cada minuto: respaldo de la cuenta del servidor, y borra los teléfonos y el perfil de bloqueo de las alertas con más de 24 h. */
   async scheduled(_evento: ScheduledController, env: Env): Promise<void> {
     await avisarVencidas(env);
-    await env.DB.prepare('UPDATE alertas SET contactos_json = NULL WHERE contactos_json IS NOT NULL AND creada < ?')
-      .bind(Date.now() - RETENCION_CONTACTOS_MS)
-      .run();
+    const limite = Date.now() - RETENCION_CONTACTOS_MS;
+    await env.DB.batch([
+      env.DB.prepare('UPDATE alertas SET contactos_json = NULL, bloqueo_json = NULL WHERE (contactos_json IS NOT NULL OR bloqueo_json IS NOT NULL) AND creada < ?').bind(limite),
+      // El avance del kit lleva nombres de la red: se va con los teléfonos.
+      env.DB.prepare('DELETE FROM bloqueos WHERE alerta_id IN (SELECT id FROM alertas WHERE creada < ?)').bind(limite),
+    ]);
   },
 } satisfies ExportedHandler<Env>;
