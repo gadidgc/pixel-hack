@@ -117,7 +117,9 @@ Vigía para que la ruta siga llegando.
   Developer). Para TestFlight o App Store hay que pedir la de distribución a Apple
   ([formulario](https://developer.apple.com/contact/request/family-controls-distribution)),
   que tarda días o semanas: **pendiente**. Mientras tanto el build de TestFlight sale sin este
-  permiso (ver [testflight-iphone.md](testflight-iphone.md)).
+  permiso (ver [testflight-iphone.md](testflight-iphone.md)). En ese build el diálogo de Apple nunca
+  aparece, así que la app no ofrece "Autorizar Tiempo de uso": explica que falta la aprobación de
+  Apple y recomienda el bloqueo con Atajos.
 
 **No probado todavía en un iPhone físico:** compila para el simulador, pero falta comprobar
 que el escudo se pone con la app en segundo plano (pantalla apagada o en otra app), que tapa

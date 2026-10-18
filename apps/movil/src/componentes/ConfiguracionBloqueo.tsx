@@ -100,7 +100,8 @@ export function ConfiguracionBloqueo({
         {esIphone && <GuiaAtajos />}
         {esIphone && (
           <T v="cuerpoFuerte" style={{ marginTop: 6 }}>
-            Además: tapar tus apps al instante
+            {/* Sin Tiempo de uso (TestFlight, iOS 15) no se tapan las apps: solo queda la protección de Apple. */}
+            {estado.disponible ? "Además: tapar tus apps al instante" : "Además: la protección de Apple"}
           </T>
         )}
         {esIphone &&

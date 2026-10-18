@@ -1,4 +1,5 @@
 import { requireOptionalNativeModule } from 'expo';
+import Constants from 'expo-constants';
 import { useEffect, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 
@@ -41,6 +42,15 @@ const modulo =
     : null;
 const esIphone = Platform.OS === 'ios';
 
+/**
+ * iPhone de TestFlight o de instalación interna: se compilan sin el permiso de Tiempo de uso porque Apple
+ * todavía no aprueba distribuirlo (app.config.js pone `extra.sinTiempoDeUso`). Ahí iOS rechaza el pedido sin
+ * mostrar el diálogo de Apple, así que no ofrecemos "Autorizar" (parecería que no responde) y lo explicamos.
+ */
+const sinTiempoDeUso = esIphone && Constants.expoConfig?.extra?.sinTiempoDeUso === true;
+const SIN_TIEMPO_DE_USO =
+  'Esta versión de prueba (TestFlight) no puede tapar tus apps: Apple todavía no aprueba el permiso de Tiempo de uso para distribuirla. El bloqueo con Atajos sí funciona:';
+
 function motivoNoDisponible(): string {
   if (esIphone)
     return 'Requiere recompilar la app de iPhone con el módulo de bloqueo (iOS 16 o más). No funciona en Expo Go. Mientras tanto, activa la protección de Apple:';
@@ -57,6 +67,8 @@ export function consultarBloqueo(): EstadoBloqueo {
     pantallaCompleta: false,
   };
   if (!modulo) return { ...vacio, detalle: motivoNoDisponible() };
+  // Sin el permiso de Apple no hay nada que autorizar ni configurar: como no disponible, pero diciendo por qué.
+  if (sinTiempoDeUso) return { ...vacio, detalle: SIN_TIEMPO_DE_USO };
   try {
     const estado = modulo.consultarEstado();
     if (esIphone) return { ...estado, detalle: detalleIphone(estado) };
@@ -90,6 +102,7 @@ function detalleIphone(estado: Omit<EstadoBloqueo, 'detalle'>): string {
   return 'Autorizado: al confirmar un arrebato taparemos las demás apps del iPhone. Para cancelar tendrás que desbloquearlo y escribir tu PIN, y las apps vuelven. Además, activa la protección de Apple:';
 }
 export async function solicitarAutorizacionBloqueo(): Promise<boolean> {
+  if (sinTiempoDeUso) return false;
   try {
     return (await modulo?.solicitarAutorizacion()) ?? false;
   } catch {
@@ -107,6 +120,8 @@ export async function abrirBloqueoSeguro(): Promise<boolean> {
 export function bloquearAlDetectar(): ResultadoBloqueo {
   if (!modulo)
     return { estado: 'no_disponible', detalle: motivoNoDisponible() };
+  if (sinTiempoDeUso)
+    return { estado: 'no_disponible', detalle: 'Esta versión de prueba no puede tapar las apps: Apple todavía no aprueba el permiso de Tiempo de uso.' };
   try {
     return modulo.bloquearAhora();
   } catch {
