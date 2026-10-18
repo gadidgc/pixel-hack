@@ -1,4 +1,4 @@
--- Alerta Arrebato: tablas del backend (Cloudflare D1, SQLite).
+-- Vigía: tablas del backend (Cloudflare D1, SQLite).
 -- Los teléfonos de la red son datos de terceros: se guardan solo mientras dura la alerta (para avisar,
 -- decir "está bien" o "alguien se encarga") y se borran al cancelarla o a las 24 h.
 

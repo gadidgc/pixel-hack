@@ -95,10 +95,10 @@ function GlifoMarca({ color }: { color: string }) {
   );
 }
 
-/** Logo de Alerta Arrebato: ficha redondeada con el glifo. Para tamaños chicos (encabezados, íconos). */
+/** Logo de Vigía: ficha redondeada con el glifo. Para tamaños chicos (encabezados, íconos). */
 export function Marca({ tam = 32, ficha, glifo }: { tam?: number; ficha: string; glifo: string }) {
   return (
-    <Svg width={tam} height={tam} viewBox="0 0 24 24" accessibilityLabel="Alerta Arrebato">
+    <Svg width={tam} height={tam} viewBox="0 0 24 24" accessibilityLabel="Vigía">
       <Rect width={24} height={24} rx={6.75} fill={ficha} />
       <G transform="translate(12 12) scale(0.7) translate(-12 -12)">
         <GlifoMarca color={glifo} />

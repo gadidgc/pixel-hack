@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 
 /**
- * Tokens del sistema de diseño "Alerta Arrebato" v2 (Negro cálido), copiados tal cual de
+ * Tokens del sistema de diseño "Vigía" v2 (Negro cálido), copiados tal cual de
  * https://claude.ai/artifact/HW9kceGpSuZaAxxFtccVMj (project/tokens.json). Si cambian allá, se cambian aquí.
  *
  * - `noche`: tema por defecto de la app.

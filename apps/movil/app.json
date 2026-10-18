@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Alerta Arrebato",
+    "name": "Vigía",
     "slug": "alerta-arrebato",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -44,8 +44,8 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "name": "Alerta Arrebato",
-      "shortName": "Arrebato",
+      "name": "Vigía",
+      "shortName": "Vigía",
       "lang": "es-PE",
       "themeColor": "#0d0c0b",
       "backgroundColor": "#0d0c0b"
@@ -61,7 +61,7 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Usamos tu ubicación para confirmar la huida y mandar la ruta a tu familia si te roban el celular.",
-          "locationAlwaysAndWhenInUsePermission": "Para protegerte aunque uses otras apps o apagues la pantalla, Alerta Arrebato necesita tu ubicación \"siempre\". Solo se envía si detectamos un robo.",
+          "locationAlwaysAndWhenInUsePermission": "Para protegerte aunque uses otras apps o apagues la pantalla, Vigía necesita tu ubicación \"siempre\". Solo se envía si detectamos un robo.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true

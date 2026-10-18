@@ -4,7 +4,7 @@ Equipo pixel-hack · Hack the Andes 2026 (Lima, 17 y 18 de octubre) · Track **S
 Integrantes: Gabriel, Cesar, Mauricio, Piero. Mercado: **primero Perú, luego Latinoamérica**.
 
 ## Fase actual: construir (la idea ya está elegida)
-**Alerta Arrebato:** una app (iPhone, Android y web) que, con el acelerómetro, el giroscopio y el GPS del celular,
+**Vigía:** una app (iPhone, Android y web) que, con el acelerómetro, el giroscopio y el GPS del celular,
 detecta cuando un ladrón en moto arrancha el celular y avisa al instante con la ubicación y la ruta de huida.
 Solo ese caso: no buscamos detectar todos los robos.
 

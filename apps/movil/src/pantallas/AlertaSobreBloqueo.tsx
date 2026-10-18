@@ -58,7 +58,7 @@ export function AlertaSobreBloqueo() {
           <Icono nombre="escudo" tam={14} color={c.protegido} grosor={2.4} />
         </View>
         <T v="apoyo13" suave style={{ flex: 1 }}>
-          Alerta Arrebato
+          Vigía
         </T>
         {esperando && (
           <T v="hora" suave>
@@ -73,8 +73,8 @@ export function AlertaSobreBloqueo() {
         </T>
         <T v="cuerpo15" suave>
           {esperando
-            ? 'Notamos un movimiento brusco y luego velocidad. Si fue tuyo, escribe tu PIN de Alerta Arrebato y no avisaremos a nadie.'
-            : 'Ya avisamos a tu red. Si estás bien, escribe tu PIN de Alerta Arrebato y les diremos que fue una falsa alarma.'}
+            ? 'Notamos un movimiento brusco y luego velocidad. Si fue tuyo, escribe tu PIN de Vigía y no avisaremos a nadie.'
+            : 'Ya avisamos a tu red. Si estás bien, escribe tu PIN de Vigía y les diremos que fue una falsa alarma.'}
         </T>
       </View>
 

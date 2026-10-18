@@ -10,7 +10,7 @@ para que los jurados la instalen sin pasar por la App Store.
 
 1. En el iPhone, instalar **TestFlight** desde la App Store (es gratis y es de Apple).
 2. Abrir el enlace público de la beta (o escanear el QR de la página de descarga) y tocar **Aceptar** → **Instalar**.
-3. Abrir **Alerta Arrebato** y aceptar los permisos de **ubicación "siempre"** y **movimiento**: con ellos la app
+3. Abrir **Vigía** y aceptar los permisos de **ubicación "siempre"** y **movimiento**: con ellos la app
    detecta el arrebato aunque la pantalla esté apagada.
 
 Requisito: iOS reciente (el que pida TestFlight). La beta dura 90 días.
@@ -55,9 +55,9 @@ Todo desde `apps/movil`.
 
 3. Esperar a que App Store Connect termine de **procesar** el build (5 a 30 min; llega un correo).
 
-4. En [App Store Connect](https://appstoreconnect.apple.com) → **Apps → Alerta Arrebato → TestFlight**:
+4. En [App Store Connect](https://appstoreconnect.apple.com) → **Apps → Alerta Arrebato → TestFlight** (la ficha se creó con el nombre anterior; puede renombrarse a Vigía):
    - **Información de prueba** (Test Information), en español:
-     - *Descripción de la beta:* "Alerta Arrebato detecta cuando un ladrón en moto te arrancha el celular y avisa al
+     - *Descripción de la beta:* "Vigía detecta cuando un ladrón en moto te arrancha el celular y avisa al
        instante a tu familia con tu ubicación y la ruta de huida. Prototipo del hackatón Hack the Andes 2026 (Lima)."
      - *Correo de contacto para comentarios:* el de Gabriel.
      - *Notas para la revisión (Beta App Review):* "No hace falta iniciar sesión. La app usa la ubicación en segundo

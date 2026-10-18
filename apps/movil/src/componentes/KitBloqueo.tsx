@@ -211,7 +211,7 @@ export function KitBloqueo({ kit, nombre, horaJalon, onMarcar }: Props) {
         </T>
       )}
       <T v="apoyo" suave>
-        Si el banco solo atiende a {nombre}, pásale estos datos para que llame cuando pueda. Nadie de Alerta Arrebato te va a pedir claves ni códigos.
+        Si el banco solo atiende a {nombre}, pásale estos datos para que llame cuando pueda. Nadie de Vigía te va a pedir claves ni códigos.
       </T>
     </View>
   );

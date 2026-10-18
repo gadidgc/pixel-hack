@@ -11,6 +11,7 @@
     "evaluar": "npm run evaluar -w @pixel-hack/detector",
     "reproducir": "npm run reproducir -w @pixel-hack/detector --",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "movil": "npm run start -w @pixel-hack/movil"
+    "movil": "npm run start -w @pixel-hack/movil",
+    "publicar:presentacion": "cd docs/presentacion && npx wrangler deploy"
   }
 }

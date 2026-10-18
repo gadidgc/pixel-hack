@@ -1,0 +1,10 @@
+// Las láminas publicadas en https://vigia.gadidgc.com (Cloudflare Workers, solo archivos estáticos).
+// Así se abren desde cualquier computadora o celular del evento, sin conectar una laptop nuestra.
+// Publicar: `npm run publicar:presentacion` desde la raíz.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "vigia-presentacion",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "." },
+  "routes": [{ "pattern": "vigia.gadidgc.com", "custom_domain": true }]
+}

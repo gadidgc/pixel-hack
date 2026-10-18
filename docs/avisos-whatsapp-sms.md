@@ -19,7 +19,7 @@ Probado de verdad en un celular del equipo: llegaron la alerta por WhatsApp y po
 ## SMS de bloqueo de iPhone (Atajos)
 
 Si la dueña configuró su número en la guía de Atajos (Tú › Bloqueo antirrobo), al llegar una `alerta` el
-backend le manda **al instante** (sin esperar la cuenta) el SMS `Alerta Arrebato AA-BLOQUEO. Si no fuiste
+backend le manda **al instante** (sin esperar la cuenta) el SMS `Vigia AA-BLOQUEO. Si no fuiste
 tu, ignora este mensaje.` a **su propio número**. Su automatización de Atajos bloquea la pantalla al recibirlo.
 Solo SMS (un WhatsApp no dispara la automatización), sin enlace y sin "robo". El número no se guarda en la
 base: solo queda enmascarado en `envios` con tipo `bloqueo_iphone`. El botón **Probar** usa el tipo
