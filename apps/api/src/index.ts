@@ -93,6 +93,8 @@ interface FilaAlerta {
   contactos_json: string | null;
   encargado: string | null;
   bloqueo_json: string | null;
+  /** iPhone: número de la dueña para el SMS de Atajos; se borra con los teléfonos de la red. */
+  numero_propio: string | null;
   robo_confirmado_por: string | null;
   robo_confirmado: number | null;
   espera_s: number | null;
@@ -207,6 +209,11 @@ async function avisarFamilia(env: Env, fila: FilaAlerta, origen: string): Promis
     return { avisados, total: contactos.length, detalle: avisados === contactos.length ? 'enviado' : `${avisados} de ${contactos.length} avisados: ${previo?.detalle ?? ''}` };
   }
   await reportarDesdeAlerta(env, fila, ahora);
+  // iPhone: venció el "¿Todo bien?" sin PIN → otra vez el SMS de Atajos, como Android que queda bloqueado.
+  // Pasa por aquí venga de la app o de la cuenta del servidor (aunque el ladrón haya cerrado la app).
+  const bloqueoIphone = fila.numero_propio
+    ? smsBloqueoAlVencer(env, fila.id, fila.numero_propio).catch((e) => console.error('No se pudo mandar el SMS de bloqueo', e))
+    : null;
   const tJalon = fila.t_jalon ?? fila.creada;
   // A la vez que el SMS, una llamada a cada contacto (si están encendidas): que su celular suene.
   const llamadas = Promise.all(contactos.map((c, i) => llamar(env, c.telefono, fila.nombre, fila.id, codigoContacto(fila.id, i), webAviso(origen)))).then(async (rs) => {
@@ -236,6 +243,7 @@ async function avisarFamilia(env: Env, fila: FilaAlerta, origen: string): Promis
     })),
   );
   await llamadas.catch((e) => console.error('No se pudo registrar la llamada', e));
+  await bloqueoIphone;
   return { avisados: r.avisados, total: contactos.length, detalle: r.detalle };
 }
 
@@ -278,7 +286,6 @@ async function avisarVencidas(env: Env): Promise<void> {
 /**
  * iPhone: el SMS de Atajos otra vez cuando vence el "¿Todo bien?" sin PIN (como Android, que queda bloqueado).
  * Si el primero (al detectar) no llegó o la dueña desbloqueó para cancelar y no alcanzó, este lo bloquea.
- * Una sola clave de idempotencia para la app y la cuenta del servidor: Zavu no lo manda dos veces.
  */
 async function smsBloqueoAlVencer(env: Env, alertaId: string, numero: string): Promise<void> {
   const r = await mandarSmsBloqueo(env, numero, `${alertaId}-bloqueo-vencido`);
@@ -306,8 +313,8 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
       const p = m.evento.posicionJalon ?? m.ruta[m.ruta.length - 1] ?? null;
       await env.DB.batch([
         env.DB.prepare(
-          `INSERT INTO alertas (id, dispositivo, nombre, estado, via, confianza, velocidad_ms, t_jalon, lat_jalon, lon_jalon, contactos_json, bloqueo_json, espera_s, origen, creada, actualizada)
-           VALUES (?, ?, ?, 'en_espera', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO alertas (id, dispositivo, nombre, estado, via, confianza, velocidad_ms, t_jalon, lat_jalon, lon_jalon, contactos_json, bloqueo_json, numero_propio, espera_s, origen, creada, actualizada)
+           VALUES (?, ?, ?, 'en_espera', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ).bind(
           id,
           m.dispositivo,
@@ -320,6 +327,7 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
           p?.lon ?? null,
           JSON.stringify(m.contactos),
           m.bloqueo ? JSON.stringify(m.bloqueo) : null,
+          m.numeroPropio,
           m.esperaS,
           origen,
           ahora,
@@ -338,16 +346,8 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
         );
       }
       // La cuenta del servidor: si el celular se apaga o se queda sin señal, igual se avisa a la red.
-      // iPhone: si para entonces la alerta quedó avisada (nadie puso el PIN), también el SMS de bloqueo otra vez.
-      const numeroPropio = m.numeroPropio;
       ctx.waitUntil(
-        new Promise((listo) => setTimeout(listo, m.esperaS * 1000 + MARGEN_SERVIDOR_MS))
-          .then(() => avisarVencidas(env))
-          .then(async () => {
-            if (!numeroPropio) return;
-            const fila = await env.DB.prepare('SELECT estado FROM alertas WHERE id = ?').bind(id).first<{ estado: string }>();
-            if (fila && fila.estado !== 'en_espera' && fila.estado !== 'cancelada') await smsBloqueoAlVencer(env, id, numeroPropio);
-          }),
+        new Promise((listo) => setTimeout(listo, m.esperaS * 1000 + MARGEN_SERVIDOR_MS)).then(() => avisarVencidas(env)),
       );
       return json({ ok: true, id, enlace: enlace(origen, id), detalle: 'en el panel' });
     }
@@ -387,8 +387,11 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
       if (m.bloqueo && !fila.bloqueo_json) {
         await env.DB.prepare('UPDATE alertas SET bloqueo_json = ? WHERE id = ?').bind(JSON.stringify(m.bloqueo), fila.id).run();
       }
-      // iPhone: el SMS de bloqueo sale a la vez que el aviso a la red, sin esperarlo.
-      if (m.numeroPropio) ctx.waitUntil(smsBloqueoAlVencer(env, fila.id, m.numeroPropio).catch((e) => console.error('No se pudo mandar el SMS de bloqueo', e)));
+      // iPhone: si la `alerta` llegó sin el número (o no llegó), lo tomamos de aquí para el SMS de bloqueo.
+      if (m.numeroPropio && !fila.numero_propio) {
+        fila.numero_propio = m.numeroPropio;
+        await env.DB.prepare('UPDATE alertas SET numero_propio = ? WHERE id = ?').bind(m.numeroPropio, fila.id).run();
+      }
       const r = await avisarFamilia(env, fila, origen);
       return json({ ok: true, id: fila.id, enlace: enlace(origen, fila.id), ...r });
     }
@@ -413,7 +416,7 @@ async function procesar(env: Env, ctx: ExecutionContext, m: Mensaje, origen: str
           ? await avisar(env, fila.id, 'esta_bien', contactosDe(fila).map((c) => ({ contacto: c, mensaje: MENSAJES.estaBien(fila.nombre) })))
           : { avisados: 0, detalle: 'la red no había sido avisada' };
       await env.DB.batch([
-        env.DB.prepare(`UPDATE alertas SET estado = 'cancelada', cancelada = ?, contactos_json = NULL, bloqueo_json = NULL, actualizada = ? WHERE id = ?`).bind(ahora, ahora, fila.id),
+        env.DB.prepare(`UPDATE alertas SET estado = 'cancelada', cancelada = ?, contactos_json = NULL, bloqueo_json = NULL, numero_propio = NULL, actualizada = ? WHERE id = ?`).bind(ahora, ahora, fila.id),
         env.DB.prepare('DELETE FROM bloqueos WHERE alerta_id = ?').bind(fila.id),
         // Era falsa alarma: sale de "Cerca de ti".
         env.DB.prepare(`DELETE FROM reportes WHERE alerta_id = ? AND origen = 'alerta'`).bind(fila.id),
@@ -832,12 +835,12 @@ export default {
     }
   },
 
-  /** Cada minuto: respaldo de la cuenta del servidor, y borra los teléfonos y el perfil de bloqueo de las alertas con más de 24 h. */
+  /** Cada minuto: respaldo de la cuenta del servidor, y borra los teléfonos (también el propio) y el perfil de bloqueo de las alertas con más de 24 h. */
   async scheduled(_evento: ScheduledController, env: Env): Promise<void> {
     await avisarVencidas(env);
     const limite = Date.now() - RETENCION_CONTACTOS_MS;
     await env.DB.batch([
-      env.DB.prepare('UPDATE alertas SET contactos_json = NULL, bloqueo_json = NULL WHERE (contactos_json IS NOT NULL OR bloqueo_json IS NOT NULL) AND creada < ?').bind(limite),
+      env.DB.prepare('UPDATE alertas SET contactos_json = NULL, bloqueo_json = NULL, numero_propio = NULL WHERE (contactos_json IS NOT NULL OR bloqueo_json IS NOT NULL OR numero_propio IS NOT NULL) AND creada < ?').bind(limite),
       // El avance del kit lleva nombres de la red: se va con los teléfonos.
       env.DB.prepare('DELETE FROM bloqueos WHERE alerta_id IN (SELECT id FROM alertas WHERE creada < ?)').bind(limite),
     ]);
