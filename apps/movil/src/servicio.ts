@@ -20,6 +20,7 @@ import { enviar, hayBackend, type ResultadoEnvio } from './alertas';
 import { bloquearAlDetectar, mostrarSobreBloqueo, ocultarSobreBloqueo, quitarBloqueoApps, type ResultadoBloqueo } from './bloqueo';
 import { Grabadora, type Etiqueta } from './grabadora';
 import { avisarTodoBien, pedirPermisoNotificaciones, quitarAviso } from './notificaciones';
+import { borrarTodasLasNotas } from './memoria';
 import { borrarPin, hayPin, verificarPin } from './pin';
 import { borrarPreferencias, guardarPreferencias, perfilParaEnviar, preferencias, type Contacto } from './preferencias';
 import { escucharSensores, pedirPermisoSensores } from './sensores';
@@ -171,6 +172,8 @@ class ServicioProteccion {
   private envioAlerta: Promise<ResultadoEnvio> | null = null;
   private pinFallidos = 0;
   private pinEsperarHasta = 0;
+  /** Por qué falló el último "Borrar todo" con el PIN correcto (`null` = fue el PIN). */
+  motivoNoBorrado: string | null = null;
 
   obtener(): EstadoProteccion {
     return this.estado;
@@ -334,8 +337,17 @@ class ServicioProteccion {
    * Los permisos del sistema no se pueden quitar desde la app: siguen dados.
    */
   async borrarTodo(pin: string): Promise<boolean> {
+    this.motivoNoBorrado = null;
     if ((await hayPin()) && !(await verificarPin(pin))) {
       this.registrar('PIN incorrecto: no se borró nada.', 'error');
+      return false;
+    }
+    // Primero las notas de falsas alarmas en Atomic Memory: si se borrara la llave antes, quedarían allá sin forma
+    // de borrarlas. Si falla, no se borra nada más (la llave queda para reintentar). La protección sigue como estaba.
+    const notas = await borrarTodasLasNotas();
+    if (!notas.ok) {
+      this.motivoNoBorrado = `Los datos de este celular siguen aquí. No pudimos completar el borrado de tus notas de falsas alarmas (${notas.motivo}); algunas pueden haberse borrado. Conservamos el acceso para reintentar.`;
+      this.registrar(this.motivoNoBorrado, 'error');
       return false;
     }
     if (this.estado.alerta && this.detector.estado === 'alerta') await this.cancelarAlerta(pin);

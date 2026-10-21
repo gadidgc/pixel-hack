@@ -33,6 +33,8 @@
   // `ORIGEN_ENLACES`: dominio de los enlaces de los SMS (Zavu rechaza *.workers.dev).
   // `ZAVU_SENDER_BLOQUEO`: sender "Cesar" de Zavu (+1 270 639 6180), otro número solo para el SMS de bloqueo al
   // vencer: Zavu deja 1 SMS por minuto por número y el de la detección sale ~25 s antes desde el número por defecto.
+  // Notas de falsas alarmas (opcional, apagado por defecto): agregar `"ATOMIC_MEMORY_URL": "https://api.atomicstrata.ai"`
+  // y `npx wrangler secret put ATOMIC_MEMORY_API_KEY`. Ver apps/api/README.md.
   "vars": {
     "META_WA_NUMERO_ID": "756647020860898",
     "ZAVU_LLAMADAS": "si",

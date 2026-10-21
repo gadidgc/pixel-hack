@@ -14,6 +14,24 @@ import {
   validarMiniatura,
   validarReporte,
 } from './comunidad';
+import {
+  borrarNota,
+  borrarTodo as borrarTodaLaMemoria,
+  buscarNotas,
+  consumirCuotas,
+  cuotasBuscar,
+  cuotasEscribir,
+  entregarLlave,
+  esIdMemoria,
+  guardarNota,
+  limpiarCuotas,
+  memoriaActiva,
+  sujetoDe,
+  validarMotivo,
+  validarNota,
+  type EnvMemoria,
+  type Resultado as ResultadoMemoria,
+} from './memoria';
 import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, type Punto } from './validar';
 
 /**
@@ -30,11 +48,12 @@ import { ErrorDeDatos, enmascarar, validarMensaje, type Contacto, type Mensaje, 
  * - `POST/GET /api/evidencias/:id/miniatura`: un cuadro del video (JPEG) para la tarjeta del mapa.
  * - `GET  /api/reportes/:id/evidencias`: las grabaciones de un reporte (video, audio con su onda), para su hoja.
  * - `GET  /api/salud`: si la base y Zavu están listos.
+ * - `/api/memoria/*`: "Tus notas de falsas alarmas" (Atomic Memory, opcional). Ver src/memoria.ts.
  * - `/`: redirige a `/descargar/` (la página para bajar el APK).
  * - Todo lo demás: la web (export de Expo en apps/movil/dist), solo con las páginas del contacto (`/a/:id`, `/aviso`).
  */
 
-export interface Env extends EnvMensajes {
+export interface Env extends EnvMensajes, EnvMemoria {
   DB: D1Database;
   ASSETS: Fetcher;
   /** Bucket R2 `alerta-arrebato-evidencias`. */
@@ -65,8 +84,8 @@ const VENTANA_BLOQUEO_VENCIDO_MS = 5 * 60_000;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Dispositivo, X-Lat, X-Lon, Range',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Dispositivo, X-Lat, X-Lon, Range',
   'Access-Control-Expose-Headers': 'Content-Range, Content-Length, Accept-Ranges',
 };
 
@@ -851,6 +870,47 @@ async function salud(env: Env): Promise<Response> {
   return json({ ok: base, base, mensajes: proveedores(env) ?? 'sin proveedor' }, base ? 200 : 503);
 }
 
+/**
+ * "Tus notas de falsas alarmas" (src/memoria.ts). Sin configurar, `GET /api/memoria` dice `activa: false` y la app
+ * no muestra la sección. Las notas exigen la llave del celular (`Authorization: Bearer`); el sujeto sale de la base.
+ */
+async function rutaMemoria(env: Env, peticion: Request, url: URL): Promise<Response | null> {
+  if (url.pathname === '/api/memoria' && peticion.method === 'GET') return json({ ok: true, activa: memoriaActiva(env) });
+  const nota = url.pathname.match(/^\/api\/memoria\/notas(?:\/([^/]{1,64}))?$/);
+  const todo = url.pathname === '/api/memoria' && peticion.method === 'DELETE';
+  if (url.pathname !== '/api/memoria/llave' && !nota && !todo) return null;
+  if (!memoriaActiva(env)) return json({ ok: false, activa: false, detalle: 'la memoria no está configurada' }, 503);
+  const ahora = Date.now();
+  const demasiado = json({ ok: false, detalle: 'se alcanzó el límite de notas por ahora; intenta más tarde' }, 429);
+  if (url.pathname === '/api/memoria/llave') {
+    if (peticion.method !== 'POST') return null;
+    const llave = await entregarLlave(env, peticion, ahora);
+    return llave ? json({ ok: true, llave }) : demasiado;
+  }
+  const sujeto = await sujetoDe(env, peticion);
+  if (!sujeto) return json({ ok: false, detalle: 'llave de memoria inválida' }, 401);
+  const responder = <T>(r: ResultadoMemoria<T>, exito: (datos: T) => Record<string, unknown>) =>
+    r.ok ? json({ ok: true, ...exito(r.datos) }) : json({ ok: false, detalle: r.detalle }, r.estado);
+  // Borrar todo no tiene cuota: borrar lo propio siempre debe poder hacerse (y está acotado por lo guardado).
+  if (todo) return responder(await borrarTodaLaMemoria(env, sujeto), (d) => d);
+  const id = nota?.[1];
+  if (!id && peticion.method === 'GET') {
+    const motivo = validarMotivo(url.searchParams.get('motivo'));
+    if (await consumirCuotas(env, ahora, cuotasBuscar(sujeto))) return demasiado;
+    return responder(await buscarNotas(env, sujeto, motivo), (notas) => ({ notas }));
+  }
+  if (!id && peticion.method === 'POST') {
+    const nueva = validarNota(await leerJson(peticion));
+    if (await consumirCuotas(env, ahora, cuotasEscribir(sujeto))) return demasiado;
+    return responder(await guardarNota(env, sujeto, nueva), (d) => ({ guardada: true, ...d }));
+  }
+  if (id && peticion.method === 'DELETE') {
+    if (!esIdMemoria(id)) return json({ ok: false, detalle: 'esa nota ya no existe' }, 404);
+    return responder(await borrarNota(env, sujeto, id), () => ({ borrada: true }));
+  }
+  return null;
+}
+
 export default {
   async fetch(peticion: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(peticion.url);
@@ -860,6 +920,10 @@ export default {
     if (peticion.method === 'OPTIONS') return new Response(null, { headers: CORS });
     try {
       if (url.pathname === '/api/salud') return await salud(env);
+      if (url.pathname.startsWith('/api/memoria')) {
+        const respuesta = await rutaMemoria(env, peticion, url);
+        if (respuesta) return respuesta;
+      }
       // La app de Android para el equipo (el APK pesa ~100 MB: no entra en los archivos estáticos, va en R2).
       // También HEAD: lo usan los verificadores de enlaces y las vistas previas de WhatsApp.
       if (url.pathname === '/api/descargar/android' && (peticion.method === 'GET' || peticion.method === 'HEAD')) {
@@ -924,5 +988,7 @@ export default {
       env.DB.prepare('DELETE FROM bloqueos WHERE alerta_id IN (SELECT id FROM alertas WHERE creada < ?)').bind(limite),
     ]);
     await borrarNumeroPropio(env, 'creada < ?', limite);
+    // Al final y sin poder romper lo anterior: las cuotas de la memoria son lo menos importante de esta tarea.
+    await limpiarCuotas(env, Date.now()).catch((e) => console.warn('No se pudieron limpiar las cuotas de la memoria', e));
   },
 } satisfies ExportedHandler<Env>;
