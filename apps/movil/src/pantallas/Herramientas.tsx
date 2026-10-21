@@ -191,7 +191,7 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
 
       <Rotulo>PROBAR LA BIENVENIDA</Rotulo>
       <T v="apoyo" suave>
-        Borra tu nombre, tu red, el PIN y lo de bloqueo, apaga la protección y vuelve a la bienvenida, como recién instalada. Los permisos del celular siguen dados (para quitarlos, borra la app).
+        Borra tu nombre, tu red, el PIN, lo de bloqueo y tus notas de falsas alarmas (también en Atomic Memory), apaga la protección y vuelve a la bienvenida, como recién instalada. Los permisos del celular siguen dados (para quitarlos, borra la app).
       </T>
       <Boton
         texto="Borrar todo y ver la bienvenida"
@@ -202,9 +202,10 @@ export function Herramientas({ onVolver }: { onVolver: () => void }) {
       <PedirPin
         visible={pedirPinBorrar}
         titulo="Borrar todo"
-        explicacion="Escribe tu PIN. Se borra todo lo que configuraste y la app vuelve a la bienvenida."
+        explicacion="Escribe tu PIN. Se borra todo lo que configuraste (también tus notas de falsas alarmas) y la app vuelve a la bienvenida. Si las notas no se pueden borrar, no se borra nada."
         textoConfirmar="Borrar todo"
         alConfirmar={(pin) => servicio.borrarTodo(pin)}
+        mensajeError={() => servicio.motivoNoBorrado}
         alCerrar={() => setPedirPinBorrar(false)}
       />
     </Pantalla>

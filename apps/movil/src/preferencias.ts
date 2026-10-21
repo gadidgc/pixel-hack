@@ -66,6 +66,11 @@ export interface Preferencias {
    * contando); `vencer` = solo si llega a 0 sin el PIN. Va uno solo: Zavu deja 1 SMS por minuto al mismo número.
    */
   bloqueoIphoneAl: 'detectar' | 'vencer';
+  /**
+   * Llave que entrega el backend la primera vez que la dueña guarda una nota de falsa alarma (Atomic Memory).
+   * Solo con ella se leen o borran sus notas. Vacío = todavía no guardó ninguna.
+   */
+  llaveMemoria: string;
 }
 
 export const PERFIL_VACIO: PerfilBloqueo = { entidades: [], operador: null, linea: '', imei: '', dni: '' };
@@ -93,6 +98,7 @@ const INICIAL: Preferencias = {
   dispositivo: '',
   numeroPropio: '',
   bloqueoIphoneAl: 'detectar',
+  llaveMemoria: '',
 };
 
 /** Id para esta sesión hasta que carguen las preferencias (o si no se pueden guardar). */
