@@ -12,7 +12,7 @@ No pongas claves, códigos 2FA, correos de testers ni datos personales.
 |---|---|---|
 | Cuenta de desarrollador | ✅ personal "gadidgc" (gabrieldgc1999@gmail.com), comparte cuenta con ExamPrazol | ✅ individual "gabriel gonza" |
 | App creada en la consola | ✅ "Vigía: alerta de arrebato" (es-419, gratis) | ✅ "Vigía: alerta de arrebato" (Apple ID 6826638823) |
-| Build de tienda | ⏳ `.aab` versionCode 2 compilando en EAS (24 oct) | ⚠️ build 2 (18 oct) existe pero **no se subió**; falta `eas submit` |
+| Build de tienda | ✅ `.aab` versionCode 2 listo en EAS (68 MB); falta subirlo a prueba interna (a mano) | ⚠️ build 2 (18 oct) existe pero **no se subió**; falta `eas submit` |
 | Política de privacidad publicada | ✅ https://alerta.gadidgc.com/privacidad/ (puesta en la consola) | ✅ misma URL (puesta en la consola) |
 | Ficha (textos) | ❌ | ✅ subtítulo, categorías, descripción, palabras clave, URLs, notas para el revisor |
 | Capturas | ❌ | ❌ |
@@ -31,7 +31,9 @@ No pongas claves, códigos 2FA, correos de testers ni datos personales.
   arreglo: `npx wrangler login`). Como esta vez no había migraciones nuevas, se publicó solo con `wrangler deploy`.
   Revisado después: /privacidad, /descargar y /api/reportes responden 200.
 - Gabriel corre él mismo `eas submit -p ios`.
-- Siguiente: subir el `.aab` a prueba interna en Play (a mano, es el primero), capturas, etiquetas de privacidad y
+- El `.aab` terminó (versionCode 2, 68 MB). Pesa más que el límite de 10 MB de la herramienta del navegador, así que la
+  primera subida la hace Gabriel: dejé abierta la página "Crear versión de prueba interna" en Play Console.
+- Siguiente: capturas, etiquetas de privacidad y
   clasificación por edad en las dos tiendas.
 
 ### 2026-10-24 (tarde) · Claude
