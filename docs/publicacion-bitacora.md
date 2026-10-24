@@ -19,10 +19,16 @@ No pongas claves, códigos 2FA, correos de testers ni datos personales.
 | Clasificación por edad | ✅ cuestionario IARC enviado (Gabriel puso el correo y aceptó los términos) | ✅ 18+ |
 | Privacidad / seguridad de datos | ✅ 7 tipos, nada compartido, sin anuncios | ✅ publicada (7 tipos, sin rastreo) |
 | Otras declaraciones | ✅ anuncios, acceso, público 18+, ID de publicidad, gobierno, finanzas, salud | — |
-| Prueba cerrada / revisión | ❌ falta invitar 12 testers | ❌ falta subir el build y enviar a revisión |
+| Prueba cerrada / revisión | ❌ falta invitar 12 testers | ⏳ **enviada a revisión de Apple** (24 oct, 16:47) |
 | Publicada | ❌ | ❌ (lanzamiento **manual** después de aprobar) |
 
 ## Entradas
+
+### 2026-10-24 (noche, 5) · Claude (con Gabriel)
+- Apple pidió "Content Rights": respondido "sí, muestra contenido de terceros (reportes y videos de usuarios) y tenemos los
+  derechos". Gabriel llenó el contacto para el revisor y envió: **iOS 1.0 en "Waiting for Review"**. Apple suele responder en 1 a 3 días.
+- Lanzamiento manual: cuando Apple apruebe, hay que apretar "Release this version".
+- Siguiente: Android, prueba cerrada con 12 testers durante 14 días; en paralelo, agregar el botón "Reportar" en "Cerca".
 
 ### 2026-10-24 (noche, 4) · Claude
 - Gabriel corrió `eas submit -p ios`: usó la clave de API de App Store Connect que ya existía (C4L44LS6R7, del equipo).
