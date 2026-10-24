@@ -70,6 +70,7 @@ npm run movil               # levanta la app (Expo). Tecla w = web, a = Android,
 - **Nadie hace push directo a `main`**, ni los integrantes ni Claude.
 - Cada cambio va en una rama propia con el formato `<nombre>/<tema>`, por ejemplo `piero/panel-mapa` o `claude/umbral-giro`.
 - Abre un PR hacia `main` con título y descripción en español: qué cambia y por qué.
+- Antes del merge corre `npm test` y `npm run typecheck` en local. El CI (compilar el APK, ~7 min) solo corre si cambia lo nativo o la configuración (`modules/`, `app.json`, `app.config.js`, `eas.json`, dependencias); no esperes CI por cambios de docs o textos.
 - No hace falta que otra persona apruebe el PR: quien lo abre (o Claude, si se lo piden) puede revisarlo y hacer merge cuando pasen las pruebas.
 - PRs chicos y frecuentes. Antes de abrir el PR, actualiza tu rama con `main` (`git pull origin main`) y resuelve los conflictos.
 - Si alguien te pide "haz push" o "súbelo", entiéndelo como: push de la rama y abrir el PR, nunca push a `main`.

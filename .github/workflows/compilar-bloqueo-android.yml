@@ -1,10 +1,16 @@
 name: Compilar bloqueo Android
+# Compilar el APK tarda ~7 min: solo vale la pena cuando cambia lo nativo o la configuración de la app.
+# Docs, capturas, textos de la tienda y pantallas en TypeScript no lo disparan (las pruebas y el typecheck
+# se corren en local antes de cada merge). Se puede correr a mano desde Actions con "Run workflow".
 on:
   pull_request:
     paths:
-      - 'apps/movil/**'
-      - 'packages/detector/**'
-      - 'package*.json'
+      - 'apps/movil/modules/**'
+      - 'apps/movil/app.json'
+      - 'apps/movil/app.config.js'
+      - 'apps/movil/eas.json'
+      - 'apps/movil/package.json'
+      - 'package-lock.json'
       - '.github/workflows/compilar-bloqueo-android.yml'
   workflow_dispatch:
 permissions:
