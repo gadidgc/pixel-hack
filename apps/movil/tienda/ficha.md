@@ -14,7 +14,7 @@ cámbialo aquí también: este archivo es la memoria de lo que pusimos. Idioma d
 | Categoría | Play: Herramientas · Apple: Utilidades (secundaria: Estilo de vida) |
 | Precio | Gratis, sin anuncios, sin compras |
 | Países | Perú primero; luego el resto de Latinoamérica |
-| Política de privacidad | https://alerta-arrebato.gabrieldgc1999.workers.dev/privacidad/ |
+| Política de privacidad | https://alerta.gadidgc.com/privacidad/ |
 | Soporte | https://github.com/gadidgc/pixel-hack |
 | Marketing | https://alerta-arrebato.gabrieldgc1999.workers.dev/descargar/ |
 | Copyright | 2026 Equipo pixel-hack |

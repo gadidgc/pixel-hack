@@ -56,7 +56,10 @@ lo resuelva en un minuto y vuelva a correr `/publicar-tiendas`.
   El **primer** `.aab` de Android se sube a mano en Play Console; los siguientes, con `eas submit` (necesita
   `apps/movil/google-play-servicio.json`, que no va al repo).
 - Política de privacidad: `apps/movil/public/privacidad/index.html` → se publica con el Worker en
-  `https://alerta-arrebato.gabrieldgc1999.workers.dev/privacidad/` (export web + `wrangler deploy` en `apps/api`).
+  `https://alerta.gadidgc.com/privacidad/` (`npm run desplegar -w @pixel-hack/api`; si falla D1 con 7403 y no hay
+  migraciones nuevas, basta `npx wrangler deploy` en `apps/api`).
+- Consolas: Play Console cuenta gadidgc (`/console/u/1/developers/5580315106553212515`, app 4974396788305235167);
+  App Store Connect app 6826638823. Los formularios de Apple no aceptan valores puestos por código: haz clic y escribe.
 - Capturas: guárdalas en `apps/movil/tienda/capturas/` con nombres `plataforma-tamaño-numero.png`.
   Se pueden sacar del simulador de iOS o del navegador con el tamaño exacto; nunca muestres datos reales de nadie.
 - Google Play, cuentas personales nuevas: prueba cerrada con 12 testers durante 14 días seguidos antes de producción.

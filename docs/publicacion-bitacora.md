@@ -11,9 +11,9 @@ No pongas claves, códigos 2FA, correos de testers ni datos personales.
 | | Android (Google Play) | iPhone (App Store) |
 |---|---|---|
 | Cuenta de desarrollador | ✅ personal "gadidgc" (gabrieldgc1999@gmail.com), comparte cuenta con ExamPrazol | ✅ individual "gabriel gonza" |
-| App creada en la consola | ❌ falta (pide aceptar declaraciones) | ✅ "Vigía: alerta de arrebato" (Apple ID 6826638823) |
+| App creada en la consola | ✅ "Vigía: alerta de arrebato" (es-419, gratis) | ✅ "Vigía: alerta de arrebato" (Apple ID 6826638823) |
 | Build de tienda | ⏳ `.aab` versionCode 2 compilando en EAS (24 oct) | ⚠️ build 2 (18 oct) existe pero **no se subió**; falta `eas submit` |
-| Política de privacidad publicada | ❌ escrita, falta deploy | ❌ escrita, falta deploy |
+| Política de privacidad publicada | ✅ https://alerta.gadidgc.com/privacidad/ (puesta en la consola) | ✅ misma URL (puesta en la consola) |
 | Ficha (textos) | ❌ | ✅ subtítulo, categorías, descripción, palabras clave, URLs, notas para el revisor |
 | Capturas | ❌ | ❌ |
 | Formularios (datos, edad, permisos) | ❌ | ❌ privacidad de la app y clasificación por edad |
@@ -21,6 +21,18 @@ No pongas claves, códigos 2FA, correos de testers ni datos personales.
 | Publicada | ❌ | ❌ (lanzamiento **manual** después de aprobar) |
 
 ## Entradas
+
+### 2026-10-24 (noche) · Claude
+- Con el OK de Gabriel: aceptadas las declaraciones de Play (políticas del programa y leyes de exportación de EE. UU.) y
+  **creada la app en Play Console**: "Vigía: alerta de arrebato", `pe.pixelhack.alertaarrebato`, español de Latinoamérica, gratis.
+- **Política de privacidad publicada** en https://alerta.gadidgc.com/privacidad/ (dominio propio del Worker) y puesta en Play
+  (Contenido de la app) y en App Store Connect (Privacidad de la app).
+- `npm run desplegar` falló en el paso de migraciones de D1 (Cloudflare 7403: el token de `wrangler` no tiene permiso para D1;
+  arreglo: `npx wrangler login`). Como esta vez no había migraciones nuevas, se publicó solo con `wrangler deploy`.
+  Revisado después: /privacidad, /descargar y /api/reportes responden 200.
+- Gabriel corre él mismo `eas submit -p ios`.
+- Siguiente: subir el `.aab` a prueba interna en Play (a mano, es el primero), capturas, etiquetas de privacidad y
+  clasificación por edad en las dos tiendas.
 
 ### 2026-10-24 (tarde) · Claude
 - **Corrección:** la entrada anterior decía que la app de iPhone ya estaba creada en App Store Connect. No lo estaba:
