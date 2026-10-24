@@ -8,19 +8,22 @@ cámbialo aquí también: este archivo es la memoria de lo que pusimos. Idioma d
 
 | Campo | Valor |
 |---|---|
-| Nombre | Vigía |
+| Nombre | App Store: **Vigía: alerta de arrebato** ("Vigía" ya estaba tomado) · Play: Vigía |
 | Paquete / Bundle ID | `pe.pixelhack.alertaarrebato` (no se puede cambiar después de publicar) |
 | Nombre de desarrollador (Play) | pixel-hack |
-| Categoría | Play: Herramientas · Apple: Utilidades |
+| Categoría | Play: Herramientas · Apple: Utilidades (secundaria: Estilo de vida) |
 | Precio | Gratis, sin anuncios, sin compras |
 | Países | Perú primero; luego el resto de Latinoamérica |
 | Política de privacidad | https://alerta-arrebato.gabrieldgc1999.workers.dev/privacidad/ |
-| Sitio / soporte | https://github.com/gadidgc/pixel-hack |
+| Soporte | https://github.com/gadidgc/pixel-hack |
+| Marketing | https://alerta-arrebato.gabrieldgc1999.workers.dev/descargar/ |
+| Copyright | 2026 Equipo pixel-hack |
+| App Store Connect | Apple ID 6826638823 · SKU `vigia-pixelhack` · idioma Spanish (Mexico) · lanzamiento manual |
 | Correo de contacto | el de la cuenta de desarrollador de Gabriel (no lo copiamos aquí) |
 
 ## Textos
 
-**Subtítulo (Apple, máx. 30):** `Avisa si te arranchan el celular`
+**Subtítulo (Apple, máx. 30):** `Avisa a tu familia al toque` (puesto en App Store Connect)
 
 **Descripción corta (Play, máx. 80):** `Detecta cuando te arranchan el celular desde una moto y avisa al toque a tu familia.`
 

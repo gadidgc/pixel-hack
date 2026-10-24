@@ -10,16 +10,35 @@ No pongas claves, códigos 2FA, correos de testers ni datos personales.
 
 | | Android (Google Play) | iPhone (App Store) |
 |---|---|---|
-| Cuenta de desarrollador | ❌ no existe (falta crear y pagar US$ 25) | ✅ existe (ya hay build en TestFlight) |
-| App creada en la consola | ❌ | ✅ (con el nombre anterior, "Alerta Arrebato") |
-| Build de tienda | ❌ falta el `.aab` | ✅ build 2 (versión 0.1.0, 18 oct) |
-| Política de privacidad publicada | ❌ | ❌ |
-| Ficha (textos, capturas, ícono) | ❌ | ❌ |
-| Formularios (datos, edad, permisos) | ❌ | ❌ |
+| Cuenta de desarrollador | ✅ personal "gadidgc" (gabrieldgc1999@gmail.com), comparte cuenta con ExamPrazol | ✅ individual "gabriel gonza" |
+| App creada en la consola | ❌ falta (pide aceptar declaraciones) | ✅ "Vigía: alerta de arrebato" (Apple ID 6826638823) |
+| Build de tienda | ⏳ `.aab` versionCode 2 compilando en EAS (24 oct) | ⚠️ build 2 (18 oct) existe pero **no se subió**; falta `eas submit` |
+| Política de privacidad publicada | ❌ escrita, falta deploy | ❌ escrita, falta deploy |
+| Ficha (textos) | ❌ | ✅ subtítulo, categorías, descripción, palabras clave, URLs, notas para el revisor |
+| Capturas | ❌ | ❌ |
+| Formularios (datos, edad, permisos) | ❌ | ❌ privacidad de la app y clasificación por edad |
 | Prueba cerrada / revisión | ❌ | ❌ |
-| Publicada | ❌ | ❌ |
+| Publicada | ❌ | ❌ (lanzamiento **manual** después de aprobar) |
 
 ## Entradas
+
+### 2026-10-24 (tarde) · Claude
+- **Corrección:** la entrada anterior decía que la app de iPhone ya estaba creada en App Store Connect. No lo estaba:
+  solo existía ExamPrazol. El build 2 de iOS nunca se subió.
+- La cuenta de Google Play es la personal **gadidgc** (en gabrieldgc1999@gmail.com, no en gabrielito.xvr). Ya tiene ExamPrazol
+  en prueba cerrada. Su nombre público de desarrollador lo comparten las dos apps: cambiarlo a "pixel-hack" también cambia ExamPrazol.
+- App Store Connect: creada la app. **"Vigía" ya estaba tomado**, quedó **"Vigía: alerta de arrebato"** (se puede cambiar en
+  otra versión). SKU `vigia-pixelhack`, idioma Spanish (Mexico). `ascAppId` 6826638823 en `eas.json`.
+- Llenado y guardado (borrador): subtítulo "Avisa a tu familia al toque", categorías Utilidades + Estilo de vida, descripción,
+  palabras clave, URL de soporte (repo) y de marketing (/descargar), copyright, notas para el revisor, sin inicio de sesión,
+  lanzamiento manual.
+- `eas submit -p ios` no corre solo: necesita una clave de API de App Store Connect, y EAS la crea solo si Gabriel inicia
+  sesión de Apple una vez en su terminal.
+- Android: lanzado el build `.aab` (versionCode 2). EAS creó la clave de firma (keystore) en la nube.
+- **Bloqueado en Gabriel:** correr `npx eas-cli submit -p ios --latest --profile production` en `apps/movil` (Apple ID + 2FA),
+  y decir si se aceptan las declaraciones de Play para crear la app y si se despliega la política de privacidad.
+- Siguiente: capturas (iPhone 6,9" y Android), privacidad de la app y clasificación por edad en Apple, crear la app en Play
+  y subir el `.aab` a prueba interna.
 
 ### 2026-10-24 · Claude (con Gabriel)
 - Nueva fase: publicar en Google Play y App Store. Plan en `publicacion-tiendas.md`.
