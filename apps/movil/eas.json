@@ -12,6 +12,9 @@
       },
       "env": {
         "SIN_TIEMPO_DE_USO": "1"
+      },
+      "android": {
+        "buildType": "app-bundle"
       }
     },
     "interno": {
@@ -26,7 +29,12 @@
   },
   "submit": {
     "production": {
-      "ios": {}
+      "ios": {},
+      "android": {
+        "serviceAccountKeyPath": "./google-play-servicio.json",
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
     }
   }
 }

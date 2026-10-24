@@ -3,7 +3,12 @@
 Equipo pixel-hack · Hack the Andes 2026 (Lima, 17 y 18 de octubre) · Track **Seguridad**.
 Integrantes: Gabriel, Cesar, Mauricio, Piero. Mercado: **primero Perú, luego Latinoamérica**.
 
-## Fase actual: construir (la idea ya está elegida)
+## Fase actual: publicar en Google Play y App Store (desde el 24 de octubre)
+- El hackatón terminó. Ahora el objetivo es tener Vigía publicada en las dos tiendas, con el equipo como autor.
+- Plan: [docs/publicacion-tiendas.md](docs/publicacion-tiendas.md). Cómo vamos: [docs/publicacion-bitacora.md](docs/publicacion-bitacora.md).
+- El agente que avanza solo: la skill `/publicar-tiendas`. Anota cada avance en la bitácora.
+
+## La app (lo que se construyó en el hackatón)
 **Vigía:** una app (iPhone, Android y web) que, con el acelerómetro, el giroscopio y el GPS del celular,
 detecta cuando un ladrón en moto arrancha el celular y avisa al instante con la ubicación y la ruta de huida.
 Solo ese caso: no buscamos detectar todos los robos.
