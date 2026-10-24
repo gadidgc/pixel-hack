@@ -12,17 +12,28 @@ No pongas claves, códigos 2FA, correos de testers ni datos personales.
 |---|---|---|
 | Cuenta de desarrollador | ✅ personal "gadidgc" (comparte cuenta con ExamPrazol) | ✅ individual |
 | App creada en la consola | ✅ "Vigía: alerta de arrebato" (es-419, gratis) | ✅ "Vigía: alerta de arrebato" (Apple ID 6826638823) |
-| Build de tienda | ✅ `.aab` versionCode 2 subido a prueba interna (borrador) | ⏳ build 4 compilando en EAS (el 3 falló por la tilde, ver entrada) |
+| Build de tienda | ✅ `.aab` versionCode 2 subido a prueba interna (borrador) | ✅ build 5 listo en EAS; falta `eas submit` (Gabriel) |
 | Política de privacidad | ✅ https://alerta.gadidgc.com/privacidad/ | ✅ misma URL |
 | Ficha (textos) | ✅ descripción corta y completa | ✅ subtítulo, descripción, palabras clave, URLs, notas |
 | Gráficos | ✅ ícono 512, gráfico 1024×500, 4 capturas | ✅ 5 capturas (6,3", Apple las usa para todos los iPhone) |
-| Clasificación por edad | ❌ falta: pide el correo de contacto y aceptar los términos de IARC | ✅ 18+ |
+| Clasificación por edad | ✅ cuestionario IARC enviado (Gabriel puso el correo y aceptó los términos) | ✅ 18+ |
 | Privacidad / seguridad de datos | ✅ 7 tipos, nada compartido, sin anuncios | ✅ publicada (7 tipos, sin rastreo) |
 | Otras declaraciones | ✅ anuncios, acceso, público 18+, ID de publicidad, gobierno, finanzas, salud | — |
 | Prueba cerrada / revisión | ❌ falta invitar 12 testers | ❌ falta subir el build y enviar a revisión |
 | Publicada | ❌ | ❌ (lanzamiento **manual** después de aprobar) |
 
 ## Entradas
+
+### 2026-10-24 (noche, 3) · Claude
+- Builds 3 y 4 de iOS fallaron: EAS buscaba el target **'Viga'** (borra la "í"). El arreglo de `app.config.js` solo corría en
+  los servidores; ahora la variable `NOMBRE_SIN_TILDE=1` va en la parte `ios.env` de los perfiles de `eas.json`, que EAS usa en
+  la Mac y en la nube. **Build 5 terminó bien.**
+- Play: Gabriel puso el correo y aceptó los términos de IARC; Claude respondió el resto. Respuestas: contenido de usuarios sí
+  (reportes y videos en "Cerca"), comparte ubicación precisa con otros sí (el aviso a la familia), sin compras, sin desnudos ni
+  violencia gráfica. **Play Console: todas las declaraciones completas.**
+- **Pendiente para la app (riesgo en la revisión de Google):** no hay forma de **reportar ni bloquear** un reporte o video de la
+  comunidad. La política de contenido generado por usuarios de Google lo pide. Hay que agregar un botón "Reportar" en el detalle.
+- Siguiente: Gabriel corre `eas submit -p ios`; luego enviar a revisión de Apple; en Play, invitar testers a la prueba cerrada.
 
 ### 2026-10-24 (noche, 2) · Claude
 - Play: subido el `.aab` (lo arrastró Gabriel) a **prueba interna**, guardado como borrador con notas de la versión.
