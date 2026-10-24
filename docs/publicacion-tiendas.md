@@ -42,6 +42,9 @@ Claude no crea cuentas, no escribe contraseñas, no paga y no acepta contratos p
    - **Servicio en primer plano de tipo ubicación** (`FOREGROUND_SERVICE_LOCATION`): otra declaración con video.
    - `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`: Google lo limita; hay que justificar que la detección debe seguir con la
      pantalla apagada. Si lo rechazan, lo sacamos y llevamos al usuario a los ajustes de batería.
+   - **Permisos restringidos que trae el build** (revisados en el emulador): `USE_FULL_SCREEN_INTENT` (Google lo limita a
+     alarmas y llamadas; hay que declararlo o quitarlo), `SYSTEM_ALERT_WINDOW` y el **administrador del dispositivo**
+     para bloquear la pantalla. Si Google los rechaza, el plan B es quitarlos y dejar el bloqueo de Google (Protección antirrobo).
 7. **Ficha:** ícono 512×512, gráfico de funciones 1024×500, al menos 2 capturas de celular, descripciones.
 8. **Prueba interna → prueba cerrada (12 testers, 14 días) → pedir acceso a producción** (Google hace preguntas sobre
    la prueba) → **producción** en Perú primero.
@@ -51,8 +54,9 @@ Claude no crea cuentas, no escribe contraseñas, no paga y no acepta contratos p
 1. La cuenta de Apple Developer ya existe y ya hay un build en TestFlight (ver [testflight-iphone.md](testflight-iphone.md)).
 2. **Ficha en App Store Connect:** renombrar la app a "Vigía", subtítulo, descripción, palabras clave, URL de soporte y
    de privacidad, categoría (Utilidades o Estilo de vida), clasificación por edad.
-3. **Capturas obligatorias:** iPhone de 6,9" (1320×2868). `ios.supportsTablet` está en `true`, así que **también pide
-   capturas de iPad 13"**. Opción más simple: poner `supportsTablet: false` y solo hacer capturas de iPhone.
+3. **Capturas:** App Store Connect pide el tamaño de 6,3" (1206×2622) y lo usa para todos los iPhone. Ya están en
+   `apps/movil/tienda/capturas/`. `ios.supportsTablet` quedó en `false` para que no pida capturas de iPad.
+   Cómo se hicieron (simulador, emulador y modo capturas): ver la bitácora del 24 de octubre.
 4. **Privacidad de la app** ("etiquetas nutricionales"): ubicación precisa, contactos (nombre y teléfono que el usuario
    escribe), audio y video (evidencia), identificador del dispositivo. Nada se usa para rastrear ni publicidad.
 5. **Revisión de Apple:** notas para el revisor que expliquen la ubicación "siempre" y cómo probar sin robo real

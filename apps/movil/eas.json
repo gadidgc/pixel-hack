@@ -25,6 +25,20 @@
       "env": {
         "SIN_TIEMPO_DE_USO": "1"
       }
+    },
+    "capturas": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "SIN_TIEMPO_DE_USO": "1",
+        "EXPO_PUBLIC_URL_ALERTAS": "ninguno",
+        "EXPO_PUBLIC_MODO_CAPTURAS": "1"
+      }
     }
   },
   "submit": {

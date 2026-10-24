@@ -10,17 +10,43 @@ No pongas claves, códigos 2FA, correos de testers ni datos personales.
 
 | | Android (Google Play) | iPhone (App Store) |
 |---|---|---|
-| Cuenta de desarrollador | ✅ personal "gadidgc" (gabrieldgc1999@gmail.com), comparte cuenta con ExamPrazol | ✅ individual "gabriel gonza" |
+| Cuenta de desarrollador | ✅ personal "gadidgc" (comparte cuenta con ExamPrazol) | ✅ individual |
 | App creada en la consola | ✅ "Vigía: alerta de arrebato" (es-419, gratis) | ✅ "Vigía: alerta de arrebato" (Apple ID 6826638823) |
-| Build de tienda | ✅ `.aab` versionCode 2 listo en EAS (68 MB); falta subirlo a prueba interna (a mano) | ⚠️ build 2 (18 oct) existe pero **no se subió**; falta `eas submit` |
-| Política de privacidad publicada | ✅ https://alerta.gadidgc.com/privacidad/ (puesta en la consola) | ✅ misma URL (puesta en la consola) |
-| Ficha (textos) | ❌ | ✅ subtítulo, categorías, descripción, palabras clave, URLs, notas para el revisor |
-| Capturas | ❌ | ❌ |
-| Formularios (datos, edad, permisos) | ❌ | ❌ privacidad de la app y clasificación por edad |
-| Prueba cerrada / revisión | ❌ | ❌ |
+| Build de tienda | ✅ `.aab` versionCode 2 subido a prueba interna (borrador) | ⏳ build 4 compilando en EAS (el 3 falló por la tilde, ver entrada) |
+| Política de privacidad | ✅ https://alerta.gadidgc.com/privacidad/ | ✅ misma URL |
+| Ficha (textos) | ✅ descripción corta y completa | ✅ subtítulo, descripción, palabras clave, URLs, notas |
+| Gráficos | ✅ ícono 512, gráfico 1024×500, 4 capturas | ✅ 5 capturas (6,3", Apple las usa para todos los iPhone) |
+| Clasificación por edad | ❌ falta: pide el correo de contacto y aceptar los términos de IARC | ✅ 18+ |
+| Privacidad / seguridad de datos | ✅ 7 tipos, nada compartido, sin anuncios | ✅ publicada (7 tipos, sin rastreo) |
+| Otras declaraciones | ✅ anuncios, acceso, público 18+, ID de publicidad, gobierno, finanzas, salud | — |
+| Prueba cerrada / revisión | ❌ falta invitar 12 testers | ❌ falta subir el build y enviar a revisión |
 | Publicada | ❌ | ❌ (lanzamiento **manual** después de aprobar) |
 
 ## Entradas
+
+### 2026-10-24 (noche, 2) · Claude
+- Play: subido el `.aab` (lo arrastró Gabriel) a **prueba interna**, guardado como borrador con notas de la versión.
+- Clasificación por edad en Apple: sin violencia, sin contenido sexual, contenido de usuarios = sí. Calculó 4+; la subimos a
+  **18+** porque la política de privacidad dice que la app no es para menores de 18. Play: público objetivo 18+.
+- Etiquetas de privacidad de Apple publicadas y "Seguridad de los datos" de Play guardada: ubicación precisa, nombre,
+  contactos, videos, audio, reportes de la comunidad e identificador de la instalación; todo para que la app funcione,
+  nada para publicidad ni rastreo, nada compartido con terceros.
+- Play: declaraciones de anuncios (no), acceso sin inicio de sesión, ID de publicidad (no; el build no pide `AD_ID`),
+  app de gobierno (no), funciones financieras (ninguna), salud (ninguna).
+- **Capturas:** iPhone en el simulador iPhone 17 Pro Max (1320×2868; Apple ahora pide 6,3" = 1206×2622 y las escala);
+  Android en el emulador (1080×1920). Datos de ejemplo: "Carmen", contacto "Rosa" 999 999 999 (no son personas reales).
+  En las dos se compiló sin servidor (`EXPO_PUBLIC_URL_ALERTAS=ninguno`): no salió ningún mensaje.
+- El simulador de iPhone no tiene acelerómetro: agregué el **modo capturas** (`EXPO_PUBLIC_MODO_CAPTURAS=1`, perfil
+  `capturas` de `eas.json`) que, solo sin acelerómetro, simula un celular quieto para mostrar "Estás protegida". El detector
+  no cambia. En Android se usó el sensor del emulador y el ensayo de alerta real ("¿Todo bien?").
+- Gráfico de funciones de Play generado con `apps/movil/scripts/grafico-tienda.py` (foto de /descargar + fuente Lexend).
+- `ios.supportsTablet` pasa a `false`: si no, Apple exige capturas de iPad. En iPad la app igual corre en modo iPhone.
+- **Build 3 de iOS falló**: "Could not find target 'Vigia'". La tilde de "Vigía" rompe el nombre del proyecto de Xcode.
+  Arreglo en `app.config.js`: en builds de iOS el proyecto se llama "Vigia" y el nombre visible sigue "Vigía". Build 4 en marcha.
+- **Riesgos para la revisión de Google** (anotados en el plan): `USE_FULL_SCREEN_INTENT` y `SYSTEM_ALERT_WINDOW` están
+  restringidos; la app pide administrador del dispositivo para bloquear la pantalla.
+- **Pendiente de Gabriel:** (1) clasificación de contenido de Play: correo de contacto + aceptar términos de IARC;
+  (2) correr `npx eas-cli submit -p ios --latest --profile production` cuando termine el build 4; (3) juntar 12 testers.
 
 ### 2026-10-24 (noche) · Claude
 - Con el OK de Gabriel: aceptadas las declaraciones de Play (políticas del programa y leyes de exportación de EE. UU.) y

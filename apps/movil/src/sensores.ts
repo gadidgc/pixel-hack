@@ -24,6 +24,7 @@ export async function pedirPermisoSensores(): Promise<boolean> {
  * Si no está compilado (por ejemplo, en Expo Go), usamos expo-sensors, que se detiene al salir de la app.
  */
 export async function escucharSensores(alRecibir: (m: MuestraImu) => void): Promise<Suscripcion> {
+  if (MODO_CAPTURAS && !(await Accelerometer.isAvailableAsync())) return celularQuieto(alRecibir);
   if (SensoresFondo) {
     const disponible = SensoresFondo.disponible();
     if (!disponible.acelerometro) throw new Error('Este celular no tiene acelerómetro.');
@@ -44,6 +45,20 @@ export async function escucharSensores(alRecibir: (m: MuestraImu) => void): Prom
     };
   }
   return escucharConExpoSensors(alRecibir);
+}
+
+/**
+ * Modo capturas (solo para las fotos de las tiendas, docs/publicacion-tiendas.md): el simulador de iPhone no tiene
+ * acelerómetro y sin él no se puede mostrar la protección encendida. Con EXPO_PUBLIC_MODO_CAPTURAS=1 al compilar,
+ * y solo si el aparato no tiene acelerómetro, mandamos lo que mediría un celular quieto sobre la mesa.
+ * Los builds de tienda no llevan esta variable.
+ */
+const MODO_CAPTURAS = process.env.EXPO_PUBLIC_MODO_CAPTURAS === '1';
+
+function celularQuieto(alRecibir: (m: MuestraImu) => void): Suscripcion {
+  const id = setInterval(() => alRecibir({ t: Date.now(), ax: 0, ay: 0, az: G, gx: 0, gy: 0, gz: 0 }), INTERVALO_SENSORES_MS);
+  // `segundoPlano: true` para que la pantalla muestre la protección como en un celular real (sin el aviso de "limitada").
+  return { tieneGiroscopio: true, segundoPlano: true, detener: () => clearInterval(id) };
 }
 
 /**

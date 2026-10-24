@@ -63,21 +63,22 @@ cámbialo aquí también: este archivo es la memoria de lo que pusimos. Idioma d
 > Para probar sin un robo real: abrir la app, agregar un contacto, activar la protección y usar la prueba guiada
 > del inicio; el aviso de prueba le llega al contacto marcado como prueba.
 
-## Gráficos (pendiente)
+## Gráficos (en `tienda/capturas/`)
 
-| Pieza | Tamaño | Estado |
+| Pieza | Archivo | Estado |
 |---|---|---|
-| Ícono Play | 512×512 PNG | sale de `assets/icon.png` |
-| Gráfico de funciones Play | 1024×500 | falta |
-| Capturas de celular (Play) | 2 a 8, 9:16 | falta |
-| Capturas iPhone 6,9" (Apple) | 1320×2868, 3 a 10 | falta |
-| Capturas iPad 13" (Apple) | 2064×2752 | solo si `supportsTablet` queda en `true` |
+| Ícono Play 512×512 | `play-icono-512.png` | ✅ subido |
+| Gráfico de funciones 1024×500 | `play-grafico-1024x500.png` (`scripts/grafico-tienda.py`) | ✅ subido |
+| Capturas Android 1080×1920 | `android-0*.png` | ✅ 4 subidas |
+| Capturas iPhone 6,3" 1206×2622 | `ios-6.3-0*.png` (salen de las de 6,9") | ✅ 5 subidas |
+
+**Descripción corta (Play, puesta):** `Detecta el arrebato del celular desde una moto y avisa al toque a tu familia.`
 
 ## Respuestas de los formularios
 
 **Clasificación de contenido (IARC / Apple):** sin violencia, sin contenido sexual, sin apuestas, sin drogas.
 Hay contenido generado por usuarios (reportes de la comunidad, con nota de máx. 140 caracteres) → se declara.
-Edad: 18+ en el público objetivo de Play (no está dirigida a niños).
+Edad: 18+ en Apple (el cuestionario daba 4+, se subió a mano) y público objetivo 18+ en Play.
 
 **Anuncios:** no. **Compras:** no. **App de noticias / gobierno / finanzas / salud:** no.
 

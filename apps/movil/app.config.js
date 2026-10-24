@@ -7,6 +7,13 @@
 // `extra.sinTiempoDeUso` avisa a la app (src/bloqueo.ts) para que esconda ese botón y lo explique
 // (ver docs/bloqueo-por-arrebato.md).
 module.exports = ({ config }) => {
+  // iPhone: con la tilde de "Vigía" el proyecto de Xcode queda con un target que EAS no encuentra
+  // ("Could not find target 'Vigia'"). El proyecto se llama "Vigia" y el nombre que se ve en el
+  // celular sigue siendo "Vigía" (CFBundleDisplayName). Android acepta la tilde sin problema.
+  if (process.env.EAS_BUILD_PLATFORM === 'ios') {
+    config.ios = { ...config.ios, infoPlist: { ...config.ios?.infoPlist, CFBundleDisplayName: config.name } };
+    config.name = 'Vigia';
+  }
   if (process.env.SIN_TIEMPO_DE_USO === '1') {
     if (config.ios?.entitlements) {
       const { 'com.apple.developer.family-controls': _quitado, ...resto } = config.ios.entitlements;
