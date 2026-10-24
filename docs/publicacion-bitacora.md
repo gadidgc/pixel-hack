@@ -12,7 +12,7 @@ No pongas claves, códigos 2FA, correos de testers ni datos personales.
 |---|---|---|
 | Cuenta de desarrollador | ✅ personal "gadidgc" (comparte cuenta con ExamPrazol) | ✅ individual |
 | App creada en la consola | ✅ "Vigía: alerta de arrebato" (es-419, gratis) | ✅ "Vigía: alerta de arrebato" (Apple ID 6826638823) |
-| Build de tienda | ✅ `.aab` versionCode 2 subido a prueba interna (borrador) | ✅ build 5 listo en EAS; falta `eas submit` (Gabriel) |
+| Build de tienda | ✅ `.aab` versionCode 2 subido a prueba interna (borrador) | ✅ build 5 subido (eas submit con la clave de API existente) y asociado a la versión 1.0 |
 | Política de privacidad | ✅ https://alerta.gadidgc.com/privacidad/ | ✅ misma URL |
 | Ficha (textos) | ✅ descripción corta y completa | ✅ subtítulo, descripción, palabras clave, URLs, notas |
 | Gráficos | ✅ ícono 512, gráfico 1024×500, 4 capturas | ✅ 5 capturas (6,3", Apple las usa para todos los iPhone) |
@@ -23,6 +23,14 @@ No pongas claves, códigos 2FA, correos de testers ni datos personales.
 | Publicada | ❌ | ❌ (lanzamiento **manual** después de aprobar) |
 
 ## Entradas
+
+### 2026-10-24 (noche, 4) · Claude
+- Gabriel corrió `eas submit -p ios`: usó la clave de API de App Store Connect que ya existía (C4L44LS6R7, del equipo).
+  Apple procesó el build 5 y quedó asociado a la versión 1.0.
+- Precio: **gratis**. Disponibilidad: **solo Perú** (la app usa +51, Yape, operadoras peruanas; además evita el trámite de
+  la Unión Europea). Se pueden sumar países de Latinoamérica después.
+- **Falta (Gabriel):** contacto para el revisor de Apple (nombre, apellido, teléfono, correo) y apretar "Add for Review" →
+  "Submit to App Review".
 
 ### 2026-10-24 (noche, 3) · Claude
 - Builds 3 y 4 de iOS fallaron: EAS buscaba el target **'Viga'** (borra la "í"). El arreglo de `app.config.js` solo corría en
