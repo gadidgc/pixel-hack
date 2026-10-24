@@ -3,7 +3,14 @@
 Equipo pixel-hack · Hack the Andes 2026 (Lima, 17 y 18 de octubre) · Track **Seguridad**.
 Integrantes: Gabriel, Cesar, Mauricio, Piero. Mercado: **primero Perú, luego Latinoamérica**.
 
-## Fase actual: construir (la idea ya está elegida)
+## Fase actual: publicar en Google Play y App Store (desde el 24 de octubre)
+- El hackatón terminó. Ahora el objetivo es tener Vigía publicada en las dos tiendas, con el equipo como autor.
+- Plan: [docs/publicacion-tiendas.md](docs/publicacion-tiendas.md). Cómo vamos: [docs/publicacion-bitacora.md](docs/publicacion-bitacora.md).
+- **Al empezar cualquier sesión sobre las tiendas, lee primero "Para retomar" en la bitácora**; al terminar, actualízalo (dónde estamos y próximos pasos) y agrega una entrada con fecha.
+- El agente que avanza solo: la skill `/publicar-tiendas`. Anota cada avance en la bitácora.
+- Lo que el equipo tiene que saber o hacer va como borrador de WhatsApp en [docs/mensajes-equipo.md](docs/mensajes-equipo.md) (Gabriel lo envía).
+
+## La app (lo que se construyó en el hackatón)
 **Vigía:** una app (iPhone, Android y web) que, con el acelerómetro, el giroscopio y el GPS del celular,
 detecta cuando un ladrón en moto arrancha el celular y avisa al instante con la ubicación y la ruta de huida.
 Solo ese caso: no buscamos detectar todos los robos.
@@ -63,6 +70,7 @@ npm run movil               # levanta la app (Expo). Tecla w = web, a = Android,
 - **Nadie hace push directo a `main`**, ni los integrantes ni Claude.
 - Cada cambio va en una rama propia con el formato `<nombre>/<tema>`, por ejemplo `piero/panel-mapa` o `claude/umbral-giro`.
 - Abre un PR hacia `main` con título y descripción en español: qué cambia y por qué.
+- Antes del merge corre `npm test` y `npm run typecheck` en local. El CI (compilar el APK, ~7 min) solo corre si cambia lo nativo o la configuración (`modules/`, `app.json`, `app.config.js`, `eas.json`, dependencias); no esperes CI por cambios de docs o textos.
 - No hace falta que otra persona apruebe el PR: quien lo abre (o Claude, si se lo piden) puede revisarlo y hacer merge cuando pasen las pruebas.
 - PRs chicos y frecuentes. Antes de abrir el PR, actualiza tu rama con `main` (`git pull origin main`) y resuelve los conflictos.
 - Si alguien te pide "haz push" o "súbelo", entiéndelo como: push de la rama y abrir el PR, nunca push a `main`.

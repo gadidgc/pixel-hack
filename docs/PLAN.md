@@ -1,5 +1,9 @@
 # Plan de construcción: Vigía
 
+> **Actualización (24 de octubre de 2026):** el hackatón terminó. La fase actual es **publicar en Google Play y en la
+> App Store**: ver [publicacion-tiendas.md](publicacion-tiendas.md) y la [bitácora](publicacion-bitacora.md).
+> Este plan queda como referencia de cómo se construyó.
+
 > Sábado 17 de octubre de 2026, ~17:30 (hora de Lima) · Preparado por Claude a pedido de Gabriel.
 > **Entrega: domingo 18, 09:00.** Quedan unas 15 horas.
 > Este documento es para que **cada integrante sepa qué está hecho, cómo funciona y qué le toca**.
