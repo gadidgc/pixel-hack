@@ -8,7 +8,10 @@
       "distribution": "store",
       "autoIncrement": true,
       "ios": {
-        "resourceClass": "default"
+        "resourceClass": "default",
+        "env": {
+          "NOMBRE_SIN_TILDE": "1"
+        }
       },
       "env": {
         "SIN_TIEMPO_DE_USO": "1"
@@ -20,7 +23,10 @@
     "interno": {
       "distribution": "internal",
       "ios": {
-        "resourceClass": "default"
+        "resourceClass": "default",
+        "env": {
+          "NOMBRE_SIN_TILDE": "1"
+        }
       },
       "env": {
         "SIN_TIEMPO_DE_USO": "1"
@@ -32,7 +38,10 @@
         "buildType": "apk"
       },
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "env": {
+          "NOMBRE_SIN_TILDE": "1"
+        }
       },
       "env": {
         "SIN_TIEMPO_DE_USO": "1",
