@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vigía · Política de privacidad</title>
+<meta name="description" content="Qué datos usa Vigía, para qué y cuándo salen de tu celular.">
+<meta name="theme-color" content="#0d0c0b">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Lexend:wght@500;600&display=swap">
+<style>
+  /* Mismos tokens que /descargar (tema noche) */
+  :root {
+    --fondo: #0d0c0b;
+    --superficie: #171513;
+    --linea: #302b26;
+    --texto: #f2ece3;
+    --texto-suave: #a59d92;
+    --protegido: #8ee3c0;
+    --titular: "Lexend", "Figtree", system-ui, sans-serif;
+    --cuerpo: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font-family: var(--cuerpo); line-height: 1.6; }
+  a { color: var(--protegido); }
+  main { max-width: 720px; margin: 0 auto; padding: 48px 16px 80px; }
+  h1, h2 { font-family: var(--titular); font-weight: 600; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(30px, 6vw, 44px); margin: 0 0 8px; }
+  h2 { font-size: 20px; margin: 40px 0 8px; }
+  .fecha { color: var(--texto-suave); margin: 0 0 32px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 8px; border-bottom: 1px solid var(--linea); }
+  th { color: var(--texto-suave); font-weight: 500; }
+  .tabla { overflow-x: auto; background: var(--superficie); border-radius: 12px; padding: 4px 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Política de privacidad de Vigía</h1>
+  <p class="fecha">Vigente desde el 24 de octubre de 2026</p>
+
+  <p>Vigía es una app gratuita hecha en Lima por el equipo pixel-hack. Detecta cuando te arranchan el celular desde una
+  moto y avisa a las personas que tú elegiste. Aquí explicamos qué datos usa, para qué y cuándo salen de tu celular.</p>
+
+  <h2>Lo que se queda en tu celular</h2>
+  <p>Los datos del acelerómetro y del giroscopio se procesan solo en tu celular para reconocer el arrebato. No se envían
+  a ningún servidor.</p>
+
+  <h2>Lo que se envía y para qué</h2>
+  <div class="tabla">
+  <table>
+    <tr><th>Dato</th><th>Cuándo se envía</th><th>Para qué</th></tr>
+    <tr><td>Tu ubicación precisa y tu velocidad</td><td>Solo cuando Vigía detecta un robo (o en la prueba guiada)</td><td>Mostrar a tus contactos dónde fue y la ruta de huida</td></tr>
+    <tr><td>Tu nombre</td><td>Con el aviso</td><td>Que tus contactos sepan quién avisa</td></tr>
+    <tr><td>Nombre y teléfono de tus contactos</td><td>Con el aviso</td><td>Mandarles el mensaje por WhatsApp y SMS</td></tr>
+    <tr><td>Video o audio</td><td>Solo si tú decides grabar evidencia</td><td>Guardarla y, si quieres, mostrarla en el mapa de la comunidad</td></tr>
+    <tr><td>Reportes de la comunidad</td><td>Cuando tú reportas algo</td><td>Mostrarlo en el mapa; la ubicación se redondea a unos 100 m</td></tr>
+    <tr><td>Un identificador aleatorio de la instalación</td><td>Con cada aviso o reporte</td><td>Agrupar lo que manda un mismo celular. No es tu IMEI ni tu número</td></tr>
+  </table>
+  </div>
+
+  <h2>Con quién se comparte</h2>
+  <p>Con los contactos que tú elegiste, por medio de los servicios que mandan los mensajes (WhatsApp de Meta y un
+  proveedor de SMS). Los datos se guardan en servidores de Cloudflare. <strong>No vendemos datos, no mostramos anuncios
+  y no usamos tus datos para rastrearte.</strong> Todo viaja cifrado (HTTPS).</p>
+
+  <h2>Cuánto tiempo se guardan</h2>
+  <p>La lista de contactos que viaja con un aviso se borra cuando el aviso termina. Si cancelas una alerta por falsa
+  alarma, se borra también el reporte que generó en el mapa. Puedes pedir que borremos todos tus datos en cualquier
+  momento (ver abajo).</p>
+
+  <h2>Tus derechos</h2>
+  <p>Puedes pedir ver, corregir o borrar tus datos, de acuerdo con la Ley N.º 29733 de Protección de Datos Personales del
+  Perú. Escríbenos desde la página del proyecto en
+  <a href="https://github.com/gadidgc/pixel-hack/issues">github.com/gadidgc/pixel-hack</a> o al correo de contacto que
+  aparece en la ficha de la tienda.</p>
+
+  <h2>Menores de edad</h2>
+  <p>Vigía no está dirigida a menores de 18 años.</p>
+
+  <h2>Cambios</h2>
+  <p>Si cambiamos esta política, actualizamos la fecha de arriba y lo avisamos en la app.</p>
+</main>
+</body>
+</html>
