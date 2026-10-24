@@ -7,6 +7,7 @@ Integrantes: Gabriel, Cesar, Mauricio, Piero. Mercado: **primero Perú, luego La
 - El hackatón terminó. Ahora el objetivo es tener Vigía publicada en las dos tiendas, con el equipo como autor.
 - Plan: [docs/publicacion-tiendas.md](docs/publicacion-tiendas.md). Cómo vamos: [docs/publicacion-bitacora.md](docs/publicacion-bitacora.md).
 - El agente que avanza solo: la skill `/publicar-tiendas`. Anota cada avance en la bitácora.
+- Lo que el equipo tiene que saber o hacer va como borrador de WhatsApp en [docs/mensajes-equipo.md](docs/mensajes-equipo.md) (Gabriel lo envía).
 
 ## La app (lo que se construyó en el hackatón)
 **Vigía:** una app (iPhone, Android y web) que, con el acelerómetro, el giroscopio y el GPS del celular,

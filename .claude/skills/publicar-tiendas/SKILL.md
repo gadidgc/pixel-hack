@@ -33,6 +33,13 @@ Todo lo que escribas en el repo va en español (ver CLAUDE.md).
 5. **Escribe la entrada de la bitácora** (`### AAAA-MM-DD · Claude`): qué hiciste, qué viste, qué falta,
    y en una línea en **negrita** lo único que necesitas del usuario. Commit en una rama `claude/tiendas-<tema>` y PR.
 
+## Avisar al equipo (WhatsApp)
+
+Cuando el equipo tiene que saber o hacer algo (ser tester, mandar su correo Gmail, revisar algo, una aprobación o rechazo,
+la app publicada para ponerla en LinkedIn), escribe un borrador en español sencillo, arriba de todo en
+[docs/mensajes-equipo.md](../../../docs/mensajes-equipo.md). Luego ofrece pegarlo en el grupo de WhatsApp Web del Chrome de
+Gabriel. **Nunca apretar Enviar**: lo hace Gabriel. Sin claves ni datos personales en el mensaje.
+
 ## Qué haces solo y qué pides
 
 **Hazlo sin preguntar:** leer consolas, compilar con EAS, escribir textos y capturas en el repo, llenar campos de
