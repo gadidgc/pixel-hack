@@ -6,6 +6,32 @@ Cada avance de [publicacion-tiendas.md](publicacion-tiendas.md), el más nuevo a
 **Formato:** `### AAAA-MM-DD · quién` y debajo: qué se hizo, qué falta y si alguien está bloqueado.
 No pongas claves, códigos 2FA, correos de testers ni datos personales.
 
+## Para retomar (léelo primero; se actualiza al final de cada sesión)
+
+**Última actualización:** 24 de octubre de 2026, noche.
+
+**Dónde estamos**
+- **iPhone:** versión 1.0 (build 5) **enviada a revisión de Apple** ("Waiting for Review"). Gratis, solo Perú, lanzamiento manual.
+  Apple responde por correo en 1 a 3 días.
+- **Android:** app creada en Play Console (cuenta `u/1`, gadidgc), `.aab` versionCode 2 en prueba interna (borrador),
+  ficha y **todas** las declaraciones completas. Falta la prueba cerrada.
+- **Equipo:** se les mandó (o está por mandarse) el mensaje de WhatsApp pidiendo su Gmail para ser testers
+  ([mensajes-equipo.md](mensajes-equipo.md)).
+
+**Próximos pasos, en orden**
+1. Cuando lleguen los Gmail del equipo: crear la **prueba cerrada** en Play Console, agregar los testers y mandarles el enlace.
+   Necesitamos **12 durante 14 días seguidos**. Anotar aquí la fecha de inicio (no los correos).
+2. Si Apple **aprueba**: Gabriel aprieta "Release this version"; avisar al equipo con los enlaces para LinkedIn.
+   Si **rechaza**: leer el motivo en App Store Connect → App Review, arreglar y volver a enviar.
+3. Agregar el botón **"Reportar"** en reportes y videos de "Cerca" (lo pide Google). Nuevo build de Android e iOS.
+4. Revisar los permisos restringidos de Android (`USE_FULL_SCREEN_INTENT`, `SYSTEM_ALERT_WINDOW`, administrador del
+   dispositivo) antes de pedir acceso a producción en Play.
+5. Pasados los 14 días: pedir acceso a producción en Play y publicar en Perú.
+
+**Datos para no buscar de nuevo:** App Store Connect app 6826638823 · Play Console developer 5580315106553212515, app
+4974396788305235167 · Expo `gadidgc/alerta-arrebato` · política de privacidad https://alerta.gadidgc.com/privacidad/ ·
+clave de API de Apple para `eas submit`: la existente C4L44LS6R7 (está en los servidores de EAS).
+
 ## Estado de un vistazo
 
 | | Android (Google Play) | iPhone (App Store) |

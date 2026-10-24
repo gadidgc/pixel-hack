@@ -30,7 +30,7 @@ Todo lo que escribas en el repo va en español (ver CLAUDE.md).
    2. Llenar fichas y formularios con los textos de `ficha.md`.
    3. Subir builds (`eas build`, `eas submit`) — corre los comandos largos en segundo plano.
    4. Revisar respuestas de Google/Apple (rechazos, preguntas) y proponer el arreglo en un PR.
-5. **Escribe la entrada de la bitácora** (`### AAAA-MM-DD · Claude`): qué hiciste, qué viste, qué falta,
+5. **Actualiza "Para retomar"** (arriba de la bitácora: dónde estamos y próximos pasos) y **escribe la entrada de la bitácora** (`### AAAA-MM-DD · Claude`): qué hiciste, qué viste, qué falta,
    y en una línea en **negrita** lo único que necesitas del usuario. Commit en una rama `claude/tiendas-<tema>` y PR.
 
 ## Avisar al equipo (WhatsApp)

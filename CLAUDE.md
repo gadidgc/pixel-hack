@@ -6,6 +6,7 @@ Integrantes: Gabriel, Cesar, Mauricio, Piero. Mercado: **primero Perú, luego La
 ## Fase actual: publicar en Google Play y App Store (desde el 24 de octubre)
 - El hackatón terminó. Ahora el objetivo es tener Vigía publicada en las dos tiendas, con el equipo como autor.
 - Plan: [docs/publicacion-tiendas.md](docs/publicacion-tiendas.md). Cómo vamos: [docs/publicacion-bitacora.md](docs/publicacion-bitacora.md).
+- **Al empezar cualquier sesión sobre las tiendas, lee primero "Para retomar" en la bitácora**; al terminar, actualízalo (dónde estamos y próximos pasos) y agrega una entrada con fecha.
 - El agente que avanza solo: la skill `/publicar-tiendas`. Anota cada avance en la bitácora.
 - Lo que el equipo tiene que saber o hacer va como borrador de WhatsApp en [docs/mensajes-equipo.md](docs/mensajes-equipo.md) (Gabriel lo envía).
 
