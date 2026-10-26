@@ -15,6 +15,12 @@ Cloudflare Workers + D1 (SQLite). Una sola URL pública con HTTPS sirve la web d
 | `GET /api/reportes/:id/evidencias` | Las grabaciones de un reporte (`{id, tipo, mime, enlace, miniatura, onda, duracionMs, creado}`), para la hoja que se abre al tocar su tarjeta. Sin `dispositivo` ni ubicación. |
 | `GET /api/evidencias/:id` | Devuelve el archivo (acepta `Range`). El id es un token aleatorio de 16 caracteres. |
 | `GET /api/salud` | Si la base de datos y Zavu están listos (la app lo muestra en "Tú"). |
+| `GET /api/memoria` | `{activa}`: si "Tus notas de falsas alarmas" (Atomic Memory) está configurada. Si no, la app no muestra la sección. |
+| `POST /api/memoria/llave` | Entrega una llave aleatoria para este celular (en la base queda solo su hash, con un sujeto aleatorio que es el `user_id` de Atomic Memory). Máximo 5 al día por red y 60 por hora en total (429). |
+| `GET /api/memoria/notas?motivo=` | Con `Authorization: Bearer <llave>`: hasta 3 notas de esa persona, las más parecidas al motivo. |
+| `POST /api/memoria/notas` | `{texto, motivo?, reemplaza?}` (máx. 140 caracteres). Responde `guardada: true` solo si Atomic Memory devuelve el id. `reemplaza` = corregir: borra la anterior después de guardar la nueva. |
+| `DELETE /api/memoria/notas/:id` | Olvida una nota. `borrada: true` solo si Atomic Memory responde `success: true`. |
+| `DELETE /api/memoria` | "Borrar todo": borra hasta 10 notas de esa persona por llamada (`{completa: false, borradas}`); cuando Atomic Memory ya no lista ninguna, revoca la llave y responde `completa: true`. La app repite hasta eso y solo entonces olvida su llave. Sin cuota. |
 | todo lo demás | La web de la app (`apps/movil/dist`). |
 
 ## Correrlo
@@ -31,7 +37,11 @@ npm run desplegar -w @pixel-hack/api        # exporta la web, migra la base remo
 npx wrangler r2 bucket create alerta-arrebato-evidencias   # una vez: el bucket de las evidencias (binding EVIDENCIAS)
 npx wrangler secret put META_WA_TOKEN       # token de Meta (usuario del sistema, permiso whatsapp_business_messaging)
 npx wrangler secret put ZAVU_API_KEY        # Zavu: SMS (clave "live"; hoy configurada)
+npx wrangler secret put ATOMIC_MEMORY_API_KEY   # opcional: notas de falsas alarmas (clave del proyecto, amc_…)
 ```
+Para activar las notas también hace falta la variable `ATOMIC_MEMORY_URL` (`https://api.atomicstrata.ai`), en `vars` de
+`wrangler.jsonc` o en el panel de Cloudflare. Solo se acepta HTTPS (HTTP únicamente a `127.0.0.1`/`localhost`, para
+el fixture de las pruebas). Sin las dos, la memoria queda apagada y el resto funciona igual.
 
 ## WhatsApp con Meta (camino principal)
 Número: el de ExamPrazol (+51 914 652 364, `META_WA_NUMERO_ID` en wrangler.jsonc). Llega a cualquier número sin que
@@ -64,4 +74,5 @@ Meta exige un método de pago en la cuenta de WhatsApp Business para mandar plan
 - **"Cerca de ti" sin datos personales:** cuando una alerta se avisa a la red, también aparece como reporte anónimo (`origen: 'alerta'`) en el lugar del jalón redondeado a ~100 m; si después se cancela (falsa alarma), el reporte se borra. El `dispositivo` solo sirve para limitar reportes por hora y nunca sale en la API.
 - **Evidencias en R2:** el enlace es un token aleatorio, como el de la alerta. La app guarda siempre una copia en el celular; si la subida falla, lo dice ("Guardada solo en tu celular: <motivo>").
 - **Mensajes sin tildes:** en SMS una tilde baja el límite de 160 a 70 caracteres por parte.
+- **Notas de falsas alarmas (Atomic Memory, opcional):** un recordatorio personal ("pasa cuando corro al paradero") que la dueña ve **después** de cancelar con su PIN. El detector, la alerta y los avisos **no las leen**: no deciden nada ni son evidencia. La clave del proyecto vive solo en el Worker; la app usa una llave propia que el servidor entrega, y el `user_id` de Atomic Memory sale de la base, nunca de lo que mande el celular. Se guarda verbatim (`skip_extraction`), solo con scope de usuario (sin `session_id`, workspace ni agente). Cuotas durables en D1 (`memoria_uso`), porque Atomic Memory se paga por uso: llaves (5 al día por red, 60 por hora en total), notas guardadas (20 al día por persona, 300 por hora en total) y búsquedas (60 al día por persona); la "red" es un HMAC de la IP con la clave del proyecto, **nunca la IP**, y las ventanas se borran a los 2 días. "Borrar todo" usa `GET /v1/memories/list` + `DELETE /v1/memories/:id` (Cloud no expone `reset-source`) y no revoca la llave hasta que el listado sale vacío. Las respuestas se leen con tope de 64 KB, sin seguir redirecciones, y los errores del proveedor se registran solo con su código (su texto podría repetir la nota). Pruebas: `test/memoria.test.ts`, contra un fixture local que imita la API (`test/fixtures/atomic-memory-falso.ts`), **no** contra el servicio real.
 - Si no hay clave de Zavu, el backend lo dice ("falta configurar Zavu") y la app muestra "No pudimos avisar": nunca dice que avisó si no salió ningún mensaje.

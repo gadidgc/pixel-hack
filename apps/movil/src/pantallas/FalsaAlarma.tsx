@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Share, View } from 'react-native';
+import { NotasFalsaAlarma } from '../componentes/NotasFalsaAlarma';
 import { PedirPin } from '../componentes/PedirPin';
+import { memoriaActiva } from '../memoria';
 import { useProteccion, usePreferencias } from '../useProteccion';
 import { Boton, Chip, Insignia, LineaDeTiempo, Pantalla, Rotulo, T, hora } from '../ui/componentes';
 
@@ -9,12 +11,23 @@ const MOTIVOS = ['Iba en auto o taxi', 'Subí a un bus o combi', 'Se me cayó', 
 /**
  * F4 · Fue falsa alarma: la red ya fue avisada (o se intentó). Cuenta qué pasó, deja avisar que estás
  * bien (con PIN) y, opcionalmente, decir qué pasó para mejorar el detector.
+ * Si el backend tiene Atomic Memory, al cancelar con el PIN pasa a "Tus notas de falsas alarmas"
+ * (`onCerrar({ motivo })`); si no, `onCerrar(null)` vuelve al inicio como siempre.
  */
-export function FalsaAlarma({ onVerAviso, onCerrar }: { onVerAviso: () => void; onCerrar: () => void }) {
+export function FalsaAlarma({ onVerAviso, onCerrar }: { onVerAviso: () => void; onCerrar: (notas: { motivo: string | null } | null) => void }) {
   const { estado, servicio } = useProteccion();
   const prefs = usePreferencias();
   const [pin, setPin] = useState(false);
   const [motivo, setMotivo] = useState<string | null>(null);
+  // Se consulta antes del PIN para no demorar el cierre; las notas recién se muestran después del PIN.
+  const [conNotas, setConNotas] = useState(false);
+  useEffect(() => {
+    let vigente = true;
+    void memoriaActiva().then((a) => vigente && setConNotas(a));
+    return () => {
+      vigente = false;
+    };
+  }, []);
   const alerta = estado.alerta;
   if (!alerta) return null;
   const quienes = prefs?.contactos.map((x) => x.nombre).join(', ') || 'tu red';
@@ -73,11 +86,29 @@ export function FalsaAlarma({ onVerAviso, onCerrar }: { onVerAviso: () => void; 
         explicacion={avisada ? `Escribe tu PIN y le diremos a ${quienes} que estás bien.` : 'Escribe tu PIN para cancelar la alerta.'}
         alConfirmar={async (p) => {
           const ok = await servicio.cancelarAlerta(p);
-          if (ok) onCerrar();
+          if (ok) onCerrar(conNotas ? { motivo } : null);
           return ok;
         }}
         alCerrar={() => setPin(false)}
       />
+    </Pantalla>
+  );
+}
+
+/** Después de cancelar con el PIN: la alerta ya terminó; aquí solo están las notas personales (Atomic Memory). */
+export function NotasTrasFalsaAlarma({ motivo, onListo }: { motivo: string | null; onListo: () => void }) {
+  return (
+    <Pantalla>
+      <Insignia tipo="protegido" texto="ALERTA CANCELADA" />
+      <View style={{ gap: 8 }}>
+        <T v="titulo26" accessibilityRole="header">
+          ¿Quieres recordar qué la causó?
+        </T>
+        <T suave>Una nota corta te ayuda a reconocerla la próxima vez. Es opcional.</T>
+      </View>
+      <NotasFalsaAlarma motivo={motivo} />
+      <View style={{ flex: 1 }} />
+      <Boton texto="Listo" onPress={onListo} />
     </Pantalla>
   );
 }

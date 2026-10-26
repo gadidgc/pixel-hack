@@ -1,0 +1,9 @@
+# Notas de falsas alarmas: demostración local de desarrollo
+
+Grabada el 2026-10-21 con los componentes reales de Vigía en Expo web. El producto no tiene aplicación web: se desactivó temporalmente su bloqueo de la raíz web para esta vista de desarrollo y se restauró antes del commit. El sensor y el GPS fueron sintéticos; la alerta usó el ensayo que ya trae la aplicación. La API real corrió en Wrangler con D1 local y el proveedor HTTP falso de Atomic Memory incluido en las pruebas. No se usó WhatsApp/SMS, una cuenta de nube real, Android ni iPhone.
+
+El video empieza en la confirmación real del PIN de falsa alarma y muestra guardar, corregir y olvidar una nota con confirmación. El proveedor falso termina con cero notas. Son notas cortas escritas por la persona y guardadas tal cual, no resúmenes automáticos ni evidencia. Nunca cambian la detección, la escalada de alertas ni los contactos. Todos los cuadros llevan el aviso sobre las partes sintéticas y la plataforma.
+
+Validación: pasan 229 pruebas (67 del detector, 82 de la API y 80 de la aplicación); pasan los chequeos TypeScript de los tres paquetes, repetidos después de restaurar el bloqueo web. Una ejecución independiente pasa las 24 pruebas de memoria de la API. Las migraciones locales de D1 hasta 0008 se aplicaron correctamente. No se verificaron sensores nativos, segundo plano, cámara ni mensajería real.
+
+Para reproducir el contrato HTTP sin una clave de nube, ejecutar las pruebas apps/api/test/memoria.test.ts con su proveedor falso test/fixtures/atomic-memory-falso.ts. Para una vista de desarrollo de la interfaz, usar el ensayo existente, la API local de Wrangler, entradas sintéticas del sensor y la ubicación, y la desactivación temporal del bloqueo web descrita arriba. No desplegar esa desactivación. En producción la memoria sigue apagada sin ATOMIC_MEMORY_URL y ATOMIC_MEMORY_API_KEY configuradas solo en el servidor.

@@ -16,7 +16,7 @@ import { Cerca } from './src/pantallas/Cerca';
 import { Contacto } from './src/pantallas/Contacto';
 import { ContactoBienvenida } from './src/pantallas/ContactoBienvenida';
 import { ContactoEnVivo } from './src/pantallas/ContactoEnVivo';
-import { FalsaAlarma } from './src/pantallas/FalsaAlarma';
+import { FalsaAlarma, NotasTrasFalsaAlarma } from './src/pantallas/FalsaAlarma';
 import { Grabar } from './src/pantallas/Grabar';
 import { Herramientas } from './src/pantallas/Herramientas';
 import { Inicio } from './src/pantallas/Inicio';
@@ -36,7 +36,7 @@ import { hora, type Pestana } from './src/ui/componentes';
 import { COLORES, TemaContexto } from './src/ui/tema';
 
 type PasoBienvenida = 'bienvenida' | 'nombre' | 'contacto' | 'permisos' | 'siempre' | 'pin' | 'atajos' | 'prueba';
-type Extra = null | 'red' | 'cuentas' | 'herramientas' | 'meRobaron' | 'vistaContacto' | 'alerta';
+type Extra = null | 'red' | 'cuentas' | 'herramientas' | 'meRobaron' | 'vistaContacto' | 'alerta' | 'notasFalsaAlarma';
 
 /**
  * En la web (la URL pública) también servimos las páginas que se abren desde OTRO celular:
@@ -144,6 +144,7 @@ function Navegacion() {
   const [paso, setPaso] = useState<PasoBienvenida>('bienvenida');
   const [pestana, setPestana] = useState<Pestana>('inicio');
   const [extra, setExtra] = useState<Extra>(null);
+  const [motivoNotas, setMotivoNotas] = useState<string | null>(null);
   const web = paginaWeb();
   // Grabar se monta la primera vez que la abres y ya no se desmonta (ver Grabar.tsx).
   const [grabarMontado, setGrabarMontado] = useState(false);
@@ -216,7 +217,17 @@ function Navegacion() {
   if (extra === 'vistaContacto') {
     contenido = <WebContacto datos={datosDeLaAlerta(estado, prefs.nombre)} ejemplo={!alerta} onCerrar={() => setExtra(alerta ? 'alerta' : null)} />;
   } else if (mostrarAlerta) {
-    contenido = <FalsaAlarma onVerAviso={() => setExtra('vistaContacto')} onCerrar={() => setExtra(null)} />;
+    contenido = (
+      <FalsaAlarma
+        onVerAviso={() => setExtra('vistaContacto')}
+        onCerrar={(notas) => {
+          setMotivoNotas(notas?.motivo ?? null);
+          setExtra(notas ? 'notasFalsaAlarma' : null);
+        }}
+      />
+    );
+  } else if (extra === 'notasFalsaAlarma') {
+    contenido = <NotasTrasFalsaAlarma motivo={motivoNotas} onListo={() => setExtra(null)} />;
   } else if (extra === 'red') {
     contenido = <Contacto paso={false} onSeguir={() => setExtra(null)} onVolver={() => setExtra(null)} />;
   } else if (extra === 'cuentas') {
