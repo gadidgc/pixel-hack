@@ -34,6 +34,72 @@ Ninguna señal aislada debe activar una emergencia. El motor de riesgo puede com
 
 Los intentos fallidos de desbloqueo y otras señales internas solo se usarían si la plataforma las expone legalmente a la aplicación. Los puntajes iniciales serían reglas del prototipo, no probabilidades científicas de robo.
 
+## Correlación multisensor
+
+La detección no debe depender de una sola señal ni de intentar leer el evento interno de **Bloqueo por detección de robo** de Google. Android no expone públicamente a aplicaciones de terceros un evento que permita distinguir ese bloqueo de cualquier otro bloqueo de pantalla.
+
+NEXUS debe construir su propia hipótesis explicable correlacionando eventos disponibles y autorizados por el usuario:
+
+```text
+Movimiento compatible con arrebato
++ desconexión del reloj o dispositivo de confianza
++ cambio de actividad a carrera, bicicleta o vehículo
++ desaparición del heartbeat
++ dispositivo posteriormente bloqueado
+= sospecha elevada
+```
+
+El bloqueo posterior es una señal secundaria: la aplicación puede conocer que el dispositivo está bloqueado, pero no afirmar que Google lo bloqueó por detectar un robo. La alerta debe mostrar qué señales observó NEXUS y cuáles no pudo comprobar.
+
+### Origen de las señales
+
+| Señal | Implementación posible | Limitación |
+|---|---|---|
+| Movimiento y cambio de actividad | Sensores del equipo y Activity Recognition de Android | Correr o subir a un vehículo también puede ser una acción normal |
+| Separación del reloj | Presencia de un dispositivo asociado por Bluetooth | Puede desconectarse por batería, distancia o interferencia |
+| Heartbeat | Evento mínimo enviado periódicamente al backend | La falta de conexión no implica robo |
+| Estado de bloqueo | Consulta genérica con `KeyguardManager` | No revela la causa del bloqueo |
+| Cambio o ausencia de SIM | APIs de telefonía, según versión y permisos | Cambiar de SIM puede ser legítimo y algunos datos están restringidos |
+| Confirmación del propietario | Notificación discreta, reloj o segundo dispositivo | El usuario puede no responder por otras razones |
+
+### Máquina de estados propuesta
+
+```text
+NORMAL
+  |
+  | aparecen dos o más señales correlacionadas
+  v
+SOSPECHA
+  |
+  | se solicita una comprobación por un canal disponible
+  v
+VERIFICANDO
+  |                          |
+  | respuesta válida         | no responde / confirma peligro
+  v                          v
+FALSA ALARMA             ALERTA FAMILIAR
+                              |
+                              | un contacto verifica el incidente
+                              v
+                         EMERGENCIA CONFIRMADA
+```
+
+El servidor controla el temporizador. De esa forma, si el teléfono pierde internet o es apagado después de enviar las primeras señales, la comprobación y el escalamiento pueden continuar desde fuera del dispositivo comprometido.
+
+### Acciones permitidas después de la sospecha
+
+Con autorización configurada previamente, el sistema puede:
+
+- Enviar un evento mínimo y cifrado al backend.
+- Iniciar una cuenta regresiva de verificación.
+- Consultar al propietario desde un reloj o segundo dispositivo.
+- Alertar a los contactos de confianza.
+- Advertir sobre posibles solicitudes de dinero o suplantaciones.
+- Abrir el checklist familiar para proteger línea, correo, banca y billeteras.
+- Conservar una cronología de señales y respuestas para auditoría.
+
+No debe borrar datos, denunciar personas, compartir ubicación permanente ni bloquear cuentas financieras automáticamente. Esas acciones requieren confirmación humana o una integración institucional autorizada.
+
 ## Flujo principal
 
 ```text
